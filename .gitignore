@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Build output (Tools/macbee.sh builds into ~/Library/Developer/MacBee, but just in case)
+.build/
+DerivedData/
+build/
+
+# Personal Xcode state (window positions, breakpoints)
+xcuserdata/
+*.xcuserstate
+.swiftpm/
