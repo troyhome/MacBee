@@ -38,7 +38,11 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
 - Build files must never go inside the project folder (they're large and change constantly). Always use `Tools/macbee.sh`:
   `Tools/macbee.sh build` (app), `Tools/macbee.sh test` (package tests), `Tools/macbee.sh run` (open the app),
   `Tools/macbee.sh install` (optimized build copied to /Applications/MacBee.app, the copy Troy uses day to day;
-  re-run it after changes he should get).
+  re-run it after changes he should get). `Tools/macbee.sh update` = `git pull` + install, skipped when the
+  installed copy already matches (commit stored in `~/Library/Developer/MacBee/installed-commit`).
+  On the second MacBook Air, an "Update MacBee" app in /Applications (AppleScript, not in the repo) runs `update`
+  and shows the result; log in `~/Library/Logs/MacBee-update.log`. Its GitHub sign-in is the GitHub CLI at
+  `~/.local/bin/gh` (git uses it for credentials).
   It puts everything in `~/Library/Developer/MacBee`. For `swift run`/`swift test` by hand, add
   `--scratch-path ~/Library/Developer/MacBee/<PackageName>`.
 - Per Mac (not synced): the music database and play history (`~/Library/Application Support/MacBee/`), and the
