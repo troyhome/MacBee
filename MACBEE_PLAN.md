@@ -214,7 +214,7 @@ Tabs:
    Preferences) and rescan those files when it reports changes or when files change on disk.
 3. Keep both behind protocols so they can be swapped or removed.
 
-### Phase 9 — Release  🔨 in progress
+### Phase 9 — Release  ✅ done (MacBee 1.0; self-signed, no notarization for now)
 1. App icon, About window, version number.
 2. Build a signed, notarized `.app` (requires an Apple Developer account; otherwise explain the
    "right-click → Open" first-launch step) packaged as a `.dmg` with drag-to-Applications.

@@ -94,13 +94,15 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
   - 2026-10-17, second Mac: "Edit Tags in TagBee" was greyed out. Cause: TagBee was installed ~2 min after MacBee
     started, and MacBee only looked for TagBee at launch. Fixed: it also looks whenever MacBee comes to the front
     (`PreferencesStore.useDefaultTagEditorIfNeeded`). Confirmed working.
-- Phase 9 (release) STARTED 2026-10-17. Done so far (not yet built on a Mac): About window with credits
+- Phase 9 DONE (checked by Troy 2026-10-17): MacBee 1.0. About window with credits
   (`MacBee/App/AboutCommand.swift`), `Tools/macbee.sh dmg` (makes ~/Desktop/MacBee-<version>.dmg with an
   Applications shortcut). Decided 2026-10-17: MacBee is just for Troy, so no Apple Developer Program for now (he may
   join later to share it; signed+notarized copies keep working after membership ends). Version set to 1.0.
   Performance pass (2026-10-17, from reading the code): cover cache now limited to 150 MB instead of 800 covers
-  (could reach 500+ MB); album tiles only draw a shadow while hovered. Waiting for Troy's timings (launch, Albums
-  scroll, page switches, memory in Activity Monitor).
+  (could reach 500+ MB); album tiles only draw a shadow while hovered. Troy's timings (launch, Albums
+  scroll, page switches, memory in Activity Monitor) -> Troy: "all good".
+- All planned phases are done. Possible next steps: smart playlists (Phase 7 optional), Apple Developer Program
+  + notarization if Troy wants to share MacBee.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).
@@ -125,4 +127,4 @@ Create an Xcode macOS app target named MacBee that uses both local packages. Bui
 6. (done) Preferences: themes, monitored folders, Plex sign-in, audio output settings.
 7. (done) Playlists, playlist folders, Playlist Studio.
 8. (done) Plex and tag-editor hooks.
-9. (in progress) Release: About window, version, .dmg, signing, performance pass.
+9. (done) Release: About window, version 1.0, .dmg, performance pass.
