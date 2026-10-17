@@ -97,8 +97,8 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
 - Phase 9 (release) STARTED 2026-10-17. Done so far (not yet built on a Mac): About window with credits
   (`MacBee/App/AboutCommand.swift`), `Tools/macbee.sh dmg` (makes ~/Desktop/MacBee-<version>.dmg with an
   Applications shortcut). Decided 2026-10-17: MacBee is just for Troy, so no Apple Developer Program for now (he may
-  join later to share it; signed+notarized copies keep working after membership ends). Open: release version
-  number, performance pass on the full library.
+  join later to share it; signed+notarized copies keep working after membership ends). Version set to 1.0.
+  Open: performance pass on the full library.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).
