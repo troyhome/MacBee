@@ -32,14 +32,17 @@ final class PreferencesStore {
         sidebarWidth = d.object(forKey: "sidebarWidth") as? Double ?? 196
         routineCheck = (d.object(forKey: "routineCheck") as? Int).flatMap(RoutineCheck.init) ?? .every30
         playbackSource = d.string(forKey: "playbackSource").flatMap(PlaybackSourcePreference.init) ?? .automatic
-        // Default to TagBee when nothing valid is chosen yet (e.g. on a new Mac).
-        let savedEditor = d.string(forKey: "tagEditorPath")
-        if let savedEditor, FileManager.default.fileExists(atPath: savedEditor + "/Contents/Info.plist") {
-            tagEditorPath = savedEditor
-        } else {
-            let tagBee = "/Applications/TagBee.app"
-            tagEditorPath = FileManager.default.fileExists(atPath: tagBee) ? tagBee : nil
-        }
+        tagEditorPath = d.string(forKey: "tagEditorPath")
+        useDefaultTagEditorIfNeeded()
+    }
+
+    /// Picks TagBee when no valid tag editor is chosen (e.g. on a new Mac, or TagBee was installed
+    /// after MacBee opened). Called at launch and whenever MacBee comes back to the front.
+    func useDefaultTagEditorIfNeeded() {
+        if let tagEditorPath, FileManager.default.fileExists(atPath: tagEditorPath + "/Contents/Info.plist") { return }
+        let tagBee = "/Applications/TagBee.app"
+        let found = FileManager.default.fileExists(atPath: tagBee) ? tagBee : nil
+        if found != tagEditorPath { tagEditorPath = found }
     }
 
     /// The page to show at launch.

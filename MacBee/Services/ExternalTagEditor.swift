@@ -30,10 +30,14 @@ final class ExternalTagEditor: TagEditorService {
         self.library = library
         self.preferences = preferences
         // Coming back to MacBee from the tag editor: check right away instead of waiting.
+        // Also picks up TagBee if it was installed while MacBee was open.
         activationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { _ = Task { await self?.checkForChanges() } }
+            MainActor.assumeIsolated {
+                self?.preferences.useDefaultTagEditorIfNeeded()
+                _ = Task { await self?.checkForChanges() }
+            }
         }
     }
 

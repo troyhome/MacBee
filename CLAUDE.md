@@ -90,7 +90,10 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
 - Phase 8 testing (started 2026-10-17): Troy has a 10-step checklist (Edit Tags in TagBee from song/album menus and
   Playlist Studio; Plex sign-in in Preferences > Plex; server + library pick and match count; "Always Plex" playback
   with the PLEX badge; replay from cache; back to Automatic; optional: eject the drive and play via Plex).
-  Results so far: none reported yet. Record each result and fix here as it comes in.
+  Results so far (record each result and fix here as it comes in):
+  - 2026-10-17, second Mac: "Edit Tags in TagBee" was greyed out. Cause: TagBee was installed ~2 min after MacBee
+    started, and MacBee only looked for TagBee at launch. Fixed: it also looks whenever MacBee comes to the front
+    (`PreferencesStore.useDefaultTagEditorIfNeeded`). Waiting for Troy to confirm.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).
