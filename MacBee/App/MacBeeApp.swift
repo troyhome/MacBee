@@ -17,6 +17,7 @@ struct MacBeeApp: App {
                 .task { await model.start() }
         }
         .commands {
+            AboutCommand()
             PlaybackCommands(player: model.player, preferences: model.preferences)
             CommandGroup(after: .textEditing) {
                 Button("Search") { model.focusSearch() }

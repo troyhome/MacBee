@@ -77,7 +77,7 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
   Music/Artists/Albums/Search leave it. In studio mode a sidebar playlist click (or dropping a playlist on the
   middle pane) shows that playlist's songs there ("Back to Library" returns); dropping a playlist on the right pane
   adds all its songs. Search-in checkboxes (Artist, Album, Song title; none = everything). Panes tinted with the accent.
-- Phase 8 BUILT, NEEDS TROY'S CHECK:
+- Phase 8 DONE (checked by Troy 2026-10-17, both Macs):
   - Tag editor = TagBee (`/Applications/TagBee.app`, default when nothing valid is chosen). `ExternalTagEditor`
     (MacBee/Services) opens songs there and watches the files for ~1 hour, re-reading them via
     `MusicLibrary.refreshFiles` when saved. "Edit Tags in TagBee…" in song/album menus and Playlist Studio.
@@ -93,7 +93,11 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
   Results so far (record each result and fix here as it comes in):
   - 2026-10-17, second Mac: "Edit Tags in TagBee" was greyed out. Cause: TagBee was installed ~2 min after MacBee
     started, and MacBee only looked for TagBee at launch. Fixed: it also looks whenever MacBee comes to the front
-    (`PreferencesStore.useDefaultTagEditorIfNeeded`). Waiting for Troy to confirm.
+    (`PreferencesStore.useDefaultTagEditorIfNeeded`). Confirmed working.
+- Phase 9 (release) STARTED 2026-10-17. Done so far (not yet built on a Mac): About window with credits
+  (`MacBee/App/AboutCommand.swift`), `Tools/macbee.sh dmg` (makes ~/Desktop/MacBee-<version>.dmg with an
+  Applications shortcut). Open: whether to pay for an Apple Developer account (needed to notarize, so other Macs
+  open it without warnings), version number for release, performance pass on the full library.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).
@@ -117,4 +121,5 @@ Create an Xcode macOS app target named MacBee that uses both local packages. Bui
 5. (done) Now Playing view (full-screen toggle), queue drawer, mini player.
 6. (done) Preferences: themes, monitored folders, Plex sign-in, audio output settings.
 7. (done) Playlists, playlist folders, Playlist Studio.
-8. (built, checking) Plex and tag-editor hooks.
+8. (done) Plex and tag-editor hooks.
+9. (in progress) Release: About window, version, .dmg, signing, performance pass.

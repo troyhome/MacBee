@@ -205,7 +205,7 @@ Tabs:
    slot** panel (placeholder view + `TagEditorService` protocol) for the future tool.
 7. Smart playlists (optional if time allows): rule-based (e.g. genre is Jazz and year < 1970).
 
-### Phase 8 — Plex and tag editor hooks  🔨 built, waiting for Troy's check (Plex = away-from-home route to the same library; tag editor = TagBee)
+### Phase 8 — Plex and tag editor hooks  ✅ done (checked by Troy 2026-10-17) (Plex = away-from-home route to the same library; tag editor = TagBee)
 1. `PlexService` protocol with a real implementation: sign in (plex.tv PIN flow), list servers and
    music libraries, browse artists/albums/tracks, stream URLs. Show Plex as a separate source in the
    sidebar. Playback of Plex tracks may need a streaming path in the engine (cannot be bit-perfect
@@ -214,7 +214,7 @@ Tabs:
    Preferences) and rescan those files when it reports changes or when files change on disk.
 3. Keep both behind protocols so they can be swapped or removed.
 
-### Phase 9 — Release (suggested)
+### Phase 9 — Release  🔨 in progress
 1. App icon, About window, version number.
 2. Build a signed, notarized `.app` (requires an Apple Developer account; otherwise explain the
    "right-click → Open" first-launch step) packaged as a `.dmg` with drag-to-Applications.
