@@ -10,7 +10,8 @@ final class ArtworkLoader {
     private let cache = NSCache<NSString, CGImage>()
 
     private init() {
-        cache.countLimit = 800
+        // Limit by memory, not count: 800 large covers alone could take over 500 MB.
+        cache.totalCostLimit = 150 * 1024 * 1024
     }
 
     func image(for artworkId: Int64?, in library: MusicLibrary, pixelSize: Int) async -> CGImage? {
@@ -21,7 +22,7 @@ final class ArtworkLoader {
         let image = await Task.detached(priority: .utility) {
             Self.thumbnail(of: url, maxPixelSize: pixelSize)
         }.value
-        if let image { cache.setObject(image, forKey: key) }
+        if let image { cache.setObject(image, forKey: key, cost: image.bytesPerRow * image.height) }
         return image
     }
 

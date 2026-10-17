@@ -14,7 +14,7 @@ struct AlbumTile: View {
             ArtworkView(artworkId: album.artworkId, pixelSize: 420)
                 .aspectRatio(1, contentMode: .fit)
                 .scaleEffect(hovering ? 1.02 : 1)
-                .shadow(color: .black.opacity(hovering ? 0.35 : 0), radius: 10, y: 4)
+                .shadow(color: .black.opacity(hovering ? 0.35 : 0), radius: hovering ? 10 : 0, y: hovering ? 4 : 0)
                 .overlay(alignment: .bottomTrailing) {
                     if hovering {
                         Button(action: onPlay) {
