@@ -32,6 +32,9 @@ struct SidebarView: View {
                 app.toggleStudio()
             }
             .help(app.isInStudio ? "Leave Playlist Studio" : "Open Playlist Studio")
+            LibrarySourceStatus(collapsed: collapsed)
+                .padding(.horizontal, 18)
+                .padding(.top, 2)
             ScanStatusView(collapsed: collapsed)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)

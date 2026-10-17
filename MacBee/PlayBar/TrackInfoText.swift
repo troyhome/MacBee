@@ -2,7 +2,7 @@ import AppKit
 import MacBeeLibrary
 import SwiftUI
 
-/// Title, artist, quality badge and album in the play bar. Clicking opens the album, at this song.
+/// Title, artist and album in the play bar (the format shows on the right, by the output device). Clicking opens the album, at this song.
 /// If any line is cut off, hovering opens a panel above it with the full text.
 struct TrackInfoText: View {
     let track: Track
@@ -70,12 +70,9 @@ struct TrackInfoText: View {
             Text(track.displayArtist)
                 .font(.system(size: 12))
                 .foregroundStyle(theme.textSecondary)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                QualityBadge(track: track)
-                Text(track.displayAlbum)
-                    .font(.system(size: 11))
-                    .foregroundStyle(theme.textTertiary)
-            }
+            Text(track.displayAlbum)
+                .font(.system(size: 11))
+                .foregroundStyle(theme.textTertiary)
         }
         .lineLimit(fullText ? nil : 1)
     }
@@ -86,9 +83,8 @@ struct TrackInfoText: View {
         func width(_ text: String, _ size: CGFloat, _ weight: NSFont.Weight = .regular) -> CGFloat {
             (text as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: size, weight: weight)]).width
         }
-        let badge = width(track.formatSummary + " HI-RES  ", 9, .semibold) + 10 + 6
         return width(track.displayTitle, 13, .semibold) > availableWidth
             || width(track.displayArtist, 12) > availableWidth
-            || badge + width(track.displayAlbum, 11) > availableWidth
+            || width(track.displayAlbum, 11) > availableWidth
     }
 }

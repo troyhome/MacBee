@@ -62,6 +62,8 @@ public final class MusicLibrary {
     @ObservationIgnored private let monitor = FolderMonitor()
     @ObservationIgnored private var scanTask: Task<Void, Never>?
     @ObservationIgnored private var pendingFolderIds: [Int64] = []
+    /// Folders whose next scan re-reads every file (Force Rescan).
+    @ObservationIgnored private var forcedFolderIds: Set<Int64> = []
 
     public init(location: LibraryLocation = .default) throws {
         database = try LibraryDatabase(fileURL: location.databaseURL)
@@ -122,8 +124,17 @@ public final class MusicLibrary {
         requestScan(folders.compactMap(\.folder.id))
     }
 
+    /// Force Rescan: reads every file in every folder again, even ones that look unchanged.
+    /// Slower than `scanAll` (on a network drive, many minutes for a large library).
+    public func forceRescanAll() {
+        let ids = folders.compactMap(\.folder.id)
+        forcedFolderIds.formUnion(ids)
+        requestScan(ids)
+    }
+
     public func cancelScan() {
         pendingFolderIds.removeAll()
+        forcedFolderIds.removeAll()
         scanTask?.cancel()
     }
 
@@ -144,7 +155,8 @@ public final class MusicLibrary {
             let id = pendingFolderIds.removeFirst()
             guard let folder = try? await database.folders().first(where: { $0.id == id }) else { continue }
             do {
-                let report = try await scanner.scan(folder) { [weak self] progress in
+                let force = forcedFolderIds.remove(id) != nil
+                let report = try await scanner.scan(folder, force: force) { [weak self] progress in
                     Task { @MainActor in
                         guard let self, self.scanTask != nil else { return }
                         self.scanProgress = progress

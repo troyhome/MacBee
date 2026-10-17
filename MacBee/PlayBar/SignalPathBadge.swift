@@ -1,7 +1,8 @@
 import MacBeeAudio
 import SwiftUI
 
-/// "Bit-perfect" badge plus the track's format. Hover for the details.
+/// "Bit-perfect" badge plus the track's format (and bitrate for MP3/AAC). The only place the play bar
+/// shows the format. Hover for the details.
 struct SignalPathBadge: View {
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
@@ -25,12 +26,19 @@ struct SignalPathBadge: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .overlay(Capsule().stroke(color.opacity(0.8), lineWidth: 1))
-                Text(format.displayString)
+                Text(formatLine(format))
                     .font(.system(size: 10))
                     .foregroundStyle(theme.textSecondary)
             }
             .help(tooltip(status))
         }
+    }
+
+    /// e.g. "FLAC 24-bit / 96 kHz", or "MP3 44.1 kHz · 320 kbps" for lossy files.
+    private func formatLine(_ format: AudioFormatInfo) -> String {
+        guard format.codec == .mp3 || format.codec == .aac,
+              let kbps = player.currentTrack?.bitrate, kbps > 0 else { return format.displayString }
+        return "\(format.displayString) · \(Int(kbps.rounded())) kbps"
     }
 
     private func tooltip(_ status: SignalPathStatus) -> String {

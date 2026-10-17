@@ -45,6 +45,7 @@ struct NowPlayingView: View {
         .background(Color.black)
         .environment(\.colorScheme, .dark)
         .background(closeShortcut)
+        .secondaryClickSkipsToNext()
     }
 
     private var topBar: some View {

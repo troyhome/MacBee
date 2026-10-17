@@ -16,7 +16,7 @@ struct SearchView: View {
         List(selection: $selection) {
             if !model.artists.isEmpty {
                 sectionTitle("Artists")
-                ScrollView(.horizontal, showsIndicators: false) {
+                HorizontalCarousel {
                     HStack(spacing: 18) {
                         ForEach(model.artists) { artist in
                             SearchArtistCard(artist: artist)
@@ -25,12 +25,13 @@ struct SearchView: View {
                                 .contextMenu { ArtistContextMenu(artist: artist) }
                         }
                     }
+                    .padding(.vertical, 4)
                 }
                 .listRowSeparator(.hidden)
             }
             if !model.albums.isEmpty {
                 sectionTitle("Albums")
-                ScrollView(.horizontal, showsIndicators: false) {
+                HorizontalCarousel {
                     HStack(alignment: .top, spacing: 18) {
                         ForEach(model.albums) { album in
                             AlbumTile(album: album) { Task { await player.playAlbum(album) } }
@@ -65,6 +66,8 @@ struct SearchView: View {
             play(paths.first)
         }
         .scrollContentBackground(.hidden)
+        // Keeps the first row (the top artist) clear of the toolbar.
+        .contentMargins(.top, 16, for: .scrollContent)
         .overlay { emptyState }
         .navigationTitle("Search")
         .task(id: "\(app.searchText)-\(library.revision)") {

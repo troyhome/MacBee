@@ -24,6 +24,20 @@ final class ScanPlannerTests: XCTestCase {
         XCTAssertTrue(plan.missing.isEmpty)
     }
 
+    func testForceRescanRereadsUnchangedFiles() {
+        let existing = [
+            "/m/a.flac": ExistingFile(id: 1, stamp: stamp(100), isMissing: false),
+            "/m/b.flac": ExistingFile(id: 2, stamp: stamp(200), isMissing: true),
+            "/m/gone.flac": ExistingFile(id: 3, stamp: stamp(300), isMissing: false),
+        ]
+        let found = ["/m/a.flac": stamp(100), "/m/b.flac": stamp(200)]
+        let plan = ScanPlanner.plan(existing: existing, found: found, rereadAll: true)
+        XCTAssertEqual(plan.toRead, ["/m/a.flac", "/m/b.flac"])
+        XCTAssertEqual(plan.unchanged, 0)
+        XCTAssertEqual(plan.restored, [2])
+        XCTAssertEqual(plan.missing, [3])
+    }
+
     func testSmallTimestampDifferenceIsIgnored() {
         let existing = ["/m/a.flac": ExistingFile(id: 1, stamp: stamp(100), isMissing: false)]
         let plan = ScanPlanner.plan(existing: existing, found: ["/m/a.flac": stamp(100, 1.5)])

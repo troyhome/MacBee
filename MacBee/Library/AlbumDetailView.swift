@@ -1,7 +1,8 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// One album: big cover, title, artist, Shuffle / Play / Add, and the track list.
+/// One album: big cover, title, artist, Shuffle / Play, the Apple Music style actions
+/// (Play Next, Play Later, Add to Playlist, Favorite), and the track list.
 /// Double-click a track to play from there. The back button returns to where you came from.
 struct AlbumDetailView: View {
     let album: AlbumSummary
@@ -117,7 +118,8 @@ private struct AlbumHeader: View {
                 HStack(spacing: 12) {
                     CircleButton(systemImage: "shuffle", help: "Shuffle", diameter: 40, action: onShuffle)
                     PlayCapsuleButton(action: onPlay)
-                    AlbumAddMenu(tracks: tracks)
+                    AlbumActions(tracks: tracks)
+                        .padding(.leading, 8)
                 }
                 .padding(.top, 14)
             }
@@ -167,30 +169,52 @@ private struct PlayCapsuleButton: View {
     }
 }
 
-/// The + next to Play: Play Next, Add to Queue, Add to Playlist.
-private struct AlbumAddMenu: View {
+/// Play Next, Play Later, Add to Playlist… and Favorite, as round buttons next to Play.
+private struct AlbumActions: View {
     let tracks: [Track]
     @Environment(PlayerViewModel.self) private var player
+
+    var body: some View {
+        HStack(spacing: 10) {
+            CircleButton(systemImage: "text.line.first.and.arrowtriangle.forward", help: "Play Next",
+                         diameter: 40) { player.playNext(tracks) }
+            CircleButton(systemImage: "text.line.last.and.arrowtriangle.forward", help: "Play Later",
+                         diameter: 40) { player.addToQueue(tracks) }
+            AddToPlaylistCircle(tracks: tracks)
+            CircleButton(systemImage: isFavorite ? "heart.fill" : "heart",
+                         help: isFavorite ? "Remove from Favorites" : "Favorite",
+                         diameter: 40) { player.setFavorite(tracks, !isFavorite) }
+        }
+        .disabled(tracks.isEmpty)
+    }
+
+    /// The album counts as a favorite when every song on it is one.
+    private var isFavorite: Bool {
+        !tracks.isEmpty && tracks.allSatisfy { player.isFavorite($0) }
+    }
+}
+
+/// Round "Add to Playlist…" button that opens the playlist menu.
+private struct AddToPlaylistCircle: View {
+    let tracks: [Track]
     @Environment(\.theme) private var theme
+    @State private var hovering = false
 
     var body: some View {
         Menu {
-            Button("Play Next") { player.playNext(tracks) }
-            Button("Add to Queue") { player.addToQueue(tracks) }
-            Divider()
-            AddToPlaylistMenu { tracks }
+            AddToPlaylistItems { tracks }
         } label: {
-            Image(systemName: "plus")
+            Image(systemName: "text.badge.plus")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(theme.accent)
                 .frame(width: 40, height: 40)
-                .background(Circle().fill(theme.surface))
+                .background(Circle().fill(hovering ? theme.elevated : theme.surface))
                 .contentShape(Circle())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
-        .disabled(tracks.isEmpty)
-        .help("Play next, add to queue, or add to a playlist")
+        .onHover { hovering = $0 }
+        .help("Add to Playlist…")
     }
 }

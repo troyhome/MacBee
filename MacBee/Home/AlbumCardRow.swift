@@ -8,7 +8,7 @@ struct AlbumCardRow: View {
     @Environment(\.libraryNavigation) private var navigation
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        HorizontalCarousel {
             LazyHStack(alignment: .top, spacing: 18) {
                 ForEach(albums) { album in
                     AlbumTile(album: album) { Task { await player.playAlbum(album) } }

@@ -16,6 +16,8 @@ final class PlayerViewModel {
     private(set) var favoriteOverrides: [Int64: Bool] = [:]
     /// Bumped after each play is saved, so Home's Recently Played and Play History refresh.
     private(set) var playsRecorded = 0
+    /// Bumped after favorites are saved, so the Collection page reloads.
+    private(set) var favoritesSaved = 0
 
     @ObservationIgnored private let database: LibraryDatabase?
     @ObservationIgnored private let preferences: PreferencesStore
@@ -197,14 +199,21 @@ final class PlayerViewModel {
 
     func setFavorite(_ tracks: [Track], _ isFavorite: Bool) {
         guard let database else { return }
+        var ids: [Int64] = []
         for var track in tracks {
             guard let id = track.id else { continue }
             favoriteOverrides[id] = isFavorite
             track.isFavorite = isFavorite
             queue.update(track)
-            Task {
-                do { try await database.setFavorite(trackId: id, isFavorite) } catch { errorMessage = error.localizedDescription }
+            ids.append(id)
+        }
+        Task {
+            do {
+                for id in ids { try await database.setFavorite(trackId: id, isFavorite) }
+            } catch {
+                errorMessage = error.localizedDescription
             }
+            favoritesSaved += 1
         }
     }
 

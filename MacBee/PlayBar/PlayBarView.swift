@@ -21,5 +21,6 @@ struct PlayBarView: View {
         .padding(.horizontal, 16)
         .frame(height: Metrics.playBarHeight)
         .background(theme.bar)
+        .secondaryClickSkipsToNext()
     }
 }

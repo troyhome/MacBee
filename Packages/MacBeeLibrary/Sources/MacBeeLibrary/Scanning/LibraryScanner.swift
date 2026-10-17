@@ -24,7 +24,9 @@ actor LibraryScanner {
         self.concurrentReads = concurrentReads
     }
 
-    func scan(_ folder: MusicFolder, progress: @escaping @Sendable (ScanProgress) -> Void) async throws -> ScanReport {
+    /// `force` re-reads every file's tags, not just new and changed ones.
+    func scan(_ folder: MusicFolder, force: Bool = false,
+              progress: @escaping @Sendable (ScanProgress) -> Void) async throws -> ScanReport {
         let started = Date()
         var report = ScanReport(folderPath: folder.path)
         guard let folderId = folder.id else { return report }
@@ -52,7 +54,7 @@ actor LibraryScanner {
         // 2. Compare with the database.
         let existing = try await database.fileStates(folderId: folderId)
         let foundStamps = found.mapValues(\.stamp)
-        let plan = ScanPlanner.plan(existing: existing, found: foundStamps)
+        let plan = ScanPlanner.plan(existing: existing, found: foundStamps, rereadAll: force)
         report.unchanged = plan.unchanged
         report.skippedRemovals = plan.skippedRemovals
 

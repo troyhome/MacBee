@@ -3,6 +3,8 @@ import SwiftUI
 
 /// The Playlists page: every playlist as a card, grouped by folder.
 struct AllPlaylistsView: View {
+    /// Shown inside the Collection page, which has its own title.
+    var embedded = false
     @Environment(PlaylistStore.self) private var store
     @Environment(\.theme) private var theme
 
@@ -12,9 +14,11 @@ struct AllPlaylistsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 HStack {
-                    Text("Playlists")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(theme.textPrimary)
+                    if !embedded {
+                        Text("Playlists")
+                            .font(.system(size: 30, weight: .bold))
+                            .foregroundStyle(theme.textPrimary)
+                    }
                     Spacer()
                     Button("New Playlist") { Task { await store.newPlaylist() } }
                 }
@@ -44,7 +48,7 @@ struct AllPlaylistsView: View {
                 }
             }
         }
-        .navigationTitle("Playlists")
+        .navigationTitle(embedded ? "Collection" : "Playlists")
     }
 
     /// Top-level playlists first, then one group per folder (in sidebar order).

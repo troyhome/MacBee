@@ -101,8 +101,35 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
   Performance pass (2026-10-17, from reading the code): cover cache now limited to 150 MB instead of 800 covers
   (could reach 500+ MB); album tiles only draw a shadow while hovered. Troy's timings (launch, Albums
   scroll, page switches, memory in Activity Monitor) -> Troy: "all good".
-- All planned phases are done. Possible next steps: smart playlists (Phase 7 optional), Apple Developer Program
-  + notarization if Troy wants to share MacBee.
+- All original phases (1-9) are done.
+
+## Post-1.0 roadmap (docs/ROADMAP.md)
+Troy's new 5-phase roadmap (received 2026-10-17). Rule: one phase at a time; never start the next phase until
+Troy confirms the current one passes its gate (zero compiler errors, all tests pass, his smoke tests succeed).
+- Roadmap Phase 1 BUILT 2026-10-17, waiting for Troy's smoke tests (app builds with no errors or warnings;
+  56 package tests pass). What was done:
+  - Search: top margin on the results list (`.contentMargins`) so the first artist row clears the toolbar.
+  - Play bar: format badge removed from the left track info (`TrackInfoText`); format shows only on the right
+    (`SignalPathBadge`, now with kbps for MP3/AAC).
+  - Album page header: round Play Next, Play Later, Add to Playlist…, Favorite (hearts every song; the album
+    counts as a favorite when all its songs are) buttons next to Shuffle/Play (`AlbumDetailView`).
+  - Collection page (`MacBee/Collection/`, sidebar item under Music): segmented Playlists / Albums (favorite
+    albums) / Tracks (favorite songs) / Videos (placeholder) / Saved Mixes (placeholder until roadmap Phase 3).
+    Queries in `LibraryDatabase+Collection.swift`, tests in `CollectionQueriesTests`. Reloads when
+    `PlayerViewModel.favoritesSaved` changes.
+  - Sidebar under Playlist Studio: `LibrarySourceStatus` (Local library / Plex / Library offline, same rules as
+    PlaybackRouter) and a Force Rescan button (`MusicLibrary.forceRescanAll`, re-reads every file;
+    `ScanPlanner.plan(rereadAll:)`), with a confirmation.
+  - Preferences: Plex tab removed; its sections (`PlexPreferenceSections`) are at the bottom of the Library tab.
+  - `HorizontalCarousel` (Common/): hover arrows on every horizontal row (Home album rows, mixes, search
+    artists/albums). Pages the underlying NSScrollView by 80% of its width.
+  - Media keys: `NowPlayingService` reports "playing" the instant playback starts/resumes/changes song (was up to
+    1 s later) and enables only the commands MacBee handles. macOS gives media keys to the app that most recently
+    reported playing; an app can't fully block others that start playing afterwards.
+  - Two-finger click (secondary click) skips to the next song on the play bar, Now Playing and the mini player
+    (`secondaryClickSkipsToNext()`). Deliberately NOT window-wide: that would break every right-click menu
+    (Edit Tags, Add to Playlist…). Revisit if Troy wants it elsewhere.
+- Roadmap Phases 2-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).

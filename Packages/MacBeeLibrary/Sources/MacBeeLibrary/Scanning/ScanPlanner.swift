@@ -43,7 +43,9 @@ public enum ScanPlanner {
         public var skippedRemovals = false
     }
 
-    public static func plan(existing: [String: ExistingFile], found: [String: FileStamp]) -> Plan {
+    /// `rereadAll` (Force Rescan) reads every file's tags again, even ones that look unchanged.
+    public static func plan(existing: [String: ExistingFile], found: [String: FileStamp],
+                            rereadAll: Bool = false) -> Plan {
         var plan = Plan()
 
         for (path, stamp) in found {
@@ -51,7 +53,10 @@ public enum ScanPlanner {
                 plan.toRead.append(path)
                 continue
             }
-            if !known.stamp.matches(stamp) {
+            if rereadAll {
+                plan.toRead.append(path)
+                if known.isMissing { plan.restored.append(known.id) }
+            } else if !known.stamp.matches(stamp) {
                 plan.toRead.append(path)
             } else if known.isMissing {
                 plan.restored.append(known.id)

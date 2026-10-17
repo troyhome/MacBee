@@ -6,7 +6,7 @@ struct MixRow: View {
     let mixes: [Mix]
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        HorizontalCarousel {
             HStack(alignment: .top, spacing: 18) {
                 ForEach(mixes) { MixCard(mix: $0) }
             }

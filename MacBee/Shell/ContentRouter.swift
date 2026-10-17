@@ -18,6 +18,8 @@ struct ContentRouter: View {
             stack { SearchView() }
         case .home:
             stack { HomeView() }
+        case .collection:
+            stack { CollectionView() }
         case .artists:
             stack { ArtistsView() }
         case .albums:

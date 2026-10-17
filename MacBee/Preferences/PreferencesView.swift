@@ -12,8 +12,6 @@ struct PreferencesView: View {
                 .tabItem { Label("Library", systemImage: "music.note.house") }
             AudioPreferences()
                 .tabItem { Label("Audio", systemImage: "hifispeaker.2") }
-            PlexPreferences()
-                .tabItem { Label("Plex", systemImage: "server.rack") }
             TagEditorPreferences()
                 .tabItem { Label("Tag Editor", systemImage: "tag") }
         }

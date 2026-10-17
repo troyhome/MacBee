@@ -2,14 +2,14 @@ import AppKit
 import MacBeeLibrary
 import SwiftUI
 
-/// Monitored folders, scanning, routine checks and missing files.
+/// Monitored folders, scanning, routine checks, missing files, and the Plex server settings.
 struct LibraryPreferences: View {
     @Environment(AppModel.self) private var app
     @Environment(PreferencesStore.self) private var preferences
 
     var body: some View {
         if let library = app.library {
-            LibraryPreferencesForm(library: library, preferences: preferences)
+            LibraryPreferencesForm(library: library, plex: app.plex, preferences: preferences)
         } else {
             ContentUnavailableView("The music library couldn't be opened", systemImage: "exclamationmark.triangle",
                                    description: Text(app.libraryError ?? ""))
@@ -19,6 +19,7 @@ struct LibraryPreferences: View {
 
 private struct LibraryPreferencesForm: View {
     let library: MusicLibrary
+    let plex: PlexConnection?
     @Bindable var preferences: PreferencesStore
 
     @AppStorage("showMissingFiles") private var showMissingFiles = false
@@ -78,6 +79,10 @@ private struct LibraryPreferencesForm: View {
                         Button("Remove Missing Files from Library…") { confirmCleanUp = true }
                     }
                 }
+            }
+
+            if let plex {
+                PlexPreferenceSections(plex: plex, preferences: preferences)
             }
         }
         .formStyle(.grouped)

@@ -4,6 +4,11 @@ import MediaPlayer
 
 /// Connects MacBee to the keyboard's media keys and the "Now Playing" panel in Control Center
 /// (title, artist, cover, position, and play/pause/next/previous/seek from there).
+///
+/// macOS sends the media keys to whichever app most recently reported that it's playing. So the moment
+/// MacBee starts or resumes playback it reports itself as playing (not up to a second later), which takes
+/// the keys away from Apple Music, Spotify and others. While paused it stays the "Now Playing" app, so
+/// the play key resumes MacBee rather than waking another player.
 @MainActor
 final class NowPlayingService {
     private let player: PlayerViewModel
@@ -16,6 +21,7 @@ final class NowPlayingService {
         self.player = player
         self.library = library
         registerCommands()
+        observePlayback()
         // Refresh once a second; the system moves the position smoothly in between.
         updateTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -27,8 +33,32 @@ final class NowPlayingService {
 
     // MARK: - Commands from media keys and Control Center
 
+    /// Reports to the system right away whenever playback starts, pauses or moves to another song.
+    private func observePlayback() {
+        withObservationTracking {
+            _ = player.isPlaying
+            _ = player.currentTrack?.path
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.update()
+                self.observePlayback()
+            }
+        }
+    }
+
     private func registerCommands() {
         let center = MPRemoteCommandCenter.shared()
+        // Only the commands MacBee handles are on, so the system doesn't offer buttons that do nothing.
+        for command in [center.togglePlayPauseCommand, center.playCommand, center.pauseCommand,
+                        center.nextTrackCommand, center.previousTrackCommand, center.changePlaybackPositionCommand] {
+            command.isEnabled = true
+        }
+        for command in [center.stopCommand, center.skipForwardCommand, center.skipBackwardCommand,
+                        center.seekForwardCommand, center.seekBackwardCommand, center.changePlaybackRateCommand,
+                        center.ratingCommand, center.likeCommand, center.dislikeCommand, center.bookmarkCommand] {
+            command.isEnabled = false
+        }
         center.togglePlayPauseCommand.addTarget { [weak self] _ in self?.run { $0.togglePlayPause() } ?? .commandFailed }
         center.playCommand.addTarget { [weak self] _ in
             self?.run { if !$0.isPlaying { $0.togglePlayPause() } } ?? .commandFailed
@@ -62,9 +92,19 @@ final class NowPlayingService {
             center.playbackState = .stopped
             return
         }
-        if artwork?.trackPath != track.path {
-            artwork = (track.path, await loadArtwork(for: track))
+        let newTrack = artwork?.trackPath != track.path
+        if newTrack { artwork = (track.path, nil) }
+        publish(track, to: center)
+        // A new song's cover loads after the song is announced, so the media keys are claimed without delay.
+        if newTrack {
+            let item = await loadArtwork(for: track)
+            guard player.currentTrack?.path == track.path else { return }
+            artwork = (track.path, item)
+            publish(track, to: center)
         }
+    }
+
+    private func publish(_ track: Track, to center: MPNowPlayingInfoCenter) {
         let progress = player.engine.progress
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: track.displayTitle,
