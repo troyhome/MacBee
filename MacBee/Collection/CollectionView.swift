@@ -18,7 +18,7 @@ struct CollectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("Collections")
-        .task(id: "\(library.revision)-\(player.favoritesSaved)") {
+        .task(id: "\(library.revision)-\(player.favoritesSaved)-\(section.rawValue)") {
             await model.load(from: library.database)
         }
     }
@@ -72,8 +72,23 @@ struct CollectionView: View {
         case .videos:
             VideosView(embedded: true)
         case .savedMixes:
-            ContentUnavailableView("No saved mixes yet", systemImage: "square.stack.3d.up",
-                                   description: Text("Saving suggested mixes from the Music page comes in a later update."))
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 180, maximum: 200), spacing: 20, alignment: .top)],
+                          alignment: .leading, spacing: 24) {
+                    ForEach(model.savedMixes) { saved in
+                        MixCard(mix: saved.mix) {
+                            Task { await model.deleteSavedMix(saved.id, from: library.database) }
+                        }
+                    }
+                }
+                .padding(24)
+            }
+            .overlay {
+                if model.isLoaded && model.savedMixes.isEmpty {
+                    ContentUnavailableView("No saved mixes yet", systemImage: "square.stack.3d.up",
+                                           description: Text("On the Music page, hover over a suggested mix and click the bookmark to keep it here."))
+                }
+            }
         }
     }
 }

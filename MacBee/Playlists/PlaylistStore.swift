@@ -56,6 +56,21 @@ final class PlaylistStore {
     // MARK: - Playlists and folders
 
     @discardableResult
+    /// Sets or clears a playlist's running-time limit (MiniDisc 74 / 80 minutes).
+    func setCapacity(_ seconds: Int?, for playlistId: Int64) async {
+        try? await database.setPlaylistCapacity(id: playlistId, seconds: seconds)
+        await reload()
+    }
+
+    /// A MiniDisc mix: a playlist with a running-time limit (74 or 80 minutes).
+    func newCapacityPlaylist(title: String, seconds: Int) async -> Playlist? {
+        let date = Date().formatted(.iso8601.year().month().day())
+        guard let playlist = await create(name: uniqueName("\(title) \(date)")), let id = playlist.id else { return nil }
+        try? await database.setPlaylistCapacity(id: id, seconds: seconds)
+        await reload()
+        return self.playlist(id: id)
+    }
+
     func create(name: String, isFolder: Bool = false, inFolder folderId: Int64? = nil) async -> Playlist? {
         do {
             let playlist = try await database.createPlaylist(name: name, isFolder: isFolder, parentFolderId: folderId)
@@ -161,6 +176,7 @@ final class PlaylistStore {
                 }
                 return tracks
             case let .playlist(id):
+                if let smart = SmartPlaylist(playlistId: id) { return try await database.tracks(for: smart) }
                 return try await database.playlistEntries(playlistId: id).map(\.track)
             }
         } catch {
@@ -188,11 +204,11 @@ final class PlaylistStore {
         }
     }
 
-    func exportM3U(_ playlist: Playlist, to url: URL) async {
+    func exportM3U(_ playlist: Playlist, to url: URL, style: M3UPlaylist.PathStyle = .relative) async {
         guard let id = playlist.id else { return }
         do {
             let tracks = try await database.playlistEntries(playlistId: id).map(\.track)
-            let text = M3UPlaylist.export(tracks, relativeTo: url.deletingLastPathComponent())
+            let text = M3UPlaylist.export(tracks, relativeTo: url.deletingLastPathComponent(), style: style)
             try text.write(to: url, atomically: true, encoding: .utf8)
         } catch {
             message = "Couldn't export “\(playlist.name)”. \(error.localizedDescription)"

@@ -15,12 +15,12 @@ public extension LibraryDatabase {
 
     /// Adds a playlist or folder at the end of `parentFolderId`.
     func createPlaylist(name: String, isFolder: Bool = false, parentFolderId: Int64? = nil,
-                        now: Date = Date()) async throws -> Playlist {
+                        capacitySeconds: Int? = nil, now: Date = Date()) async throws -> Playlist {
         try await writer.write { db in
             let next = try Int.fetchOne(db, sql: "SELECT COALESCE(MAX(sortOrder), -1) + 1 FROM playlist WHERE parentFolderId IS ?",
                                         arguments: [parentFolderId]) ?? 0
             var playlist = Playlist(id: nil, name: name, parentFolderId: parentFolderId, isFolder: isFolder,
-                                    sortOrder: next, createdAt: now, artworkId: nil)
+                                    sortOrder: next, createdAt: now, artworkId: nil, capacitySeconds: capacitySeconds)
             try playlist.insert(db)
             return playlist
         }
@@ -138,14 +138,34 @@ public extension LibraryDatabase {
         }
     }
 
-    /// Tracks with these exact file paths, in the same order (unknown paths are skipped). Used by M3U import.
+    /// Tracks for these file paths, in the same order (unknown paths are skipped). Used by M3U import.
+    /// Paths written on another computer or drive (e.g. "D:/Music/Artist/Album/01.flac") are matched by their
+    /// last folders and file name, so playlists from elsewhere still find your copies.
     func tracks(atPaths paths: [String]) async throws -> [Track] {
         guard !paths.isEmpty else { return [] }
         return try await writer.read { db in
             let found = try Track.filter(paths.contains(Column("path"))).fetchAll(db)
             let byPath = Dictionary(found.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
-            return paths.compactMap { byPath[$0] }
+            guard byPath.count < Set(paths).count else { return paths.compactMap { byPath[$0] } }
+            // Some weren't found where the file says: match the rest by "Artist/Album/file" endings.
+            let all = try Track.filter(sql: Self.visible()).fetchAll(db)
+            var byEnding: [String: Track] = [:]
+            for track in all {
+                for depth in [3, 2, 1] {
+                    let key = Self.pathEnding(track.path, depth: depth)
+                    if byEnding[key] == nil { byEnding[key] = track }
+                }
+            }
+            return paths.compactMap { path in
+                byPath[path] ?? [3, 2, 1].lazy.compactMap { byEnding[Self.pathEnding(path, depth: $0)] }.first
+            }
         }
+    }
+
+    /// The last `depth` parts of a path, lowercased: depth 2 of "/M/Ride/Nowhere/01.flac" is "nowhere/01.flac".
+    internal static func pathEnding(_ path: String, depth: Int) -> String {
+        let parts = path.split(separator: "/").suffix(depth)
+        return "\(depth):" + parts.joined(separator: "/").lowercased()
     }
 
     /// Tracks with these ids, in the same order (unknown ids are skipped). Used for drag and drop.
@@ -223,7 +243,13 @@ public extension LibraryDatabase {
         }
         if filter.favoritesOnly { conditions.append("isFavorite = 1") }
         var order = "artistKey, year, albumKey, discNumber, trackNumber"
-        if let playlistId = filter.playlistId {
+        var smartOrder: [Int64]?
+        if let smart = SmartPlaylist(playlistId: filter.playlistId) {
+            // A smart playlist: its songs, in its own order, with the other filters on top.
+            let ids = try await tracks(for: smart).compactMap(\.id)
+            smartOrder = ids
+            conditions.append("id IN (\(ids.isEmpty ? "NULL" : ids.map(String.init).joined(separator: ",")))")
+        } else if let playlistId = filter.playlistId {
             conditions.append("id IN (SELECT trackId FROM playlistItem WHERE playlistId = ?)")
             arguments += [playlistId]
             order = "(SELECT MIN(position) FROM playlistItem WHERE playlistId = \(playlistId) AND trackId = track.id)"
@@ -234,7 +260,10 @@ public extension LibraryDatabase {
             ORDER BY \(order) LIMIT ?
             """
         let args = arguments
-        return try await writer.read { db in try Track.fetchAll(db, sql: sql, arguments: args) }
+        let found = try await writer.read { db in try Track.fetchAll(db, sql: sql, arguments: args) }
+        guard let smartOrder else { return found }
+        let rank = Dictionary(uniqueKeysWithValues: smartOrder.enumerated().map { ($1, $0) })
+        return found.sorted { (rank[$0.id ?? 0] ?? .max) < (rank[$1.id ?? 0] ?? .max) }
     }
 
     // MARK: - Helpers

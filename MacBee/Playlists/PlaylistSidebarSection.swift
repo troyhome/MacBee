@@ -18,6 +18,8 @@ struct PlaylistSidebarSection: View {
             header
             ScrollView {
                 VStack(alignment: .leading, spacing: 1) {
+                    SmartPlaylistRows()
+                        .padding(.bottom, 4)
                     if store.tree.isEmpty {
                         Text("No playlists yet")
                             .font(.system(size: 12))

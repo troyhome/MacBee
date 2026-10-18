@@ -47,7 +47,9 @@ struct HomeView: View {
                 }
 
                 if !model.mixes.isEmpty {
-                    HomeSection(title: "Suggested Mixes", subtitle: "New picks every day") {
+                    HomeSection(title: "Suggested Mixes", subtitle: "New picks every day",
+                                action: ("Refresh Suggestions", "arrow.clockwise",
+                                         { Task { await model.refreshMixes(from: library.database) } })) {
                         MixRow(mixes: model.mixes)
                     }
                 }

@@ -162,6 +162,25 @@ public final class LibraryDatabase: Sendable {
             }
         }
 
+        // Roadmap Phase 3: saved mixes, and a running-time limit for MiniDisc playlists.
+        migrator.registerMigration("v8") { db in
+            try db.alter(table: "playlist") { t in
+                t.add(column: "capacitySeconds", .integer)
+            }
+            try db.create(table: "savedMix") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("title", .text).notNull()
+                t.column("subtitle", .text).notNull().defaults(to: "")
+                t.column("createdAt", .datetime).notNull()
+            }
+            try db.create(table: "savedMixItem") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("savedMixId", .integer).notNull().indexed().references("savedMix", onDelete: .cascade)
+                t.column("trackId", .integer).notNull().indexed().references("track", onDelete: .cascade)
+                t.column("position", .integer).notNull()
+            }
+        }
+
         return migrator
     }
 

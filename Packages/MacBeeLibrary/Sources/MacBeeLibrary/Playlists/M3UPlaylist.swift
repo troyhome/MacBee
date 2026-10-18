@@ -28,20 +28,35 @@ public enum M3UPlaylist {
         return parse(text, baseDirectory: url.deletingLastPathComponent())
     }
 
-    /// Text of an extended M3U8 file. Songs inside `directory` (where the file is saved) get relative paths,
-    /// so the folder can be moved or opened from another computer; everything else gets full paths.
-    public static func export(_ tracks: [Track], relativeTo directory: URL) -> String {
+    public enum PathStyle: String, CaseIterable, Sendable {
+        /// Paths from where the playlist file is saved ("../Artist/Album/01.flac"), so the music and the
+        /// playlist can move together or be opened from another computer. Songs on another drive keep full paths.
+        case relative
+        /// Full paths ("/Volumes/2 Set Music/Artist/Album/01.flac").
+        case absolute
+    }
+
+    /// Text of an extended M3U8 file.
+    public static func export(_ tracks: [Track], relativeTo directory: URL, style: PathStyle = .relative) -> String {
         var lines = ["#EXTM3U"]
         for track in tracks {
             lines.append("#EXTINF:\(Int(track.duration.rounded())),\(track.displayArtist) - \(track.displayTitle)")
-            lines.append(relativePath(track.path, to: directory))
+            lines.append(style == .absolute ? track.path : relativePath(track.path, to: directory))
         }
         return lines.joined(separator: "\n") + "\n"
     }
 
+    /// The path of a file as seen from `directory`, going up with ".." where needed. Files on another drive
+    /// (no shared start below the drive) keep their full path.
     static func relativePath(_ path: String, to directory: URL) -> String {
-        let folder = directory.standardizedFileURL.path
-        let prefix = folder.hasSuffix("/") ? folder : folder + "/"
-        return path.hasPrefix(prefix) ? String(path.dropFirst(prefix.count)) : path
+        let from = directory.standardizedFileURL.pathComponents
+        let to = URL(fileURLWithPath: path).standardizedFileURL.pathComponents
+        var shared = 0
+        while shared < min(from.count, to.count) && from[shared] == to[shared] { shared += 1 }
+        // Only "/" (or "/Volumes/<drive>" not shared): different places, keep the full path.
+        let volumeDepth = from.count > 1 && from[1] == "Volumes" ? 3 : 2
+        guard shared >= volumeDepth else { return path }
+        let ups = Array(repeating: "..", count: from.count - shared)
+        return (ups + to[shared...]).joined(separator: "/")
     }
 }

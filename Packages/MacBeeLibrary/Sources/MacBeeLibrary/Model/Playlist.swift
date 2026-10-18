@@ -12,6 +12,8 @@ public struct Playlist: Codable, Identifiable, Hashable, Sendable, FetchableReco
     public var createdAt: Date
     /// A picture chosen for the playlist (nil shows a collage of its album covers).
     public var artworkId: Int64?
+    /// A running-time limit in seconds (MiniDisc mixes: 74 or 80 minutes). Nil for ordinary playlists.
+    public var capacitySeconds: Int? = nil
 
     public static let databaseTableName = "playlist"
 

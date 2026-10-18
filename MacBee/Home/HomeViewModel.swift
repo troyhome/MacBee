@@ -16,11 +16,13 @@ final class HomeViewModel {
     private(set) var isLoaded = false
 
     private static let historyPageSize = 60
+    /// Bumped by Refresh Suggestions: a different shuffle than today's.
+    private var shuffleOffset = 0
 
     func load(from database: LibraryDatabase) async {
         async let played = database.albums(sortedBy: .recentlyPlayed, limit: 20)
         async let added = database.albums(sortedBy: .recentlyAdded, limit: 20)
-        async let mixes = database.suggestedMixes()
+        async let mixes = database.suggestedMixes(day: LibraryDatabase.dayNumber() + shuffleOffset * 7919)
         async let gems = database.forgottenGems()
         async let history = database.playHistory(limit: Self.historyPageSize)
 
@@ -30,6 +32,12 @@ final class HomeViewModel {
         forgottenGems = (try? await gems) ?? []
         setHistory((try? await history) ?? [])
         isLoaded = true
+    }
+
+    /// Rebuilds the suggested mixes with new songs.
+    func refreshMixes(from database: LibraryDatabase) async {
+        shuffleOffset += 1
+        mixes = (try? await database.suggestedMixes(day: LibraryDatabase.dayNumber() + shuffleOffset * 7919)) ?? mixes
     }
 
     func loadMoreHistory(from database: LibraryDatabase) async {

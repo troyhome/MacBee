@@ -28,7 +28,9 @@ struct ContentRouter: View {
             stack { AlbumsView() }
         case .playlists:
             stack {
-                if let id = app.selectedPlaylistId {
+                if let smart = SmartPlaylist(playlistId: app.selectedPlaylistId) {
+                    SmartPlaylistView(smart: smart)
+                } else if let id = app.selectedPlaylistId {
                     PlaylistDetailView(playlistId: id)
                 } else {
                     AllPlaylistsView()

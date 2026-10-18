@@ -1,7 +1,8 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// Suggested mixes as cards with a four-cover collage. Click shuffles the mix.
+/// Suggested mixes as cards with a four-cover collage. Click shuffles the mix; the bookmark (or right-click)
+/// saves it to Collections > Saved Mixes.
 struct MixRow: View {
     let mixes: [Mix]
 
@@ -16,11 +17,15 @@ struct MixRow: View {
     }
 }
 
-private struct MixCard: View {
+struct MixCard: View {
     let mix: Mix
+    /// For saved mixes: removes it from Saved Mixes (instead of offering to save it).
+    var onDelete: (() -> Void)?
     @Environment(PlayerViewModel.self) private var player
+    @Environment(MusicLibrary.self) private var library
     @Environment(\.theme) private var theme
     @State private var hovering = false
+    @State private var saved = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -33,6 +38,20 @@ private struct MixCard: View {
                         .foregroundStyle(.white)
                         .shadow(color: .black.opacity(0.8), radius: 6)
                         .padding(10)
+                }
+                .overlay(alignment: .topTrailing) {
+                    if hovering && onDelete == nil {
+                        Button(action: save) {
+                            Image(systemName: saved ? "bookmark.fill" : "bookmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 28, height: 28)
+                                .background(Circle().fill(.black.opacity(0.55)))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(8)
+                        .help(saved ? "Saved to Saved Mixes" : "Save to Saved Mixes")
+                    }
                 }
                 .overlay(alignment: .bottomTrailing) {
                     if hovering {
@@ -63,8 +82,22 @@ private struct MixCard: View {
             Button("Shuffle") { player.playShuffled(mix.tracks) }
             Button("Play in Order") { player.play(mix.tracks) }
             Button("Add to Queue") { player.addToQueue(mix.tracks) }
+            Divider()
+            if let onDelete {
+                Button("Remove from Saved Mixes", action: onDelete)
+            } else {
+                Button("Save to Saved Mixes", action: save)
+            }
         }
         .help("Click to shuffle \(mix.title)")
+    }
+
+    /// Keeps this mix's songs as they are now, in Collections > Saved Mixes.
+    private func save() {
+        guard !saved else { return }
+        saved = true
+        let ids = mix.tracks.compactMap(\.id)
+        Task { try? await library.database.saveMix(title: mix.title, subtitle: mix.subtitle, trackIds: ids) }
     }
 
     /// 2 x 2 covers; fewer covers repeat to fill the square.

@@ -267,7 +267,25 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       (UserDefaults "excludedVideos"; the next copy shows instead), Restore Removed Copies, Accept, Auto Select.
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
-- Roadmap Phases 3-5: not started.
+- Roadmap Phase 2 PASSED (Troy, 2026-10-18: "Let's move on").
+- Roadmap Phase 3 BUILT 2026-10-18, waiting for Troy's smoke tests:
+  - DB v8: playlist.capacitySeconds; savedMix + savedMixItem tables. Backup before:
+    ~/Library/Application Support/MacBee/Library-before-phase3.sqlite.
+  - M3U: export asks for Relative paths (with "../" from where it's saved; full path when on another drive) or
+    Full paths (`M3UPlaylist.PathStyle`); .m3u or .m3u8. Import matches paths from other computers by their last
+    1–3 path parts when the exact path isn't in the library (`tracks(atPaths:)`).
+  - Music page: "Refresh Suggestions" on Suggested Mixes (new seed, `HomeViewModel.refreshMixes`); bookmark on a
+    mix card / right-click "Save to Saved Mixes" (`saveMix`); Collections > Saved Mixes lists them (remove via
+    right-click).
+  - Smart playlists (`SmartPlaylist`, negative playlist ids -1/-2/-3): Recently Added (50), Most Played (100,
+    played at least once), Top Rated (150 favorites, by rating then plays). Top of the sidebar's playlists;
+    `SmartPlaylistView` (Play, Shuffle, Save as Playlist); usable as a Playlist Studio source
+    (`tracks(matching:)` handles negative ids) and draggable.
+  - MiniDisc: Playlist Studio "New" menu > New 74min / 80min MD Mix (playlist named "<template> <date>" with
+    capacitySeconds); studio header has a Disc limit picker, `CapacityBar` (time used of 74:00/80:00, Overtime red,
+    Underfill orange when > 7 min free) and Auto-fill (`CapacityFiller.fill`, from the studio's filtered songs,
+    shuffled, never over the limit). Playlist pages show the bar too.
+- Roadmap Phases 4-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).

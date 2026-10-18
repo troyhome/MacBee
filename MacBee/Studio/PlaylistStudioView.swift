@@ -26,17 +26,18 @@ struct PlaylistStudioView: View {
                 .background(theme.accent.opacity(0.06))
             ColumnResizer(width: $panelWidth, range: 300...700, resizesLeftColumn: false, defaultWidth: 380)
             StudioPlaylistPanel(playlistId: targetBinding,
-                                selectedTracks: model.results.filter { selection.contains($0.path) })
+                                selectedTracks: model.results.filter { selection.contains($0.path) },
+                                candidates: model.results)
                 .padding(20)
                 .frame(width: panelWidth)
                 .background(theme.accent.opacity(0.11))
         }
         .navigationTitle("Playlist Studio")
-        .onAppear { model.filter.playlistId = sourcePlaylist?.id }
-        .onChange(of: app.studioSourcePlaylistId) { model.filter.playlistId = sourcePlaylist?.id }
+        .onAppear { model.filter.playlistId = sourceId }
+        .onChange(of: app.studioSourcePlaylistId) { model.filter.playlistId = sourceId }
         .onChange(of: store.playlists) {
             // The source playlist was deleted: go back to the whole library.
-            if app.studioSourcePlaylistId != nil && sourcePlaylist == nil { app.studioSourcePlaylistId = nil }
+            if app.studioSourcePlaylistId != nil && sourceId == nil { app.studioSourcePlaylistId = nil }
         }
         .task(id: library.revision) { await model.loadGenres(from: library.database) }
         // A new filter cancels the previous search, so results never come back out of order.
@@ -64,7 +65,11 @@ struct PlaylistStudioView: View {
             }
             StudioFilterBar(filter: $model.filter, genres: model.genres)
             if let playlist = sourcePlaylist {
-                sourceBanner(playlist)
+                sourceBanner(title: playlist.name) { PlaylistArtwork(playlist: playlist, size: 32, cornerRadius: 4) }
+            } else if let smart = SmartPlaylist(playlistId: app.studioSourcePlaylistId) {
+                sourceBanner(title: smart.title) {
+                    Image(systemName: smart.systemImage).foregroundStyle(theme.accent).frame(width: 32, height: 32)
+                }
             }
             HStack {
                 Text(countText)
@@ -118,7 +123,7 @@ struct PlaylistStudioView: View {
     }
 
     /// "Songs from <playlist>" with a big, obvious way back to the whole library.
-    private func sourceBanner(_ playlist: Playlist) -> some View {
+    private func sourceBanner<Picture: View>(title: String, @ViewBuilder picture: () -> Picture) -> some View {
         HStack(spacing: 12) {
             Button {
                 app.studioSourcePlaylistId = nil
@@ -134,13 +139,13 @@ struct PlaylistStudioView: View {
             .buttonStyle(.plain)
             .help("Show songs from your whole library again")
 
-            PlaylistArtwork(playlist: playlist, size: 32, cornerRadius: 4)
+            picture()
             VStack(alignment: .leading, spacing: 1) {
                 Text("SHOWING A PLAYLIST")
                     .font(.system(size: 9, weight: .bold))
                     .tracking(0.8)
                     .foregroundStyle(theme.accent)
-                Text(playlist.name)
+                Text(title)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
@@ -150,6 +155,11 @@ struct PlaylistStudioView: View {
         .padding(10)
         .background(RoundedRectangle(cornerRadius: 10).fill(theme.accent.opacity(0.16)))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(theme.accent.opacity(0.5), lineWidth: 1))
+    }
+
+    /// The playlist (or smart playlist) whose songs are shown, if it still exists.
+    private var sourceId: Int64? {
+        SmartPlaylist(playlistId: app.studioSourcePlaylistId)?.playlistId ?? sourcePlaylist?.id
     }
 
     /// The playlist whose songs are shown, if it still exists.

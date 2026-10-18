@@ -6,6 +6,8 @@ struct StudioPlaylistPanel: View {
     @Binding var playlistId: Int64?
     /// Songs selected in the studio's library list, for the tag editor button.
     var selectedTracks: [Track] = []
+    /// The songs the studio's filters show now: what Auto-fill picks from for MiniDisc mixes.
+    var candidates: [Track] = []
 
     @Environment(MusicLibrary.self) private var library
     @Environment(PlaylistStore.self) private var store
@@ -25,14 +27,27 @@ struct StudioPlaylistPanel: View {
                     }
                 }
                 .labelsHidden()
-                Button("New") {
-                    Task { if let created = await store.newPlaylist() { playlistId = created.id } }
+                Menu("New") {
+                    Button("New Playlist") {
+                        Task { if let created = await store.newPlaylist() { playlistId = created.id } }
+                    }
+                    Divider()
+                    ForEach(CapacityFiller.templates, id: \.seconds) { template in
+                        Button("New \(template.title)") {
+                            Task {
+                                if let created = await store.newCapacityPlaylist(title: template.title, seconds: template.seconds) {
+                                    playlistId = created.id
+                                }
+                            }
+                        }
+                    }
                 }
-                .help("New playlist")
+                .fixedSize()
+                .help("New playlist, or a MiniDisc mix limited to 74 or 80 minutes")
             }
 
             if let id = playlistId, let playlist = store.playlist(id: id) {
-                StudioPlaylistHeader(playlist: playlist, entries: entries)
+                StudioPlaylistHeader(playlist: playlist, entries: entries, candidates: candidates)
                 List(selection: $selection) {
                     ForEach(entries) { entry in
                         TrackRow(track: entry.track, showsArtist: true,
@@ -110,6 +125,7 @@ struct StudioPlaylistPanel: View {
 private struct StudioPlaylistHeader: View {
     let playlist: Playlist
     let entries: [PlaylistEntry]
+    let candidates: [Track]
 
     @Environment(PlaylistStore.self) private var store
     @Environment(PlayerViewModel.self) private var player
@@ -140,11 +156,49 @@ private struct StudioPlaylistHeader: View {
                     }
                 }
                 .controlSize(.small)
-                Button("Play") { player.play(entries.map(\.track)) }
-                    .disabled(entries.isEmpty)
-                    .controlSize(.small)
+                HStack(spacing: 8) {
+                    Button("Play") { player.play(entries.map(\.track)) }
+                        .disabled(entries.isEmpty)
+                    Picker("Disc", selection: capacityBinding) {
+                        Text("No time limit").tag(Int?.none)
+                        ForEach(CapacityFiller.templates, id: \.seconds) { Text("MiniDisc \($0.seconds / 60) min").tag(Optional($0.seconds)) }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    .help("Limit the playlist to a MiniDisc's running time")
+                }
+                .controlSize(.small)
             }
             Spacer(minLength: 0)
         }
+        if let capacity = playlist.capacitySeconds {
+            VStack(alignment: .leading, spacing: 8) {
+                CapacityBar(total: total, capacity: Double(capacity))
+                HStack {
+                    Button("Auto-fill") { autoFill(capacity: Double(capacity)) }
+                        .disabled(candidates.isEmpty || total >= Double(capacity) - 60)
+                        .help("Adds songs from the list on the left (your filters there are the criteria) until the disc is full")
+                    Text("Uses the songs your filters show on the left")
+                        .font(.system(size: 11))
+                        .foregroundStyle(theme.textTertiary)
+                }
+                .controlSize(.small)
+            }
+        }
+    }
+
+    private var total: Double { entries.map(\.track.duration).reduce(0, +) }
+
+    private var capacityBinding: Binding<Int?> {
+        Binding(get: { playlist.capacitySeconds }, set: { seconds in
+            guard let id = playlist.id else { return }
+            Task { await store.setCapacity(seconds, for: id) }
+        })
+    }
+
+    private func autoFill(capacity: Double) {
+        guard let id = playlist.id else { return }
+        let picked = CapacityFiller.fill(existing: entries.map(\.track), candidates: candidates.shuffled(), capacity: capacity)
+        Task { await store.add(picked, to: id) }
     }
 }
