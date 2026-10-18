@@ -72,7 +72,13 @@ final class AppModel {
     /// Text in the sidebar search field.
     var searchText = ""
     /// The queue drawer on the right of the window.
-    var showQueue = false
+    var showQueue = false {
+        didSet { if showQueue { showLyrics = false } }
+    }
+    /// The lyrics drawer on the right of the window (shares the place with the queue).
+    var showLyrics = false {
+        didSet { if showLyrics { showQueue = false } }
+    }
     /// The full-window Now Playing view.
     var showNowPlaying = false
     /// Bumped by ⌘F; the sidebar focuses the search field when it changes.

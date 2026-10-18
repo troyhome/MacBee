@@ -26,21 +26,38 @@ public enum Lyrics: Equatable, Sendable {
     }
 }
 
-/// Finds a song's lyrics (roadmap Phase 4): first the text embedded in the file's tags, then an .lrc file
-/// with the same name next to it.
+/// Finds a song's lyrics (roadmap Phase 4): the text embedded in the file's tags, or an .lrc file with the
+/// same name next to it. Lyrics with timings win (Troy wants them to follow the music): embedded timed lyrics,
+/// then the .lrc file, then embedded plain text.
 public enum LyricsReader {
     public static func lyrics(for track: Track) -> Lyrics? {
         let url = URL(fileURLWithPath: track.path)
-        if let embedded = embeddedLyrics(in: url) { return embedded }
+        let embedded = embeddedLyrics(in: url)
+        if case .timed = embedded { return embedded }
+        if let fromFile = lrcFile(next: url) { return fromFile }
+        return embedded
+    }
+
+    /// Plain lyrics spread evenly over the song, so they can still scroll along (roughly) with the music.
+    /// A short lead-in and fade-out are left without lines.
+    public static func estimatedTiming(_ text: String, duration: Double) -> [Lyrics.TimedLine] {
+        let lines = text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        let sung = lines.filter { !$0.isEmpty }
+        guard !sung.isEmpty, duration > 0 else { return [] }
+        let start = duration * 0.06, end = duration * 0.92
+        let step = (end - start) / Double(sung.count)
+        return sung.enumerated().map { .init(time: start + Double($0.offset) * step, text: $0.element) }
+    }
+
+    static func lrcFile(next url: URL) -> Lyrics? {
         let lrc = url.deletingPathExtension().appendingPathExtension("lrc")
-        if let data = try? Data(contentsOf: lrc),
-           let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) {
-            let lines = LRCParser.parse(text)
-            if !lines.isEmpty { return .timed(lines) }
-            let plain = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !plain.isEmpty { return .plain(plain) }
-        }
-        return nil
+        guard let data = try? Data(contentsOf: lrc),
+              let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else { return nil }
+        let lines = LRCParser.parse(text)
+        if !lines.isEmpty { return .timed(lines) }
+        let plain = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return plain.isEmpty ? nil : .plain(plain)
     }
 
     /// Lyrics in the file's own tags. Some taggers store LRC text there; that shows in time too.

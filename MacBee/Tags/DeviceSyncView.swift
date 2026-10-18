@@ -44,6 +44,9 @@ struct DeviceSyncView: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
             List {
+                Section("Everything") {
+                    checkbox("Entire library", key: "all")
+                }
                 Section("Smart playlists") {
                     ForEach(SmartPlaylist.allCases) { smart in checkbox(smart.title, key: "s:\(smart.rawValue)") }
                 }
@@ -185,7 +188,14 @@ struct DeviceSyncView: View {
     private func sources() async -> [DeviceSync.Source] {
         let database = library.database
         var result: [DeviceSync.Source] = []
-        for key in selection.sorted() {
+        if selection.contains("all") {
+            // The whole library: every song, no playlist file of its own.
+            var everything = TrackFilter()
+            everything.text = ""
+            let tracks = (try? await database.tracks(matching: everything, limit: 1_000_000)) ?? []
+            result.append(.init(name: "", tracks: tracks))
+        }
+        for key in selection.sorted() where key != "all" {
             let parts = key.split(separator: ":", maxSplits: 1).map(String.init)
             guard parts.count == 2, let id = Int64(parts[1]) else { continue }
             switch parts[0] {

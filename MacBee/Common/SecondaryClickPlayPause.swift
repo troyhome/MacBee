@@ -1,4 +1,5 @@
 import AppKit
+import OSLog
 import SwiftUI
 
 
@@ -32,6 +33,8 @@ private struct SecondaryClickZone: NSViewRepresentable {
 
 /// Watches the app's own secondary clicks (not other apps') and, inside a zone, plays or pauses instead of
 /// letting the click through.
+private let clickLog = Logger(subsystem: "com.troyhomenchuk.MacBee", category: "SecondaryClick")
+
 @MainActor
 final class SecondaryClickMonitor {
     static let shared = SecondaryClickMonitor()
@@ -47,7 +50,10 @@ final class SecondaryClickMonitor {
             // Local monitors run on the main thread.
             nonisolated(unsafe) let event = event
             let used = MainActor.assumeIsolated {
-                guard let self, self.isInZone(event) else { return false }
+                guard let self else { return false }
+                let inZone = self.isInZone(event)
+                clickLog.notice("secondary click \(event.type.rawValue, privacy: .public): zones \(self.zones.count, privacy: .public), live \(self.zones.filter { $0.view?.window != nil }.count, privacy: .public), in zone \(inZone, privacy: .public)")
+                guard inZone else { return false }
                 if event.type == .rightMouseDown { action() }
                 return true
             }

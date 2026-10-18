@@ -20,10 +20,14 @@ struct RootView: View {
                             if model.showQueue {
                                 QueueDrawer()
                                     .transition(.move(edge: .trailing))
+                            } else if model.showLyrics {
+                                LyricsDrawer()
+                                    .transition(.move(edge: .trailing))
                             }
                         }
                         .clipped()
                         .animation(.easeOut(duration: 0.2), value: model.showQueue)
+                        .animation(.easeOut(duration: 0.2), value: model.showLyrics)
                 }
                 Rectangle().fill(theme.separator).frame(height: 1)
                 PlayBarView()

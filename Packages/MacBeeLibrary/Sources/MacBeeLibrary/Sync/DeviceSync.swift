@@ -4,7 +4,8 @@ import Foundation
 /// each playlist gets an .m3u8 next to the music, and only what changed is copied. Songs MacBee put there
 /// earlier that no playlist needs any more are removed; files MacBee didn't put there are never touched.
 public enum DeviceSync {
-    /// One playlist (or smart playlist / saved mix) to put on the device.
+    /// One playlist (or smart playlist / saved mix) to put on the device. An empty name (the entire library)
+    /// copies the songs without writing a playlist file.
     public struct Source: Sendable {
         public var name: String
         public var tracks: [Track]
@@ -66,7 +67,9 @@ public enum DeviceSync {
                 lines.append("#EXTINF:\(Int(track.duration.rounded())),\(track.displayArtist) - \(track.displayTitle)")
                 lines.append("../" + path)
             }
-            plan.playlists["\(playlistFolder)/\(safe(source.name)).m3u8"] = lines.joined(separator: "\n") + "\n"
+            if !source.name.isEmpty {
+                plan.playlists["\(playlistFolder)/\(safe(source.name)).m3u8"] = lines.joined(separator: "\n") + "\n"
+            }
         }
         for (path, track) in wanted.sorted(by: { $0.key < $1.key }) {
             if existing[path] == track.fileSize {

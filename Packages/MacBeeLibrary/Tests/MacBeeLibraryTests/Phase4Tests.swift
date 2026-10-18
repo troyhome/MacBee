@@ -28,6 +28,13 @@ final class Phase4Tests: XCTestCase {
         XCTAssertNil(Lyrics.currentLine(in: lines, at: 5))
     }
 
+    func testEstimatedTimingSpreadsLines() {
+        let lines = LyricsReader.estimatedTiming("One\n\nTwo\nThree", duration: 100)
+        XCTAssertEqual(lines.map(\.text), ["One", "Two", "Three"])
+        XCTAssertEqual(lines[0].time, 6, accuracy: 0.01)
+        XCTAssertLessThan(lines[2].time, 92)
+    }
+
     func testDevicePathNaming() {
         XCTAssertEqual(DeviceSync.devicePath(for: track("Seagull", number: 1)), "Ride/Nowhere/01 - Seagull.flac")
         XCTAssertEqual(DeviceSync.devicePath(for: track("What? / Why", number: 12)), "Ride/Nowhere/12 - What_ _ Why.flac")

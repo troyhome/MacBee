@@ -1,13 +1,16 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// Lyrics on the Now Playing screen: the text embedded in the song's tags, or an .lrc file next to it.
-/// Timed lyrics follow the song: the current line is highlighted and kept in view. Click a timed line to jump there.
+/// Lyrics (Now Playing and the lyrics panel): the text embedded in the song's tags, or an .lrc file next to it.
+/// They follow the song: the current line is highlighted and kept in view; click a line to jump there.
+/// Lyrics without timings are spread evenly over the song, so they still move along with it (roughly).
 struct LyricsPanel: View {
     let track: Track
     @Environment(PlayerViewModel.self) private var player
     @State private var lyrics: Lyrics?
     @State private var loadedPath: String?
+
+    private var duration: Double { player.engine.progress.duration ?? track.duration }
 
     var body: some View {
         Group {
@@ -15,13 +18,11 @@ struct LyricsPanel: View {
             case let .timed(lines):
                 TimedLyricsView(lines: lines)
             case let .plain(text):
-                ScrollView {
-                    Text(text)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .lineSpacing(6)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 4) {
+                    TimedLyricsView(lines: LyricsReader.estimatedTiming(text, duration: duration))
+                    Text("These lyrics have no timings, so their pace is estimated.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.35))
                 }
             case nil:
                 HStack(spacing: 8) {

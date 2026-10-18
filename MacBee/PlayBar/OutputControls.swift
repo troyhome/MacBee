@@ -13,6 +13,8 @@ struct OutputControls: View {
             OutputDeviceMenu()
             ExclusiveModeButton()
             VolumeControl()
+            BarIconButton(systemImage: "quote.bubble", help: app.showLyrics ? "Hide lyrics" : "Show lyrics",
+                          isActive: app.showLyrics) { app.showLyrics.toggle() }
             BarIconButton(systemImage: "list.bullet", help: app.showQueue ? "Hide queue" : "Show queue",
                           isActive: app.showQueue) { app.showQueue.toggle() }
             BarIconButton(systemImage: "pip", help: "Switch to the mini player") {

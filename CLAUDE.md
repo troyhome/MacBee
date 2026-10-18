@@ -304,6 +304,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     Troy's 2 Set Music has ~878 .lrc files.
   - Plex videos debug: Keychain reads log their OSStatus (category "Keychain"); PlexVideos log said "not signed in"
     on 2026-10-18 02:14 right after a reinstall, i.e. the token wasn't readable at that launch.
+  - Fixes after Troy's Phase 4 test: lyrics button (quote bubble) next to the queue button opens `LyricsDrawer`
+    (shares the right-hand spot with the queue). Timed lyrics win over embedded plain text (Troy wants them in
+    time): embedded timed -> .lrc -> embedded plain; plain lyrics are spread over the song
+    (`LyricsReader.estimatedTiming`) so they scroll along too. Device Sync has "Entire library" (copies every
+    song, no playlist file). Two-finger tap stopped working: diagnostic log added (category "SecondaryClick").
 - Roadmap Phase 5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
