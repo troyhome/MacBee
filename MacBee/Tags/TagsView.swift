@@ -18,6 +18,14 @@ struct TagsView: View {
                 Text("Track Studio")
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(theme.textPrimary)
+                Text("STUDIO MODE")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(0.8)
+                    .foregroundStyle(theme.accent)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .overlay(Capsule().stroke(theme.accent.opacity(0.7), lineWidth: 1))
+                    .help("Click Track Studio in the sidebar to leave. Click a playlist in the sidebar to work on its songs.")
                 PillTabs(items: TagsSection.allCases, selection: $section, title: \.title, systemImage: \.systemImage)
                 Spacer()
             }
@@ -32,7 +40,9 @@ struct TagsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(theme.accent.opacity(0.06)) // tinted like Playlist Studio, so the mode is easy to spot
         .navigationTitle("Track Studio")
+        .onChange(of: app.trackStudioSourcePlaylistId) { _, id in if id != nil { section = .tagBee } }
     }
 }
 
@@ -69,26 +79,47 @@ private struct TagBeePanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                FilterField(prompt: "Find songs, albums or artists to tag", text: $query)
-                    .frame(maxWidth: 360)
+            if let name = sourceName {
+                HStack(spacing: 10) {
+                    Button {
+                        app.trackStudioSourcePlaylistId = nil
+                    } label: {
+                        Label("Back to Library", systemImage: "chevron.left")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(theme.onAccent)
+                            .padding(.horizontal, 10)
+                            .frame(height: 26)
+                            .background(Capsule().fill(theme.accent))
+                    }
+                    .buttonStyle(.plain)
+                    Text("SHOWING A PLAYLIST")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(0.8)
+                        .foregroundStyle(theme.accent)
+                    Text(name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(theme.textPrimary)
+                }
+            }
+            FilterField(prompt: sourceName == nil ? "Find songs, albums or artists to tag" : "Search this playlist",
+                        text: $query)
+                .frame(maxWidth: 420)
+            // The TagBee actions, as buttons in a row under the search box.
+            HStack(spacing: 8) {
                 Button("Select All") { selection = Set(results.map(\.path)) }
                     .disabled(results.isEmpty)
                 Button("Open \(selection.count) in TagBee") { send(results.filter { selection.contains($0.path) }) }
                     .buttonStyle(.borderedProminent)
                     .disabled(selection.isEmpty || !hasEditor)
-                Spacer()
-                Menu("Send to TagBee") {
-                    Button("The Song Playing") { if let track = player.currentTrack { send([track]) } }
-                        .disabled(player.currentTrack == nil)
-                    Button("The Album Playing") { Task { await sendPlayingAlbum() } }
-                        .disabled(player.currentTrack == nil)
-                    Divider()
-                    Button("Just Open TagBee") {
-                        if let path = preferences.tagEditorPath { NSWorkspace.shared.open(URL(fileURLWithPath: path)) }
-                    }
+                Button("Song Playing") { if let track = player.currentTrack { send([track]) } }
+                    .disabled(player.currentTrack == nil || !hasEditor)
+                    .help("Open the song that's playing in TagBee")
+                Button("Album Playing") { Task { await sendPlayingAlbum() } }
+                    .disabled(player.currentTrack == nil || !hasEditor)
+                    .help("Open every song of the album that's playing in TagBee")
+                Button("Open TagBee") {
+                    if let path = preferences.tagEditorPath { NSWorkspace.shared.open(URL(fileURLWithPath: path)) }
                 }
-                .fixedSize()
                 .disabled(!hasEditor)
             }
             List(selection: $selection) {
@@ -107,22 +138,37 @@ private struct TagBeePanel: View {
             .scrollContentBackground(.hidden)
             .overlay {
                 if results.isEmpty {
-                    ContentUnavailableView("Find songs to tag", systemImage: "tag",
+                    ContentUnavailableView(sourceName == nil ? "Find songs to tag" : "No songs", systemImage: "tag",
                                            description: Text(hasEditor
-                                               ? "Search above, tick songs (⌘-click or ⇧-click for several) and open them in TagBee. Double-click opens one. Changes saved in TagBee show up here by themselves."
+                                               ? "Search above, or click a playlist in the sidebar. Tick songs (⌘-click or ⇧-click for several) and open them in TagBee; double-click opens one. Changes saved in TagBee show up here by themselves."
                                                : "TagBee isn't installed. Choose a tag editor in Settings > Tag Editor."))
                 }
             }
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 10)
-        .task(id: query) {
+        .task(id: "\(query)-\(app.trackStudioSourcePlaylistId ?? 0)-\(library.revision)") {
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
             let text = query.trimmingCharacters(in: .whitespaces)
-            results = text.isEmpty ? [] : ((try? await library.database.search(text, limit: 500)) ?? [])
+            if let id = app.trackStudioSourcePlaylistId {
+                // A playlist from the sidebar: its songs, narrowed by the search box.
+                var filter = TrackFilter()
+                filter.playlistId = id
+                filter.text = text
+                results = (try? await library.database.tracks(matching: filter, limit: 5000)) ?? []
+            } else {
+                results = text.isEmpty ? [] : ((try? await library.database.search(text, limit: 500)) ?? [])
+            }
             selection = selection.intersection(results.map(\.path))
         }
+    }
+
+    /// The name of the playlist (or smart playlist) clicked in the sidebar, if any.
+    private var sourceName: String? {
+        guard let id = app.trackStudioSourcePlaylistId else { return nil }
+        if let smart = SmartPlaylist(playlistId: id) { return smart.title }
+        return app.playlists?.playlist(id: id)?.name
     }
 
     private var hasEditor: Bool { preferences.tagEditorPath != nil }

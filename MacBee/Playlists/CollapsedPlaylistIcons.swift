@@ -30,8 +30,7 @@ private struct CollapsedPlaylistIcon: View {
     @State private var targeted = false
 
     private var isSelected: Bool {
-        app.isInStudio ? app.studioSourcePlaylistId == playlist.id
-                       : app.selection == .playlists && app.selectedPlaylistId == playlist.id
+        app.isPlaylistHighlighted(playlist.id)
     }
 
     var body: some View {

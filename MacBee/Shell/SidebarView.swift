@@ -21,18 +21,12 @@ struct SidebarView: View {
                 .help("Go to where the current music was started")
                 .padding(.bottom, 4)
             }
-            ForEach(SidebarItem.library) { item in
+            ForEach(SidebarItem.library.filter { $0 != .tags }) { item in
                 SidebarRow(item: item, isSelected: isSelected(item), collapsed: collapsed) {
                     app.go(to: item)
                 }
-                if item == .tags {
-                    // Playlist Studio sits right under Track Studio.
-                    SidebarRow(item: .playlistStudio, isSelected: selection == .playlistStudio, collapsed: collapsed) {
-                        app.toggleStudio()
-                    }
-                    .help(app.isInStudio ? "Leave Playlist Studio" : "Open Playlist Studio")
-                }
             }
+            studios
             if collapsed {
                 // Playlists stay reachable as small pictures; hover for the name.
                 CollapsedPlaylistIcons()
@@ -79,6 +73,29 @@ struct SidebarView: View {
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.horizontal, collapsed ? 0 : 18)
         .padding(.bottom, 8)
+    }
+
+    /// Track Studio and Playlist Studio: modes you enter and leave, set apart from the pages above.
+    private var studios: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if collapsed {
+                Rectangle().fill(theme.separator).frame(height: 1).padding(.horizontal, 12).padding(.vertical, 6)
+            } else {
+                Text("STUDIOS")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(theme.textTertiary)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 12)
+                    .padding(.bottom, 2)
+            }
+            SidebarRow(item: .tags, isSelected: selection == .tags, collapsed: collapsed) { app.toggleTrackStudio() }
+                .help(app.isInTrackStudio ? "Leave Track Studio" : "Open Track Studio")
+            SidebarRow(item: .playlistStudio, isSelected: selection == .playlistStudio, collapsed: collapsed) {
+                app.toggleStudio()
+            }
+            .help(app.isInStudio ? "Leave Playlist Studio" : "Open Playlist Studio")
+        }
     }
 
     /// "Playlists" is highlighted only on the all-playlists page; a single playlist highlights its own row.

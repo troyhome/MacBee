@@ -323,6 +323,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     with playCount/lastPlayedAt updated; favorites and higher ratings added; playlists matched by folder path +
     name, created or missing songs appended. Never deletes anything (un-favoriting or removing a playlist song
     doesn't travel). Music files aren't copied. Not done: syncing through Plex.
+  - Track Studio is a mode like Playlist Studio (Troy): click it to enter, again to leave
+    (`AppModel.toggleTrackStudio`, `isInTrackStudio`); STUDIO MODE badge and accent tint; a playlist (or smart
+    playlist) clicked in the sidebar becomes the TagBee tab's song source (`trackStudioSourcePlaylistId`,
+    "Back to Library"); TagBee actions are buttons under the search box. Sidebar: Track Studio and Playlist Studio
+    sit apart under a STUDIOS heading. `AppModel.isPlaylistHighlighted` decides sidebar playlist highlighting.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

@@ -22,8 +22,7 @@ struct PlaylistTreeRow: View {
     private var isOpen: Bool { openFolderIds.contains(node.id) }
     private var isSelected: Bool {
         guard !isFolder else { return false }
-        return app.isInStudio ? app.studioSourcePlaylistId == node.id
-                              : app.selection == .playlists && app.selectedPlaylistId == node.id
+        return app.isPlaylistHighlighted(node.id)
     }
 
     var body: some View {
@@ -83,7 +82,7 @@ struct PlaylistTreeRow: View {
             guard let first = strings.first, let payload = DragPayload(string: first) else { return false }
             return handleDrop(payload)
         } isTargeted: { targeted = $0 }
-        .help(isFolder ? "" : app.isInStudio
+        .help(isFolder ? "" : app.isInStudio || app.isInTrackStudio
               ? "Click to show its songs in the studio. Drag it into the studio to add or browse it."
               : "Click to open, double-click to play. Drop songs here to add them.")
     }

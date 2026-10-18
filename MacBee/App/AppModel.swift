@@ -63,6 +63,12 @@ final class AppModel {
     var studioSourcePlaylistId: Int64?
     /// Where you were before entering the studio; clicking Playlist Studio again returns there.
     @ObservationIgnored private var locationBeforeStudio: Location?
+    /// Track Studio is open: a mode like Playlist Studio. A playlist clicked in the sidebar feeds its song list.
+    var isInTrackStudio: Bool { location.page == .tags }
+    /// The playlist (or smart playlist) whose songs Track Studio lists (nil = search the library).
+    var trackStudioSourcePlaylistId: Int64?
+    /// Where you were before entering Track Studio; clicking it again returns there.
+    @ObservationIgnored private var locationBeforeTrackStudio: Location?
 
     /// Album pages opened on top of the current page.
     var albumPath: [AlbumSummary] {
@@ -145,7 +151,25 @@ final class AppModel {
     /// Shows a page from its start (closing any open album or playlist).
     func go(to page: SidebarItem) {
         if page == .playlistStudio && !isInStudio { locationBeforeStudio = location }
+        if page == .tags && !isInTrackStudio { locationBeforeTrackStudio = location }
         location = Location(page: page)
+    }
+
+    /// The Track Studio button: enters the mode, or leaves it back to where you were.
+    func toggleTrackStudio() {
+        if isInTrackStudio {
+            location = locationBeforeTrackStudio ?? Location(page: .home)
+            locationBeforeTrackStudio = nil
+        } else {
+            go(to: .tags)
+        }
+    }
+
+    /// Whether this playlist is the one highlighted in the sidebar: a studio's song source, or the open page.
+    func isPlaylistHighlighted(_ id: Int64?) -> Bool {
+        if isInStudio { return studioSourcePlaylistId == id }
+        if isInTrackStudio { return trackStudioSourcePlaylistId == id }
+        return selection == .playlists && selectedPlaylistId == id
     }
 
     /// The Playlist Studio button: enters studio mode, or leaves it back to where you were.
@@ -162,6 +186,8 @@ final class AppModel {
     func selectPlaylistInSidebar(_ id: Int64) {
         if isInStudio {
             studioSourcePlaylistId = id
+        } else if isInTrackStudio {
+            trackStudioSourcePlaylistId = id
         } else {
             openPlaylist(id)
         }

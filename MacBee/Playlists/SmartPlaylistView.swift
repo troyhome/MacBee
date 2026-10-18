@@ -128,7 +128,6 @@ struct SmartPlaylistRows: View {
     }
 
     private func isSelected(_ smart: SmartPlaylist) -> Bool {
-        app.isInStudio ? app.studioSourcePlaylistId == smart.playlistId
-                       : app.selection == .playlists && app.selectedPlaylistId == smart.playlistId
+        app.isPlaylistHighlighted(smart.playlistId)
     }
 }
