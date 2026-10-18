@@ -19,12 +19,14 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
 - Music lives on a network drive mounted at `/Volumes/2 Set Music` (~9,500 tracks, growing). More folders can be added later.
 - Network playback: each track and the next one are loaded fully into memory before playing (fixed real dropouts).
 - The Mac currently has no external DAC; the "BoomAudio" output (Boom 3D app) adds effects, so tests target "MacBook Air Speakers".
-- Code signing: the app is signed with Troy's self-signed "MacBee Local Signing" certificate (Keychain), so macOS
-  remembers permissions (network volume access) across rebuilds. Don't switch back to ad-hoc ("-") signing.
-  His "Apple Development" certificate exists but fails to sign (errSecInternalComponent); revisit in Phase 9.
-  The certificate on Troy's first MacBook Air expires 2027-10-16 (made with the 1-year default). New ones: Keychain
-  Access > Certificate Assistant > Create a Certificate, Name "MacBee Local Signing", Self Signed Root, Code Signing,
-  "Let me override defaults", validity 3650 days, other pages left as they are.
+- Code signing (2026-10-18): automatic signing with Troy's Apple team DA9YJ36D24 ("Apple Development"), plus
+  `MacBee.entitlements` (Keychain Sharing, group `$(AppIdentifierPrefix)com.troyhomenchuk.MacBee`). Needed so the
+  Plex token lives in the data protection keychain (`MacBee/Plex/KeychainStore.swift`) with no "wants to access key"
+  prompts; the old self-signed "MacBee Local Signing" cert got error -34018 there. `Tools/macbee.sh` passes
+  `-allowProvisioningUpdates` so Xcode renews the signing profile on each build. Each Mac must be signed in to
+  Xcode > Settings > Accounts with Troy's Apple ID. Troy enrolled in the paid Apple Developer Program on 2026-10-18;
+  until Apple activates it the team shows as "Personal Team" and profiles last only 7 days (rebuild/update renews).
+  Don't go back to ad-hoc ("-") or self-signed signing.
 - Virtual output devices (BoomAudio, Loopback, BlackHole; transport type virtual or unknown) are never switched
   in sample rate or bit depth: doing so made Boom 3D produce loud noise. They show as "not bit-perfect".
 - Architecture: MVVM, small files, no giant single-file dumps. Placeholder protocols for a future tag editor and Plex.

@@ -18,7 +18,7 @@ OUT="$HOME/Library/Developer/MacBee"
 case "${1:-build}" in
     build)
         xcodebuild -project "$ROOT/MacBee.xcodeproj" -scheme MacBee -configuration Debug \
-            -derivedDataPath "$OUT/DerivedData" build
+            -derivedDataPath "$OUT/DerivedData" -allowProvisioningUpdates build
         ;;
     test)
         for package in MacBeeAudio MacBeeLibrary MacBeeVideo; do
@@ -30,7 +30,7 @@ case "${1:-build}" in
         ;;
     install)
         xcodebuild -project "$ROOT/MacBee.xcodeproj" -scheme MacBee -configuration Release \
-            -derivedDataPath "$OUT/DerivedData-Release" build
+            -derivedDataPath "$OUT/DerivedData-Release" -allowProvisioningUpdates build
         osascript -e 'quit app "MacBee"' 2>/dev/null || true
         sleep 2
         rm -rf /Applications/MacBee.app
@@ -55,7 +55,7 @@ case "${1:-build}" in
     dmg)
         # A disk image with MacBee and an Applications shortcut, for copying MacBee to another Mac.
         xcodebuild -project "$ROOT/MacBee.xcodeproj" -scheme MacBee -configuration Release \
-            -derivedDataPath "$OUT/DerivedData-Release" build
+            -derivedDataPath "$OUT/DerivedData-Release" -allowProvisioningUpdates build
         APP="$OUT/DerivedData-Release/Build/Products/Release/MacBee.app"
         VERSION="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")"
         STAGE="$OUT/dmg"
