@@ -68,6 +68,15 @@ final class VideoScannerTests: XCTestCase {
         XCTAssertTrue(catalog.movies.isEmpty)
     }
 
+    func testMusicVideosOnTwoDrivesShowOnce() throws {
+        try make("A/Balthazar/Losers.mp4")
+        try make("B/Balthazar/Losers.mp4")
+        let catalog = VideoScanner.scan([.init(url: root.appendingPathComponent("A"), kind: .musicVideos),
+                                         .init(url: root.appendingPathComponent("B"), kind: .musicVideos)])
+        XCTAssertEqual(catalog.musicVideos.count, 1)
+        XCTAssertTrue(catalog.musicVideos[0].file.path.contains("/A/"))
+    }
+
     func testStoreRoundTrip() throws {
         try make("Office Space (1999).mkv")
         let catalog = VideoScanner.scan([.init(url: root, kind: .moviesAndShows)])

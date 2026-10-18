@@ -237,7 +237,7 @@ final class AppModel {
     /// Looks for videos again in the video folders and (for music videos) the music folders.
     func refreshVideos() async {
         await videos.refresh(videoFolders: preferences.videoFolders.map { URL(fileURLWithPath: $0) },
-                             musicFolders: library?.folders.filter(\.isOnline).map(\.folder.url) ?? [],
+                             musicFolders: library?.folders.filter { $0.isOnline && !$0.folder.isPaused }.map(\.folder.url) ?? [],
                              plex: plex)
     }
 

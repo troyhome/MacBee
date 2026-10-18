@@ -17,12 +17,23 @@ struct ArtistOverviewView: View {
     @State private var model = ArtistOverviewViewModel()
 
     var body: some View {
+        VStack(spacing: 0) {
+            // Stays put while the rows scroll.
+            ArtistPageHeader(artist: artist, layout: $layout,
+                             onPlay: { player.play(model.allTracks) },
+                             onShuffle: { player.playShuffled(model.allTracks) })
+                .padding(.horizontal, 20)
+            rows
+        }
+        .task(id: "\(artist.artistKey)-\(library.revision)") {
+            await model.load(artist: artist, from: library.database)
+        }
+    }
+
+    private var rows: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
-                ArtistPageHeader(artist: artist, layout: $layout,
-                                 onPlay: { player.play(model.allTracks) },
-                                 onShuffle: { player.playShuffled(model.allTracks) })
-                    .padding(.horizontal, 20)
+                Color.clear.frame(height: 0)
                 if !model.albums.isEmpty {
                     row("Albums") { albumRow(model.albums) }
                 }
@@ -40,9 +51,6 @@ struct ArtistOverviewView: View {
                 }
             }
             .padding(.bottom, 30)
-        }
-        .task(id: "\(artist.artistKey)-\(library.revision)") {
-            await model.load(artist: artist, from: library.database)
         }
     }
 

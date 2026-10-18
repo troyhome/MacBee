@@ -32,11 +32,18 @@ private struct ArtistAlbumsWithSongsView: View {
     @State private var selection = Set<String>()
 
     var body: some View {
-        List(selection: $selection) {
+        VStack(spacing: 0) {
+            // Stays put while the albums scroll.
             ArtistPageHeader(artist: artist, layout: $layout,
                              onPlay: { player.play(model.allTracks) },
                              onShuffle: { player.playShuffled(model.allTracks) })
-                .listRowSeparator(.hidden)
+                .padding(.horizontal, 20)
+            albumList
+        }
+    }
+
+    private var albumList: some View {
+        List(selection: $selection) {
             ForEach(model.sections) { section in
                 ArtistAlbumHeader(section: section,
                                   onOpen: { navigation.openAlbum(section.album) },

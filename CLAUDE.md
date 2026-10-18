@@ -245,6 +245,9 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       <= 3 = Single), Mixes (`artistMixes(for:)`: <Artist> Radio with similar artists, Top Tracks, Deep Cuts,
       Favorites), Videos (music videos whose title/folder has the artist's name), Similar Artists
       (`similarArtists(to:)`: genre overlap, compilations left out).
+    - Artist header (name, layout switch, Play/Shuffle) stays fixed above the scrolling list in both layouts.
+    - Music videos found in more than one music folder show once (same file name; first folder in priority order
+      wins). Paused music folders aren't searched for music videos.
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.
