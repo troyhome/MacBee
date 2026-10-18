@@ -248,6 +248,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     - Artist header (name, layout switch, Play/Shuffle) stays fixed above the scrolling list in both layouts.
     - Music videos found in more than one music folder show once (same file name; first folder in priority order
       wins). Paused music folders aren't searched for music videos.
+    - Playing From remembers the artist when music starts on the Artists page (`Location.artistKey`, restored into
+      @AppStorage "selectedArtist").
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.

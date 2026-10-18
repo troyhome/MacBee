@@ -113,7 +113,10 @@ final class AppModel {
             guard let self else { return }
             // A whole album started from a grid opens that album's page; anything else returns to the page it was on.
             closeVideo()
-            playingFrom = album.map { Location(page: .albums, albums: [$0]) } ?? location
+            var from = album.map { Location(page: .albums, albums: [$0]) } ?? location
+            // On the Artists page, also remember which artist it was (the page itself keeps that separately).
+            if from.page == .artists { from.artistKey = UserDefaults.standard.string(forKey: "selectedArtist") }
+            playingFrom = from
         }
 
         // Stop playback and give up exclusive access when the app quits.
@@ -249,7 +252,11 @@ final class AppModel {
 
     /// "Playing From": back to the page the music was started from (or the playing song's album).
     func showPlayingFrom() async {
-        if let playingFrom, playingFrom.page != .search || !searchText.isEmpty {
+        if var playingFrom, playingFrom.page != .search || !searchText.isEmpty {
+            if let artistKey = playingFrom.artistKey {
+                UserDefaults.standard.set(artistKey, forKey: "selectedArtist")
+                playingFrom.artistKey = nil // the page's own location doesn't carry it
+            }
             location = playingFrom
         } else {
             await showCurrentAlbum()
