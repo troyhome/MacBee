@@ -236,6 +236,10 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       main artists ("feat." stripped) and no artist with half the folder's songs (Slayyyter etc. were wrongly
       caught). Troy retagged "If I Were A Carpenter" in TagBee (Album Artist = Various Artists).
     - Now Playing view has a queue button (top right) that opens the same QueueDrawer beside it (Troy).
+    - MP3 compilation bug: SFBAudioEngine treats any ID3 TCMP frame as "compilation", even "0". `ID3Compilation`
+      (Scanning/) reads the frame's value for MP3s. One-time re-read of MP3s marked compilation at launch
+      (UserDefaults "MacBee.rereadMP3Compilations.v1"). Mintzkov's albums were under Various Artists because of it.
+      `refreshFiles` (tag editor saves) now re-runs `applyVisibility` (duplicates/compilations).
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.

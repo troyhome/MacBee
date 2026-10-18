@@ -84,6 +84,19 @@ public final class MusicLibrary {
             monitor.setPeriodicCheck(every: periodicCheckInterval)
         }
         if checkForChanges { scanAll() }
+        await rereadMP3Compilations()
+    }
+
+    /// One-time fix: older versions read every MP3 with a compilation frame as a compilation, even "0" (no).
+    /// Re-reads those files once so their albums leave Various Artists.
+    private func rereadMP3Compilations() async {
+        let key = "MacBee.rereadMP3Compilations.v1"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        guard let paths = try? await database.mp3CompilationPaths() else { return }
+        let reachable = paths.filter { FileManager.default.fileExists(atPath: $0) }
+        if !reachable.isEmpty { _ = try? await refreshFiles(reachable) }
+        // Done once every file could be checked (a drive that's away gets another go next launch).
+        if reachable.count == paths.count { UserDefaults.standard.set(true, forKey: key) }
     }
 
     // MARK: - Folders
@@ -260,10 +273,8 @@ public final class MusicLibrary {
     public func refreshFiles(_ paths: [String]) async throws -> Int {
         let folderList = try await database.folders()
         let count = try await scanner.refresh(paths: paths, in: folderList)
-        if count > 0 {
-            await refreshStats()
-            revision += 1
-        }
+        // Edited tags can change duplicates and compilations, so re-work those out too.
+        if count > 0 { await applyVisibility() }
         return count
     }
 

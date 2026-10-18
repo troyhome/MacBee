@@ -95,6 +95,13 @@ public extension LibraryDatabase {
         return DuplicateFinder.fingerprint(name)
     }
 
+    /// MP3 files currently marked as compilations (see `MusicLibrary.rereadMP3Compilations`).
+    func mp3CompilationPaths() async throws -> [String] {
+        try await writer.read { db in
+            try String.fetchAll(db, sql: "SELECT path FROM track WHERE isCompilation = 1 AND LOWER(path) LIKE '%.mp3'")
+        }
+    }
+
     // MARK: - Duplicates page
 
     /// Every song that has more than one copy: the copy that shows first, then the others.

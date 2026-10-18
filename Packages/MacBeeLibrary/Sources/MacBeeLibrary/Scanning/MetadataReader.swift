@@ -43,6 +43,10 @@ struct MetadataReader: Sendable {
         t.discNumber = m.discNumber
         t.discTotal = m.discTotal
         t.isCompilation = m.isCompilation ?? false
+        // For MP3s, check what the compilation frame actually says ("0" means no).
+        if t.isCompilation, url.pathExtension.lowercased() == "mp3", let value = ID3Compilation.value(in: url) {
+            t.isCompilation = value
+        }
         t.rating = m.rating
 
         let p = audioFile.properties
