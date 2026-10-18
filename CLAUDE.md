@@ -107,8 +107,8 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
 ## Post-1.0 roadmap (docs/ROADMAP.md)
 Troy's new 5-phase roadmap (received 2026-10-17). Rule: one phase at a time; never start the next phase until
 Troy confirms the current one passes its gate (zero compiler errors, all tests pass, his smoke tests succeed).
-- Roadmap Phase 1 BUILT 2026-10-17, waiting for Troy's smoke tests (app builds with no errors or warnings;
-  56 package tests pass). What was done:
+- Roadmap Phase 1 PASSED (confirmed by Troy 2026-10-18, after the fixes and the Videos section below).
+  (Built 2026-10-17: app builds with no errors or warnings; package tests pass.) What was done:
   - Search: top margin on the results list (`.contentMargins`) so the first artist row clears the toolbar.
   - Play bar: format badge removed from the left track info (`TrackInfoText`); format shows only on the right
     (`SignalPathBadge`, now with kbps for MP3/AAC).
