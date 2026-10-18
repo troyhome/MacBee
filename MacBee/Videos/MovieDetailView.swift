@@ -12,8 +12,9 @@ struct MovieDetailView: View {
     var body: some View {
         ScrollView {
             HStack(alignment: .top, spacing: 32) {
-                PosterImage(path: movie.posterPath, title: movie.title, maxPixels: 900, previewFile: movie.file)
+                Color.clear
                     .aspectRatio(2 / 3, contentMode: .fit)
+                    .overlay { PosterImage(path: movie.posterPath, title: movie.title, maxPixels: 900, previewFile: movie.file) }
                     .frame(width: 260)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .shadow(color: .black.opacity(0.5), radius: 18, y: 8)

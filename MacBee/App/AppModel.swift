@@ -21,10 +21,12 @@ final class AppModel {
     let themeStore = ThemeStore()
     /// Movies, shows and music videos.
     let videos = VideoLibrary()
-    /// The video playing over the window, if any.
-    var playingVideo: VideoPlayback?
-    /// The video is shrunk to the mini player in the corner, so the rest of MacBee can be used.
-    var videoIsMini = false
+    /// The video being watched, if any.
+    private(set) var videoSession: VideoSession?
+    /// The video is in the mini player window instead of over the main window.
+    private(set) var videoIsMini = false
+    @ObservationIgnored private let videoMiniWindow = VideoMiniWindow()
+    var playingVideo: VideoPlayback? { videoSession?.current }
     let preferences: PreferencesStore
 
     /// Where you are now. Every change remembers the previous place for the back arrow.
@@ -110,7 +112,7 @@ final class AppModel {
         player.onNewQueue = { [weak self] album in
             guard let self else { return }
             // A whole album started from a grid opens that album's page; anything else returns to the page it was on.
-            playingVideo = nil
+            closeVideo()
             playingFrom = album.map { Location(page: .albums, albums: [$0]) } ?? location
         }
 
@@ -171,13 +173,36 @@ final class AppModel {
     func playVideo(_ playback: VideoPlayback) {
         if player.isPlaying { player.togglePlayPause() }
         showNowPlaying = false
-        videoIsMini = false
         videos.markPlayed(playback.likeId)
-        playingVideo = playback
+        videoSession?.stop()
+        let session = VideoSession(playback: playback, library: videos)
+        videoSession = session
+        // A video started while the mini player is open plays there.
+        if videoIsMini { videoMiniWindow.show(session, app: self) }
     }
 
     func closeVideo() {
-        playingVideo = nil
+        guard let session = videoSession else { return }
+        videoIsMini = false
+        videoMiniWindow.hide()
+        session.stop()
+        videoSession = nil
+    }
+
+    /// Moves the video into its own small window.
+    func showVideoMiniPlayer() {
+        guard let session = videoSession else { return }
+        videoIsMini = true
+        videoMiniWindow.show(session, app: self)
+    }
+
+    /// Puts the video back over the main window.
+    func hideVideoMiniPlayer() {
+        guard videoIsMini else { return }
+        videoMiniWindow.hide()
+        videoIsMini = false
+        NSApp.activate()
+        NSApp.windows.first { $0.identifier?.rawValue.hasPrefix(MacBeeApp.mainWindowID) == true }?.makeKeyAndOrderFront(nil)
     }
 
     func playMovie(_ movie: Movie, resume: Bool) {

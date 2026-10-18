@@ -182,10 +182,15 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     - Stills for videos without posters (music videos, and movies/shows Plex doesn't know): `VideoThumbnailer`
       (MacBeeVideo) grabs a frame 10% in with mpv `screenshot-raw` (the LGPL build has no image encoders, so
       vo=image fails) and saves a JPEG via ImageIO in ~/Library/Caches/MacBee/VideoFrames. Shown in the same 2:3
-      card as posters (blurred fill + whole frame). `VideoFrames` actor limits it to 2 at a time.
-    - Mini player: the pip button in the video's top bar shrinks it to a 384×216 box above the play bar
-      (`AppModel.videoIsMini`); drag to move, double-click or the expand button for full size. The mpv view
-      stays the same SwiftUI view in both sizes so playback isn't interrupted.
+      card as posters (blurred fill + whole frame); the card is a fixed 2:3 `Color.clear` with the image as overlay
+      so wide stills can't stretch the grid. `VideoFrames` actor limits it to 2 at a time.
+    - Mini player = its own floating NSPanel (`VideoMiniWindow`), resizable at 16:9, stays above other windows;
+      "Back to MacBee" (or double-click) returns the video to the main window; its close button stops the video.
+      Playback state lives in `VideoSession` (AppModel.videoSession: MPVPlayer, current item, next episodes,
+      position saving) so it survives the move. `MPVPlayer.surface` is the one NSView mpv draws into; each
+      `MPVVideoView` adopts it (reparenting), because mpv's `wid` layer can't change after start. Checked: playback
+      continues and the drawable resizes when the surface moves windows. (The first in-window version cropped the
+      picture; Troy asked for a separate window.)
     - Show pages list seasons as tabs (was a pull-down menu), per Troy.
 - Roadmap Phases 2-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other

@@ -12,8 +12,10 @@ struct VideoPosterCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            PosterImage(path: title.posterPath, title: title.title, previewFile: title.previewFile)
+            // A fixed 2:3 frame first, so stills (which are wide) are cropped to the same size as posters.
+            Color.clear
                 .aspectRatio(2 / 3, contentMode: .fit)
+                .overlay { PosterImage(path: title.posterPath, title: title.title, previewFile: title.previewFile) }
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(alignment: .topLeading) { qualityBadges.padding(6) }
                 .overlay(alignment: .topTrailing) {

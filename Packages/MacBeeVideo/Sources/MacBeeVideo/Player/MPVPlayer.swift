@@ -27,13 +27,20 @@ public final class MPVPlayer {
     @ObservationIgnored private var handle: OpaquePointer?
     /// A file asked for before mpv was ready (its view not yet on screen).
     @ObservationIgnored private var pending: (url: URL, start: Double)?
+    @ObservationIgnored private var isShutDown = false
     @ObservationIgnored let layer = MPVMetalLayer()
+    /// The view the picture is drawn in; `MPVVideoView` places it.
+    @ObservationIgnored public private(set) lazy var surface: MPVSurfaceView = {
+        let view = MPVSurfaceView(frame: .zero)
+        view.player = self
+        return view
+    }()
 
     public init() {}
 
     /// Starts mpv and draws into the view's layer. Call once the view is on screen.
     func start(in view: NSView) {
-        guard handle == nil, let mpv = mpv_create() else { return }
+        guard handle == nil, !isShutDown, let mpv = mpv_create() else { return }
         handle = mpv
         view.layer = layer
         view.wantsLayer = true
@@ -108,6 +115,7 @@ public final class MPVPlayer {
 
     /// Stops playback and shuts mpv down. The player can't be used afterwards.
     public func shutdown() {
+        isShutDown = true
         guard let handle else { return }
         self.handle = nil
         mpv_set_wakeup_callback(handle, nil, nil)
@@ -115,9 +123,12 @@ public final class MPVPlayer {
     }
 
     func resize(to size: CGSize, scale: CGFloat) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true) // no animated stretching while the window resizes
         layer.frame = CGRect(origin: .zero, size: size)
         layer.contentsScale = scale
         layer.drawableSize = CGSize(width: size.width * scale, height: size.height * scale)
+        CATransaction.commit()
     }
 
     // MARK: - mpv plumbing
@@ -207,6 +218,16 @@ public final class MPVPlayer {
 /// CAMetalLayer with MoltenVK workarounds (from mpv/MPVKit): ignore 1x1 drawable sizes that cause flicker,
 /// and switch on HDR (EDR) only from the main thread.
 final class MPVMetalLayer: CAMetalLayer {
+    override init() {
+        super.init()
+        // While a resize is in progress, show the whole old picture scaled, never a cropped part of it.
+        contentsGravity = .resizeAspect
+        backgroundColor = NSColor.black.cgColor
+    }
+
+    override init(layer: Any) { super.init(layer: layer) }
+    required init?(coder: NSCoder) { super.init(coder: coder) }
+
     override var drawableSize: CGSize {
         get { super.drawableSize }
         set { if Int(newValue.width) > 1 && Int(newValue.height) > 1 { super.drawableSize = newValue } }

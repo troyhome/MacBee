@@ -14,8 +14,9 @@ struct ShowDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .bottom, spacing: 28) {
-                    PosterImage(path: show.posterPath, title: show.title, maxPixels: 700, previewFile: show.firstEpisode?.file)
+                    Color.clear
                         .aspectRatio(2 / 3, contentMode: .fit)
+                        .overlay { PosterImage(path: show.posterPath, title: show.title, maxPixels: 700, previewFile: show.firstEpisode?.file) }
                         .frame(width: 200)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .shadow(color: .black.opacity(0.5), radius: 16, y: 8)
