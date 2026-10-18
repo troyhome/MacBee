@@ -211,6 +211,19 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     paused folders skipped) when the song's file can't be reached, before falling back to Plex.
   - Home: `SourceBadge` (Local Library / Plex Server / Library offline) with a switch: on = playbackSource .plex,
     off = .automatic. It switches where songs play from; the library list itself stays the same songs.
+  - Fixes after Troy's first Phase 2 test (2026-10-18):
+    - Duplicates matched by `DuplicateFinder.fingerprint` (letters/digits only), so ’ vs ' and punctuation
+      don't matter (Guns N' Roses showed twice).
+    - Compilation detection: DB v6 `track.onCompilation`, set in `refreshVisibility` when tagged as compilation,
+      filed under Various Artists, or the song's folder holds 3+ different artists (many compilations aren't
+      tagged; e.g. 4 Non Blondes on "If I Were A Carpenter"). Hidden artists on Troy's library: 19 of 226.
+    - Tags page (`MacBee/Tags/`): Duplicates (every song with several copies; per copy: Remove from Library,
+      Keep Only This Copy, Show in Finder, Move File to Trash; Remove All Extra Copies; Restore Removed Copies)
+      and a TagBee tab (opens TagBee; full integration is Phase 5). "Remove from Library" sets DB v6
+      `track.isExcluded` (kept across scans, hidden everywhere, playlists too). Trash uses
+      FileManager.trashItem only, never a permanent delete; drives without a Trash leave the file alone.
+    - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
+      library shows each once.
 - Roadmap Phases 3-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

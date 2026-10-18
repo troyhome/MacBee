@@ -22,6 +22,14 @@ final class DuplicateFinderTests: XCTestCase {
         XCTAssertEqual(DuplicateFinder.duplicates(in: [song(1, duration: 200), song(2, duration: 201.5)]).count, 1)
     }
 
+    func testApostrophesAndPunctuationDontMatter() {
+        var curly = song(2, title: "Sweet Child o’ Mine")
+        curly.artist = "Guns N’ Roses"
+        var straight = song(1, title: "Sweet Child O' Mine")
+        straight.artist = "Guns N' Roses"
+        XCTAssertEqual(DuplicateFinder.duplicates(in: [straight, curly]).count, 1)
+    }
+
     func testCaseAndAccentsDontMatterButTitlesDo() {
         var other = song(2)
         other.artist = "BALTHAZAR"
@@ -79,6 +87,25 @@ final class SourcesTests: XCTestCase {
         XCTAssertEqual(folders.first { $0.id == first.folder }?.isPaused, true)
     }
 
+    func testDuplicatesPageAndRemovingCopies() async throws {
+        let first = try await addCopy(folder: "/A")
+        let second = try await addCopy(folder: "/B")
+        try await db.refreshVisibility()
+        var groups = try await db.duplicateGroups()
+        XCTAssertEqual(groups.count, 1)
+        XCTAssertEqual(groups[0].copies.map(\.track.id), [first.track, second.track])
+        try await db.excludeTracks([second.track])
+        try await db.refreshVisibility()
+        groups = try await db.duplicateGroups()
+        XCTAssertTrue(groups.isEmpty)
+        let removed = try await db.excludedTrackCount()
+        XCTAssertEqual(removed, 1)
+        try await db.restoreExcludedTracks()
+        try await db.refreshVisibility()
+        groups = try await db.duplicateGroups()
+        XCTAssertEqual(groups.count, 1)
+    }
+
     func testNewFoldersGoToTheBottom() async throws {
         _ = try await db.insertFolder(path: "/Z", name: "Z")
         _ = try await db.insertFolder(path: "/A", name: "A")
@@ -93,10 +120,17 @@ final class SourcesTests: XCTestCase {
         var guest = ScannedTrack(path: "/M/C/1.flac", fileSize: 1, modifiedAt: Date())
         guest.title = "Guest"; guest.artist = "Guest Star"; guest.albumArtist = "Guest Star"; guest.album = "Hits"
         guest.isCompilation = true; guest.duration = 100; guest.codec = "FLAC"
-        _ = try await db.save([own, guest], folderId: folder.id!)
+        // An untagged compilation: three artists in one folder.
+        let untagged = ["Band One", "Band Two", "Band Three"].enumerated().map { index, artist -> ScannedTrack in
+            var t = ScannedTrack(path: "/M/Tribute/\(index).flac", fileSize: 1, modifiedAt: Date())
+            t.title = "Cover \(index)"; t.artist = artist; t.album = "Tribute"; t.duration = 100; t.codec = "FLAC"
+            return t
+        }
+        _ = try await db.save([own, guest] + untagged, folderId: folder.id!)
+        try await db.refreshVisibility()
         let all = try await db.artists().map(\.name)
         let hidden = try await db.artists(hidingCompilationOnly: true).map(\.name)
-        XCTAssertEqual(all.count, 2)
+        XCTAssertEqual(all.count, 5)
         XCTAssertEqual(hidden, ["Solo"])
     }
 }

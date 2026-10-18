@@ -122,6 +122,24 @@ public final class MusicLibrary {
         if !paused { requestScan([id]) }
     }
 
+    /// Takes copies out of the library for good (Duplicates page). Files stay on disk.
+    public func removeFromLibrary(trackIds: [Int64]) async throws {
+        try await database.excludeTracks(trackIds)
+        await applyVisibility()
+    }
+
+    /// Brings back every copy removed on the Duplicates page.
+    public func restoreRemovedCopies() async throws {
+        try await database.restoreExcludedTracks()
+        await applyVisibility()
+    }
+
+    /// Forgets songs whose files were moved to the Trash.
+    public func forgetDeletedFiles(trackIds: [Int64]) async throws {
+        try await database.deleteTracks(trackIds)
+        await applyVisibility()
+    }
+
     /// Re-works out paused folders and duplicates, then refreshes every list.
     func applyVisibility() async {
         do {

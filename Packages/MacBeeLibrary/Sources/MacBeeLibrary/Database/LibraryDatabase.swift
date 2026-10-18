@@ -147,17 +147,26 @@ public final class LibraryDatabase: Sendable {
             try db.create(index: "track_on_duplicateOf", on: "track", columns: ["duplicateOf"])
         }
 
+        // Duplicates page: copies removed from the library by hand; songs that sit on compilations.
+        migrator.registerMigration("v6") { db in
+            try db.alter(table: "track") { t in
+                t.add(column: "isExcluded", .boolean).notNull().defaults(to: false)
+                t.add(column: "onCompilation", .boolean).notNull().defaults(to: false)
+            }
+        }
+
         return migrator
     }
 
     /// SQL for songs that show in the library: present, not in a paused folder, and not a second copy of a
     /// song (duplicates show once, as their best copy). `prefix` is a table name with a dot, e.g. "track.".
     static func visible(_ prefix: String = "") -> String {
-        "\(prefix)isMissing = 0 AND \(prefix)isPaused = 0 AND \(prefix)duplicateOf IS NULL"
+        "\(prefix)isMissing = 0 AND \(prefix)isPaused = 0 AND \(prefix)isExcluded = 0 AND \(prefix)duplicateOf IS NULL"
     }
 
     /// SQL for songs a playlist shows: like `visible`, but a duplicate copy someone put in a playlist stays.
+    /// (Copies removed on the Duplicates page leave playlists too.)
     static func playable(_ prefix: String = "") -> String {
-        "\(prefix)isMissing = 0 AND \(prefix)isPaused = 0"
+        "\(prefix)isMissing = 0 AND \(prefix)isPaused = 0 AND \(prefix)isExcluded = 0"
     }
 }

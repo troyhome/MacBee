@@ -6,7 +6,8 @@ public extension LibraryDatabase {
 
     /// `visible()` as a GRDB filter.
     internal static var isVisible: SQLExpression {
-        Column("isMissing") == false && Column("isPaused") == false && Column("duplicateOf") == nil
+        Column("isMissing") == false && Column("isPaused") == false && Column("isExcluded") == false
+            && Column("duplicateOf") == nil
     }
 
     /// Columns that build an `AlbumSummary` from `track` rows grouped by albumKey.
@@ -85,9 +86,9 @@ public extension LibraryDatabase {
     }
 
     /// Every album artist. `hidingCompilationOnly` leaves out artists whose songs are all on compilations
-    /// (they have no album of their own).
+    /// (they have no album of their own). See `refreshVisibility` for how compilations are recognised.
     func artists(hidingCompilationOnly: Bool = false) async throws -> [ArtistSummary] {
-        let having = hidingCompilationOnly ? "HAVING MIN(isCompilation) = 0" : ""
+        let having = hidingCompilationOnly ? "HAVING MIN(onCompilation) = 0" : ""
         return try await writer.read { db in
             try ArtistSummary.fetchAll(db, sql: """
                 SELECT artistKey,

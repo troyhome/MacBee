@@ -26,6 +26,14 @@ public enum DuplicateFinder {
         }
     }
 
+    /// Letters and digits only, lowercased and without accents, so "Sweet Child O' Mine" and
+    /// "Sweet Child o’ Mine" (straight vs curly apostrophe) match.
+    public static func fingerprint(_ text: String) -> String {
+        let folded = LibraryKeys.normalize(text)
+        let kept = folded.unicodeScalars.map { CharacterSet.alphanumerics.contains($0) ? Character($0) : " " }
+        return String(kept).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+
     /// The longest gap allowed between the lengths of two copies.
     public static let durationTolerance: Double = 2
 
@@ -33,9 +41,9 @@ public enum DuplicateFinder {
     public static func duplicates(in songs: [Song]) -> [Int64: Int64] {
         var groups: [String: [Song]] = [:]
         for song in songs {
-            let title = LibraryKeys.normalize(song.title)
+            let title = fingerprint(song.title)
             guard !title.isEmpty else { continue } // untagged files can't be told apart
-            let key = [LibraryKeys.normalize(song.artist), title, LibraryKeys.normalize(song.album)].joined(separator: "\u{1F}")
+            let key = [fingerprint(song.artist), title, fingerprint(song.album)].joined(separator: "\u{1F}")
             groups[key, default: []].append(song)
         }
         var result: [Int64: Int64] = [:]

@@ -35,8 +35,7 @@ struct ContentRouter: View {
                 }
             }
         case .tags:
-            PlaceholderView(title: "Tags", systemImage: "tag",
-                            message: "Browsing by genre and other tags comes later.")
+            stack { TagsView() }
         case .playlistStudio:
             stack { PlaylistStudioView() }
         }
