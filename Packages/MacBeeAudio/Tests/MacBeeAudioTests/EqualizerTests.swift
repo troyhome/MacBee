@@ -14,7 +14,7 @@ final class EqualizerTests: XCTestCase {
         XCTAssertFalse(eq.isActive)
         eq.apply(.flat)
         XCTAssertFalse(eq.isActive)
-        eq.apply(.rock)
+        eq.apply(.punchy)
         XCTAssertTrue(eq.isActive)
         eq.isEnabled = false
         XCTAssertFalse(eq.isActive)
@@ -35,16 +35,16 @@ final class EqualizerTests: XCTestCase {
     }
 
     func testBuiltInPresets() {
-        XCTAssertEqual(EqualizerPreset.builtIns.map(\.name), ["Flat", "Typical", "Rock", "Soft", "Electronic", "Indie"])
+        XCTAssertEqual(EqualizerPreset.builtIns.map(\.name), ["Flat", "Typical", "Punchy", "Reduce Treble", "Brite", "Indie"])
         XCTAssertEqual(Set(EqualizerPreset.builtIns.map(\.id)).count, 6)
         for preset in EqualizerPreset.builtIns {
             XCTAssertEqual(preset.gains.count, 16, preset.name)
             XCTAssertTrue(preset.isBuiltIn)
         }
         var eq = EqualizerSettings(isEnabled: true)
-        eq.apply(.electronic)
-        XCTAssertTrue(eq.matches(.electronic))
-        XCTAssertFalse(eq.matches(.rock))
+        eq.apply(.brite)
+        XCTAssertTrue(eq.matches(.brite))
+        XCTAssertFalse(eq.matches(.punchy))
     }
 
     func testOldSavedSettingsDecode() throws {

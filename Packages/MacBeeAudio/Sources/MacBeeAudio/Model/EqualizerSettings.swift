@@ -87,15 +87,15 @@ public struct EqualizerPreset: Codable, Sendable, Equatable, Identifiable, Hasha
                                          [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0])
     public static let typical = builtIn(2, "Typical", preamp: -3,
                                          [   3,   3, 2.5,   2,   1, 0.5,   0,   0,   0,   0, 0.5,   1, 1.5,   2,   2, 1.5])
-    public static let rock = builtIn(3, "Rock", preamp: -4,
+    public static let punchy = builtIn(3, "Punchy", preamp: -4,
                                          [   4,   4, 3.5,   3,   2,   0,  -1,-1.5,  -1,   0,   1, 2.5, 3.5,   4,   4, 3.5])
-    public static let soft = builtIn(4, "Soft", preamp: 0,
+    public static let reduceTreble = builtIn(4, "Reduce Treble", preamp: 0,
                                          [   1,   1,   1, 0.5,   0,   0,   0,   0,  -1,-1.5,  -2,-2.5,  -3,-3.5,  -4,  -4])
-    public static let electronic = builtIn(5, "Electronic", preamp: -5,
+    public static let brite = builtIn(5, "Brite", preamp: -5,
                                          [ 5.5,   5, 4.5,   3,   1,   0,  -1,  -1,   0,   1, 1.5,   2,   3,   4, 4.5,   4])
     public static let indie = builtIn(6, "Indie", preamp: -3,
                                          [   2, 2.5, 2.5,   2,   1,   0,  -1,  -1,   0,   1,   2,   3,   3, 2.5,   2, 1.5])
 
     /// In the order shown in the preset menu.
-    public static let builtIns: [EqualizerPreset] = [flat, typical, rock, soft, electronic, indie]
+    public static let builtIns: [EqualizerPreset] = [flat, typical, punchy, reduceTreble, brite, indie]
 }

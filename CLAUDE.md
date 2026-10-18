@@ -387,8 +387,9 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   disconnected, so bit-perfect is untouched. Format changes re-wire it via the SFB delegate
   `reconfigureProcessingGraph`. Active EQ = SignalPathStatus issue `.equalizer` + orange "EQ" tag by the badge.
   App: `MacBee/Equalizer/` (EqualizerStore: UserDefaults "equalizer", "equalizerPresets", "equalizerPreset"; per
-  Mac). Presets Flat, Typical, Rock, Soft, Electronic, Indie + unlimited saved ones. Off by default.
-  `macbee-play --eq rock` (q toggles) tests it from Terminal.
+  Mac). Presets Flat, Typical, Punchy, Reduce Treble, Brite, Indie (renamed by Troy from Rock/Soft/Electronic);
+  saved ones listed first in the menu. Window stays in front (WindowLevelSetter). Off by default.
+  `macbee-play --eq punchy` (q toggles) tests it from Terminal.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

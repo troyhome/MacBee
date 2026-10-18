@@ -3,7 +3,7 @@
 //   swift run macbee-play --list-devices
 //   swift run macbee-play [--exclusive] [--dop] [--software-volume 0.5] [--device "Name"] file1.flac file2.flac ...
 //
-//   swift run macbee-play --eq Rock file.flac
+//   swift run macbee-play --eq Punchy file.flac
 //
 // While playing, type: p (pause/resume), n (next), e (jump to last 10 seconds), s (stop and quit), +/- (volume),
 // q (equalizer on/off).
@@ -137,7 +137,7 @@ func run() {
                 }
             case "q":
                 var eq = engine.equalizer
-                if eq.isFlat { eq.apply(.rock) }
+                if eq.isFlat { eq.apply(.punchy) }
                 eq.isEnabled.toggle()
                 engine.applyEqualizer(eq)
                 print("  equalizer \(eq.isActive ? "on" : "off")")

@@ -16,6 +16,7 @@ struct EqualizerView: View {
         }
         .padding(18)
         .background(theme.background)
+        .background(WindowLevelSetter(floating: true))
         .fixedSize()
         .alert("Save Preset", isPresented: $isNaming) {
             TextField("Preset name", text: $newName)
@@ -47,17 +48,20 @@ struct EqualizerView: View {
 
     private var presetMenu: some View {
         Menu(eq.presetTitle) {
-            Section("Presets") {
-                ForEach(EqualizerPreset.builtIns) { preset in
-                    presetButton(preset)
-                }
-            }
             if !eq.customPresets.isEmpty {
                 Section("My Presets") {
                     ForEach(eq.customPresets) { preset in
                         presetButton(preset)
                     }
                 }
+            }
+            Section("Presets") {
+                ForEach(EqualizerPreset.builtIns) { preset in
+                    presetButton(preset)
+                }
+            }
+            if !eq.customPresets.isEmpty {
+                Divider()
                 Menu("Delete Preset") {
                     ForEach(eq.customPresets) { preset in
                         Button(preset.name) { eq.deleteCustomPreset(preset) }
