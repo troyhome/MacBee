@@ -311,7 +311,7 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     song, no playlist file). Two-finger tap stopped working: diagnostic log added (category "SecondaryClick").
 - Roadmap Phase 4 PASSED (Troy, 2026-10-18: "Next"). Plex posters came back after Troy signed in to Plex again
   (the keychain change on the other Mac had lost the token on this Mac: both keychains returned -25300).
-- Roadmap Phase 5 BUILT 2026-10-18, waiting for Troy's smoke tests (needs both Macs updated):
+- Roadmap Phase 5 PASSED 2026-10-18 (Troy confirmed automatic sync works between CMBA and DDMBA). Roadmap complete:
   - TagBee: Track Studio > TagBee tab = search songs, tick, "Open N in TagBee" (double-click opens one), and a
     "Send to TagBee" menu (song playing / album playing / just open TagBee). Uses `ExternalTagEditor`, which
     re-reads files when TagBee saves. (Embedding TagBee inside MacBee isn't possible: it's a separate app.)
@@ -373,7 +373,7 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     removed. Applied with `LibraryDatabase.applyProfile` (minimal diff, keeps playlist ids). Video likes sync
     by file/folder name (`VideoLibrary.syncedLikeKeys` / `setSyncedLikes`, unmatched keys kept). Snapshots now
     include favorites/ratings of missing (unplugged) songs. Safety: refuses when either side has no favorites,
-    playlists or plays; daily backup Library-before-auto-sync.sqlite. Not yet tested between the two real Macs.
+    playlists or plays; daily backup Library-before-auto-sync.sqlite. Troy confirmed it works between both Macs.
   - Music (Home) in the sidebar always leaves Track Studio and Playlist Studio (removed from
     `browsableBesideTrackStudio`). Track Studio title stays on one line in a narrow pane.
 - All five roadmap phases built.

@@ -1,7 +1,7 @@
 # MacBee Development Roadmap (after 1.0)
 
-Troy's roadmap, received 2026-10-17. Work goes one phase at a time. Status (2026-10-18): Phases 1–4 passed,
-Phase 5 built and waiting for Troy's test. Phase status is tracked in
+Troy's roadmap, received 2026-10-17. Work goes one phase at a time. Status (2026-10-18): all five phases
+passed (Troy confirmed). Roadmap complete. Phase status is tracked in
 `CLAUDE.md` (Status section) so either Mac picks up where things stand.
 
 ## Phase Progression Rules
