@@ -17,6 +17,7 @@ struct VideosView: View {
     @State private var genre: String?
     @State private var searchText = ""
     @State private var open: VideoTitle?
+    @State private var sort = VideoSort()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -37,6 +38,9 @@ struct VideosView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle(embedded ? "Collections" : "Videos")
+        .onAppear { sort = VideoSort.load(for: shownCategory) }
+        .onChange(of: shownCategory) { _, new in sort = VideoSort.load(for: new) }
+        .onChange(of: sort) { _, new in new.save(for: shownCategory) }
         .task(id: "\(library.revision)-\(preferences.videoFolders.count)") { await app.refreshVideosIfStale() }
     }
 
@@ -64,6 +68,16 @@ struct VideosView: View {
             .buttonStyle(.borderless)
             .disabled(app.videos.isScanning)
             .help("Look for new videos")
+            if shownCategory == .shows {
+                @Bindable var preferences = preferences
+                Toggle("Continuous Play", isOn: $preferences.continuousPlayEpisodes)
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .help("Play the next episode automatically when one ends")
+            }
+            if Self.sortable.contains(shownCategory) {
+                VideoSortMenu(category: shownCategory, sort: $sort)
+            }
             FilterField(prompt: "Search videos", text: $searchText)
                 .frame(width: 220)
         }
@@ -85,8 +99,12 @@ struct VideosView: View {
         }
     }
 
+    private static let sortable: Set<VideoCategory> = [.movies, .shows, .musicVideos]
+
     private var titles: [VideoTitle] {
-        app.videos.titles(in: shownCategory, genre: genre ?? app.videos.catalog.genres.first, matching: searchText)
+        let titles = app.videos.titles(in: shownCategory, genre: genre ?? app.videos.catalog.genres.first,
+                                       matching: searchText)
+        return Self.sortable.contains(shownCategory) ? sort.apply(to: titles) : titles
     }
 
     @ViewBuilder

@@ -44,6 +44,8 @@ final class VideoSession {
 
     private func playNext() {
         library.savePosition(player.duration, duration: player.duration, for: current.file.path)
+        // Continuous Play (Videos > TV Shows, or Settings > General) off: stop after this episode.
+        guard UserDefaults.standard.object(forKey: "continuousPlayEpisodes") as? Bool ?? true else { return }
         guard let next = current.upNext.first else { return }
         var item = VideoPlayback(title: next.title, subtitle: next.subtitle, file: next.file, likeId: current.likeId)
         item.upNext = Array(current.upNext.dropFirst())

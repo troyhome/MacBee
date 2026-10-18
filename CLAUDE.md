@@ -401,6 +401,14 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   Playing From (and showCurrentAlbum) in Track Studio opens beside the studio instead of leaving it (Troy).
   Artist page album headers (Albums and songs layout): heart button + "…" menu (`AlbumMoreMenu`: Play Next,
   Add to Queue, Add to Playlist) next to Play.
+- Random play (Troy): right-click Artists / Albums / Playlists in the sidebar > dice "Play a Random Artist/Album/
+  Playlist" (`RandomPlayMenu`, `AppModel.playRandom*`).
+- Continuous play (Troy): Settings > General > Continuous play. `continuousPlay` (default on): when the queue ends
+  (engine `.queueFinished` via eventHandler in AppModel), `PlayerViewModel.queueDidFinish` starts an endless mix from
+  the last song. `continuousPlayEpisodes` (default on, also a switch on Videos > TV Shows): next episode autoplay.
+- Video sorting (Troy): sort menu next to the search box on Movies / TV Shows / Music Videos (`VideoSort.swift`):
+  Title, Year, Genre, Date Added (music videos: Title, Artist, Date Added), Ascending/Descending; saved per page in
+  UserDefaults "videoSort.<category>".
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

@@ -28,6 +28,10 @@ final class PreferencesStore {
     var videoFolders: [String] { didSet { save(videoFolders, "videoFolders") } }
     /// The keyboard's media keys control MacBee whenever it has music loaded, even with other players open.
     var mediaKeysAlwaysMacBee: Bool { didSet { save(mediaKeysAlwaysMacBee, "mediaKeysAlwaysMacBee") } }
+    /// When a song, album or playlist ends, keep going with a mix made from the last song.
+    var continuousPlay: Bool { didSet { save(continuousPlay, "continuousPlay") } }
+    /// TV shows: the next episode starts when one ends.
+    var continuousPlayEpisodes: Bool { didSet { save(continuousPlayEpisodes, "continuousPlayEpisodes") } }
 
     static let sidebarWidthRange: ClosedRange<Double> = 170...280
 
@@ -49,6 +53,8 @@ final class PreferencesStore {
         hideCompilationOnlyArtists = d.object(forKey: "hideCompilationOnlyArtists") as? Bool ?? false
         videoFolders = d.stringArray(forKey: "videoFolders") ?? []
         mediaKeysAlwaysMacBee = d.object(forKey: "mediaKeysAlwaysMacBee") as? Bool ?? true
+        continuousPlay = d.object(forKey: "continuousPlay") as? Bool ?? true
+        continuousPlayEpisodes = d.object(forKey: "continuousPlayEpisodes") as? Bool ?? true
         useDefaultTagEditorIfNeeded()
     }
 

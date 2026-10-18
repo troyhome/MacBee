@@ -99,11 +99,15 @@ final class PlayerViewModel {
 
     /// Right-click > Start Mix: plays this song, then similar songs (same and similar artists, same genre).
     /// The mix keeps going: more songs are added whenever only a few are left.
-    func startMix(from seed: Track) async {
+    func startMix(from seed: Track, includingSeed: Bool = true) async {
         guard let database else { return }
         do {
             let songs = try await database.songMix(from: seed)
-            continueOrPlay(seed, then: songs)
+            if includingSeed {
+                continueOrPlay(seed, then: songs)
+            } else {
+                play(songs)
+            }
             mixSeed = seed
         } catch {
             errorMessage = error.localizedDescription
@@ -133,6 +137,12 @@ final class PlayerViewModel {
         } else {
             play([first] + rest)
         }
+    }
+
+    /// The engine played the last song in the queue. With continuous play on, a mix from that song follows.
+    func queueDidFinish() {
+        guard preferences.continuousPlay, let last = queue.tracks.last ?? currentTrack else { return }
+        Task { await startMix(from: last, includingSeed: false) }
     }
 
     /// Adds the next batch when three or fewer songs are left after the current one, built from the last

@@ -52,6 +52,13 @@ struct GeneralPreferences: View {
             Section("Display") {
                 Toggle("Show quality badges (e.g. FLAC 24/96)", isOn: $preferences.showQualityBadges)
             }
+            Section("Continuous play") {
+                Toggle("Keep playing when a song, album or playlist ends", isOn: $preferences.continuousPlay)
+                Text("MacBee carries on with a mix made from the last song. Repeat All still repeats instead.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Toggle("TV shows: play the next episode automatically", isOn: $preferences.continuousPlayEpisodes)
+            }
             Section("Media keys") {
                 Toggle("Media keys always control MacBee", isOn: $preferences.mediaKeysAlwaysMacBee)
                     .onChange(of: preferences.mediaKeysAlwaysMacBee) { _, on in

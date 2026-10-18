@@ -136,6 +136,9 @@ final class AppModel {
         }
         networkSync?.likedVideos = { [weak self] in self?.videos.syncedLikeKeys ?? [] }
         networkSync?.setLikedVideos = { [weak self] keys in self?.videos.setSyncedLikes(keys) ?? 0 }
+        engine.eventHandler = { [weak self] event in
+            if case .queueFinished = event { self?.player.queueDidFinish() }
+        }
         player.onNewQueue = { [weak self] album in
             guard let self else { return }
             // A whole album started from a grid opens that album's page; anything else returns to the page it was on.
@@ -291,6 +294,30 @@ final class AppModel {
                                      file: episode.file, likeId: show.id)
         playback.upNext = rest.map { (episodeTitle($0), "\(show.title) · \($0.code)", $0.file) }
         playVideo(playback)
+    }
+
+    // MARK: - Random play (right-click Artists / Albums / Playlists in the sidebar)
+
+    func playRandomArtist() async {
+        guard let database = library?.database,
+              let artist = try? await database.artists(hidingCompilationOnly: preferences.hideCompilationOnlyArtists)
+                .randomElement() else { return }
+        player.play(await player.tracks(of: artist).shuffled())
+    }
+
+    func playRandomAlbum() async {
+        guard let database = library?.database,
+              let album = try? await database.albums(sortedBy: .artist).randomElement() else { return }
+        await player.playAlbum(album)
+    }
+
+    func playRandomPlaylist() async {
+        guard let playlists else { return }
+        for playlist in playlists.allPlaylists.shuffled() {
+            guard let id = playlist.id else { continue }
+            let tracks = await playlists.tracks(for: .playlist(id))
+            if !tracks.isEmpty { return player.play(tracks) }
+        }
     }
 
     func playMusicVideo(_ video: MusicVideo) {

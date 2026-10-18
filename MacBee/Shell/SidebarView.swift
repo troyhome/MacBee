@@ -25,6 +25,7 @@ struct SidebarView: View {
                 SidebarRow(item: item, isSelected: isSelected(item), collapsed: collapsed) {
                     app.go(to: item)
                 }
+                .contextMenu { RandomPlayMenu(item: item) }
             }
             studios
             if collapsed {
