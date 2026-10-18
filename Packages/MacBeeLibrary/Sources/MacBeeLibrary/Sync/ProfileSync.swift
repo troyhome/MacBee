@@ -96,6 +96,26 @@ public extension LibraryDatabase {
         }
     }
 
+    /// Makes this library match another Mac's: its favorites and playlists replace this Mac's (playlists and
+    /// folders that Mac doesn't have are deleted here; the others get exactly its songs, in its order).
+    /// Plays are still added, never removed, since they really happened. Back up first.
+    func mirrorProfile(_ snapshot: ProfileSnapshot) async throws -> ProfileMergeReport {
+        try await writer.write { db in
+            try db.execute(sql: "UPDATE track SET isFavorite = 0")
+            try db.execute(sql: "DELETE FROM playlistItem")
+            try db.execute(sql: "DELETE FROM playlist")
+        }
+        return try await mergeProfile(snapshot)
+    }
+
+    /// Copies the whole library database to `url` (a safety copy before a sync replaces things).
+    func backup(to url: URL) async throws {
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let destination = try DatabaseQueue(path: url.path)
+        let source = writer
+        try await Task.detached { try source.backup(to: destination) }.value
+    }
+
     /// Brings another Mac's plays, favorites, ratings and playlists into this library. Nothing is deleted:
     /// plays are added if this Mac doesn't have them (same song, same minute), favorites and ratings are added,
     /// new playlists are created and songs missing from a shared playlist are added at the end.

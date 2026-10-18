@@ -323,6 +323,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     with playCount/lastPlayedAt updated; favorites and higher ratings added; playlists matched by folder path +
     name, created or missing songs appended. Never deletes anything (un-favoriting or removing a playlist song
     doesn't travel). Music files aren't copied. Not done: syncing through Plex.
+    - Every Sync Now first shows `SyncChoiceSheet` (Troy, after a first sync surprised him): Combine both Macs
+      (default), Make <other> match this Mac (`Mode.sendMine`: the other Mac mirrors), Make this Mac match <other>
+      (`takeTheirs`). Mirroring (`mirrorProfile`) deletes the target's playlists/folders and favorites, then merges
+      the snapshot; plays are always added. The Mac being changed saves `Library-before-sync-<date>.sqlite` first.
+      Older MacBees ignore the mode (combine). Checked after Troy's first sync: CMBA received DDMBA's playlists
+      ("First Playlist", folder "Mixesblitzes" > "mix 1") and plays (29 -> 100).
   - Track Studio is a mode like Playlist Studio (Troy): click it to enter, again to leave
     (`AppModel.toggleTrackStudio`, `isInTrackStudio`); STUDIO MODE badge and accent tint; a playlist (or smart
     playlist) clicked in the sidebar becomes the TagBee tab's song source (`trackStudioSourcePlaylistId`,

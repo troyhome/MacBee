@@ -39,4 +39,19 @@ final class ProfileSyncTests: XCTestCase {
         let again = try await macB.mergeProfile(try await macA.profileSnapshot(deviceName: "A"))
         XCTAssertEqual(again, ProfileMergeReport())
     }
+
+    func testMirrorReplacesPlaylistsAndFavorites() async throws {
+        let (macA, a) = try await library(drive: "A")
+        let (macB, b) = try await library(drive: "B")
+        let mine = try await macA.createPlaylist(name: "Keep Me")
+        try await macA.addTracks([a[0]], toPlaylist: mine.id!)
+        _ = try await macB.createPlaylist(name: "Test Playlist on B")
+        try await macB.setFavorite(trackId: b[2], true)
+
+        _ = try await macB.mirrorProfile(try await macA.profileSnapshot(deviceName: "A"))
+        let names = try await macB.playlists().map(\.name)
+        XCTAssertEqual(names, ["Keep Me"])
+        let unfavored = try await macB.track(id: b[2])
+        XCTAssertEqual(unfavored?.isFavorite, false)
+    }
 }

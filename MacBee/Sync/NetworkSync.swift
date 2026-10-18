@@ -18,6 +18,17 @@ final class NetworkSync {
 
     static let serviceType = "_macbee-sync._tcp"
 
+    /// How two Macs are brought together. Plays and history are always combined (they really happened).
+    enum Mode: String, Codable, CaseIterable, Identifiable {
+        /// Everything from both Macs ends up on both; nothing is deleted.
+        case combine
+        /// The other Mac's favorites and playlists are replaced by this Mac's.
+        case sendMine
+        /// This Mac's favorites and playlists are replaced by the other Mac's.
+        case takeTheirs
+        var id: String { rawValue }
+    }
+
     private(set) var peers: [Peer] = []
     private(set) var syncingWith: String?
     /// The result of the last sync (either direction).
@@ -102,8 +113,8 @@ final class NetworkSync {
 
     // MARK: - Syncing
 
-    /// Sends this Mac's data to `peer`, gets theirs back, and adds it here.
-    func sync(with peer: Peer, code: String) async {
+    /// Sends this Mac's data to `peer`, gets theirs back, and adds it here (or replaces, per `mode`).
+    func sync(with peer: Peer, code: String, mode: Mode = .combine) async {
         syncingWith = peer.name
         defer { syncingWith = nil }
         let connection = NWConnection(to: peer.endpoint, using: .tcp)
@@ -111,16 +122,25 @@ final class NetworkSync {
         do {
             try await Wire.open(connection)
             let mine = try await library.database.profileSnapshot(deviceName: deviceName)
-            try await Wire.send(Request(code: code, snapshot: mine), on: connection)
+            try await Wire.send(Request(code: code, snapshot: mine, mode: mode), on: connection)
             let response: Response = try await Wire.receive(on: connection)
             guard response.ok, let theirs = response.snapshot else {
                 lastMessage = response.error ?? "\(peer.name) didn't accept the sync."
                 return
             }
             saveCode(code, for: peer)
-            let report = try await library.database.mergeProfile(theirs)
+            switch mode {
+            case .combine:
+                let report = try await library.database.mergeProfile(theirs)
+                lastMessage = "Combined with \(peer.name). Here: \(report.summary) There: \(response.report ?? "")"
+            case .sendMine:
+                lastMessage = "\(peer.name) now matches this Mac. \(response.report ?? "")"
+            case .takeTheirs:
+                let backup = try await backUpLibrary()
+                _ = try await library.database.mirrorProfile(theirs)
+                lastMessage = "This Mac now matches \(peer.name). A copy of this Mac's library from before is in \(backup.lastPathComponent)."
+            }
             await onMerged?()
-            lastMessage = "Synced with \(peer.name). Here: \(report.summary) There: \(response.report ?? "")"
         } catch {
             lastMessage = "Couldn't sync with \(peer.name). \(error.localizedDescription)"
         }
@@ -137,19 +157,48 @@ final class NetworkSync {
                                     on: connection)
                 return
             }
-            let report = try await library.database.mergeProfile(request.snapshot)
-            let mine = try await library.database.profileSnapshot(deviceName: deviceName)
-            try await Wire.send(Response(ok: true, snapshot: mine, report: report.summary), on: connection)
+            let from = request.snapshot.deviceName
+            switch request.mode ?? .combine {
+            case .combine:
+                let report = try await library.database.mergeProfile(request.snapshot)
+                let mine = try await library.database.profileSnapshot(deviceName: deviceName)
+                try await Wire.send(Response(ok: true, snapshot: mine, report: report.summary), on: connection)
+                lastMessage = "\(from) combined with this Mac. \(report.summary)"
+            case .sendMine:
+                // The other Mac asked for this one to match it.
+                let backup = try await backUpLibrary()
+                _ = try await library.database.mirrorProfile(request.snapshot)
+                let mine = try await library.database.profileSnapshot(deviceName: deviceName)
+                try await Wire.send(Response(ok: true, snapshot: mine, report: "Its playlists and favorites were replaced; a backup was saved there."),
+                                    on: connection)
+                lastMessage = "\(from) made this Mac match it. A copy of this Mac's library from before is in \(backup.lastPathComponent)."
+            case .takeTheirs:
+                // The other Mac will make itself match this one: just send ours.
+                let mine = try await library.database.profileSnapshot(deviceName: deviceName)
+                try await Wire.send(Response(ok: true, snapshot: mine, report: nil), on: connection)
+                lastMessage = "\(from) copied this Mac's playlists and favorites."
+            }
             await onMerged?()
-            lastMessage = "\(request.snapshot.deviceName) synced with this Mac. \(report.summary)"
         } catch {
             lastMessage = "A sync from another Mac didn't finish. \(error.localizedDescription)"
         }
     }
 
+    /// Saves a copy of this Mac's library database before a sync replaces anything.
+    private func backUpLibrary() async throws -> URL {
+        let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false))
+            .replacingOccurrences(of: ":", with: "-")
+        let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MacBee/Library-before-sync-\(stamp).sqlite")
+        try await library.database.backup(to: url)
+        return url
+    }
+
     struct Request: Codable {
         var code: String
         var snapshot: ProfileSnapshot
+        /// Missing from older versions: combine.
+        var mode: Mode?
     }
 
     struct Response: Codable {
