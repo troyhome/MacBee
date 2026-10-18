@@ -96,7 +96,7 @@ APPLESCRIPT
         ;;
     release)
         # One step: new version number, .dmg, and a GitHub Release with the .dmg attached.
-        GH="$(command -v gh || echo /opt/homebrew/bin/gh)"
+        GH="$(command -v gh || ls /usr/local/bin/gh /opt/homebrew/bin/gh 2>/dev/null | head -1 || true)"
         if [ ! -x "$GH" ] || ! "$GH" auth status >/dev/null 2>&1; then
             echo "First install GitHub's tool and sign in (once):  brew install gh && gh auth login" >&2
             exit 1
