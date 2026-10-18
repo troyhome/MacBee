@@ -11,6 +11,11 @@ public struct DuplicateGroup: Identifiable, Sendable, Hashable {
     public var id: Int64
     public var copies: [Copy]
 
+    public init(id: Int64, copies: [Copy]) {
+        self.id = id
+        self.copies = copies
+    }
+
     public var shown: Track { copies[0].track }
     public var extras: [Copy] { Array(copies.dropFirst()) }
 }

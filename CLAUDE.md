@@ -222,6 +222,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       and a TagBee tab (opens TagBee; full integration is Phase 5). "Remove from Library" sets DB v6
       `track.isExcluded` (kept across scans, hidden everywhere, playlists too). Trash uses
       FileManager.trashItem only, never a permanent delete; drives without a Trash leave the file alone.
+    - Duplicates page round 2 (Troy): folder menu ("All folders" / "Only <folder>": duplicates inside one
+      folder), tick boxes + Select All/Deselect All (ticks extra copies only) with Remove from Library and
+      Delete from Disk… at the top, Show in Finder button per copy, full path shown while hovering a row.
+      Delete = Trash first; on drives without a Trash (Troy's "music" SMB share has none, "2 Set Music" has
+      one) a second confirmation, then a permanent delete. Troy asked for deleting from disk.
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.
