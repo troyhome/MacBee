@@ -3,8 +3,8 @@ import MacBeeLibrary
 import MacBeeVideo
 import SwiftUI
 
-/// The Videos page, laid out like the Apple TV app: sections on the left (Recently Added, Movies, TV Shows,
-/// 4K HDR, Genres…), posters on the right, and a page for each movie or show.
+/// The Videos page, laid out like the Apple TV app: sections on the left (Movies, TV Shows, Music Videos,
+/// Genres), posters on the right, and a page for each movie or show.
 /// Inside Collection (`embedded`) it shows only liked videos, without the sections.
 struct VideosView: View {
     var embedded = false
@@ -13,7 +13,7 @@ struct VideosView: View {
     @Environment(MusicLibrary.self) private var library
     @Environment(PreferencesStore.self) private var preferences
     @Environment(\.theme) private var theme
-    @AppStorage("videoCategory") private var category: VideoCategory = .recentlyAdded
+    @AppStorage("videoCategory") private var category: VideoCategory = .movies
     @State private var genre: String?
     @State private var searchText = ""
     @State private var open: VideoTitle?
@@ -72,7 +72,18 @@ struct VideosView: View {
         .padding(.bottom, 10)
     }
 
-    private var shownCategory: VideoCategory { embedded ? .liked : category }
+    private var shownCategory: VideoCategory {
+        if embedded { return .liked }
+        return VideoCategory.sidebar.contains(category) ? category : .movies
+    }
+
+    /// Movies (or shows) stopped part-way through, for the row at the top of their page.
+    private var continueWatching: [VideoTitle] {
+        app.videos.continueWatching.filter { title in
+            if case .movie = title { return shownCategory == .movies }
+            return shownCategory == .shows
+        }
+    }
 
     private var titles: [VideoTitle] {
         app.videos.titles(in: shownCategory, genre: genre ?? app.videos.catalog.genres.first, matching: searchText)
@@ -95,18 +106,19 @@ struct VideosView: View {
                         FilterField(prompt: "Search liked videos", text: $searchText)
                             .frame(width: 240)
                     }
-                    if shownCategory == .recentlyAdded && searchText.isEmpty && !app.videos.continueWatching.isEmpty {
+                    if (shownCategory == .movies || shownCategory == .shows) && searchText.isEmpty
+                        && !continueWatching.isEmpty {
                         rowTitle("Continue Watching")
                         HorizontalCarousel {
                             HStack(alignment: .top, spacing: 18) {
-                                ForEach(app.videos.continueWatching) { title in
+                                ForEach(continueWatching) { title in
                                     VideoPosterCard(title: title) { openOrPlay(title) }
                                         .frame(width: 150)
                                 }
                             }
                             .padding(.vertical, 6)
                         }
-                        rowTitle("Recently Added")
+                        rowTitle(shownCategory == .movies ? "All Movies" : "All Shows")
                     }
                     if shownCategory == .genres { genrePicker }
                     VideoPosterGrid(titles: titles) { openOrPlay($0) }
@@ -154,6 +166,9 @@ struct VideosView: View {
             } else if shownCategory == .genres {
                 ContentUnavailableView("No genres found", systemImage: "theatermasks",
                                        description: Text("Genres come from .nfo files next to your videos, or from Plex."))
+            } else if shownCategory == .musicVideos {
+                ContentUnavailableView("No music videos found", systemImage: "music.note.tv",
+                                       description: Text("MacBee looks for videos in your music folders."))
             } else {
                 ContentUnavailableView("Nothing here yet", systemImage: shownCategory.systemImage)
             }
@@ -233,15 +248,5 @@ private struct VideoSidebar: View {
         .frame(width: 180)
     }
 
-    /// Music Videos and Genres appear only when there's something in them.
-    private var shown: [VideoCategory] {
-        VideoCategory.allCases.filter { item in
-            switch item {
-            case .musicVideos: !catalog.musicVideos.isEmpty
-            case .genres: !catalog.genres.isEmpty
-            case .liked: false // liked videos live in Collection
-            default: true
-            }
-        }
-    }
+    private var shown: [VideoCategory] { VideoCategory.sidebar }
 }

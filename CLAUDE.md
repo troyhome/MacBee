@@ -168,8 +168,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       < 20 MB), `VideoCatalogStore` (cache in ~/Library/Application Support/MacBee/videos.json), `MPVPlayer` +
       `MPVVideoView` (libmpv via MPVKit, LGPL product "MPVKit", pinned exact 1.1.0-n9.0.2; vo=gpu-next, MoltenVK,
       videotoolbox). Troy OK'd downloading MPVKit. Checked: MKV and a 4K HDR HEVC MKV play.
-    - App side `MacBee/Videos/`: VideosView (sidebar Recently Added / Movies / TV Shows / 4K HDR / Music Videos /
-      Genres, Continue Watching row, search), Movie/Show detail pages, VideoPlayerOverlay + VideoControls (auto-hide,
+    - App side `MacBee/Videos/`: VideosView (sidebar Movies / TV Shows / Music Videos / Genres only, per Troy;
+      Continue Watching row on Movies and TV Shows; search), Movie/Show detail pages, VideoPlayerOverlay + VideoControls (auto-hide,
       Space/←/→/Esc, audio + subtitle menus, volume, resume positions, next episode autoplay). Likes, positions and
       watched are per Mac in UserDefaults ("likedVideos", "videoPositions", "watchedVideos").
     - Preferences > Library > Video folders (`PreferencesStore.videoFolders`). Troy's: "/Volumes/2 Set 6TB/MOVIES SHOWS"

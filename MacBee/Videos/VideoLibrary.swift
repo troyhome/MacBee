@@ -113,10 +113,8 @@ final class VideoLibrary {
     func titles(in category: VideoCategory, genre: String?, matching text: String) -> [VideoTitle] {
         var titles: [VideoTitle]
         switch category {
-        case .recentlyAdded: titles = allTitles.sorted { $0.added > $1.added }.prefix(60).map { $0 }
         case .movies: titles = catalog.movies.map(VideoTitle.movie)
         case .shows: titles = catalog.shows.map(VideoTitle.show)
-        case .fourK: titles = allTitles.filter(\.is4K)
         case .musicVideos: titles = catalog.musicVideos.map(VideoTitle.musicVideo)
         case .genres: titles = genre.map { genre in allTitles.filter { $0.genres.contains(genre) } } ?? []
         case .liked: titles = (allTitles + catalog.musicVideos.map(VideoTitle.musicVideo)).filter { liked.contains($0.id) }
