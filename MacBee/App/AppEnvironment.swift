@@ -16,6 +16,7 @@ struct AppEnvironment: ViewModifier {
         .environment(model)
         .environment(model.player)
         .environment(model.themeStore)
+        .environment(model.equalizer)
         .environment(model.preferences)
         .environment(\.theme, theme)
         .preferredColorScheme(theme.colorScheme)

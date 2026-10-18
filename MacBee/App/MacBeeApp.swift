@@ -4,6 +4,7 @@ import SwiftUI
 struct MacBeeApp: App {
     static let mainWindowID = "main"
     static let miniPlayerWindowID = "mini"
+    static let equalizerWindowID = "equalizer"
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var model = AppModel()
@@ -18,7 +19,7 @@ struct MacBeeApp: App {
         }
         .commands {
             AboutCommand()
-            PlaybackCommands(player: model.player, preferences: model.preferences)
+            PlaybackCommands(player: model.player, preferences: model.preferences, equalizer: model.equalizer)
             SyncCommands(app: model)
             CommandGroup(after: .textEditing) {
                 Button("Search") { model.focusSearch() }
@@ -38,5 +39,12 @@ struct MacBeeApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultPosition(.topTrailing)
+
+        Window("Equalizer", id: Self.equalizerWindowID) {
+            EqualizerView()
+                .appEnvironment(model)
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }

@@ -10,6 +10,7 @@ struct SignalPathBadge: View {
     var body: some View {
         HStack(spacing: 8) {
             PlexSourceTag()
+            EqualizerTag()
             badge
         }
     }
@@ -46,6 +47,25 @@ struct SignalPathBadge: View {
         lines.append("Output: \(player.engine.outputDevice?.name ?? "none")")
         if let error = player.engine.lastError { lines.append("Last problem: \(error)") }
         return lines.joined(separator: "\n")
+    }
+}
+
+/// "EQ" while the equalizer is changing the sound (it makes playback not bit-perfect).
+private struct EqualizerTag: View {
+    @Environment(EqualizerStore.self) private var eq
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        if eq.isActive {
+            Text("EQ")
+                .font(.system(size: 9, weight: .bold))
+                .tracking(0.6)
+                .foregroundStyle(theme.warning)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .overlay(Capsule().stroke(theme.warning.opacity(0.8), lineWidth: 1))
+                .help("Equalizer is on (\(eq.presetTitle)) and changing the sound, so playback is not bit-perfect.")
+        }
     }
 }
 

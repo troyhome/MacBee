@@ -6,6 +6,8 @@ import SFBAudioEngine
 /// plain values to the engine on the main actor.
 final class PlayerDelegateProxy: NSObject, AudioPlayer.Delegate {
     weak var engine: SFBPlaybackEngine?
+    /// The EQ, so a format change can re-wire it on the player's own thread.
+    var equalizer: EqualizerNode?
 
     func audioPlayer(_ audioPlayer: AudioPlayer, decodingStarted decoder: PCMDecoding) {
         let url = decoder.inputSource.url
@@ -34,6 +36,12 @@ final class PlayerDelegateProxy: NSObject, AudioPlayer.Delegate {
     func audioPlayer(_ audioPlayer: AudioPlayer, encounteredError error: Error) {
         let message = error.localizedDescription
         Task { @MainActor [weak self] in self?.engine?.report(message) }
+    }
+
+    /// Only called while the EQ sits between the source and the mixer (see `EqualizerNode`).
+    func audioPlayer(_ audioPlayer: AudioPlayer, reconfigureProcessingGraph engine: AVAudioEngine,
+                     with format: AVAudioFormat) -> AVAudioNode {
+        equalizer?.reconnect(in: engine, format: format) ?? engine.mainMixerNode
     }
 
     func audioPlayer(_ audioPlayer: AudioPlayer, audioEngineConfigurationChange userInfo: [AnyHashable: Any]?) {

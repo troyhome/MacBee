@@ -5,6 +5,8 @@ import SwiftUI
 struct PlaybackCommands: Commands {
     let player: PlayerViewModel
     let preferences: PreferencesStore
+    let equalizer: EqualizerStore
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Commands {
         CommandMenu("Controls") {
@@ -17,6 +19,12 @@ struct PlaybackCommands: Commands {
             Divider()
             Button(player.queue.isShuffled ? "Turn Shuffle Off" : "Turn Shuffle On") { player.toggleShuffle() }
             Button("Repeat: \(player.queue.repeatMode.title)") { player.cycleRepeat() }
+            Divider()
+            Button("Equalizer…") { openWindow(id: MacBeeApp.equalizerWindowID) }
+                .keyboardShortcut("e", modifiers: [.command, .option])
+            Button(equalizer.settings.isEnabled ? "Turn Equalizer Off" : "Turn Equalizer On") {
+                equalizer.setEnabled(!equalizer.settings.isEnabled)
+            }
             Divider()
             Picker("Play Songs From", selection: Binding(get: { preferences.playbackSource },
                                                          set: { preferences.playbackSource = $0 })) {

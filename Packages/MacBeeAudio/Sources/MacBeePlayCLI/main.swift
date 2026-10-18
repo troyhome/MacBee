@@ -3,7 +3,10 @@
 //   swift run macbee-play --list-devices
 //   swift run macbee-play [--exclusive] [--dop] [--software-volume 0.5] [--device "Name"] file1.flac file2.flac ...
 //
-// While playing, type: p (pause/resume), n (next), e (jump to last 10 seconds), s (stop and quit), +/- (volume).
+//   swift run macbee-play --eq Rock file.flac
+//
+// While playing, type: p (pause/resume), n (next), e (jump to last 10 seconds), s (stop and quit), +/- (volume),
+// q (equalizer on/off).
 
 import Foundation
 import MacBeeAudio
@@ -37,6 +40,7 @@ struct Options {
     var listDevices = false
     var settings = OutputSettings.default
     var deviceName: String?
+    var equalizer = EqualizerSettings.off
     var files: [URL] = []
 }
 
@@ -52,6 +56,10 @@ func parse(_ args: [String]) -> Options {
             o.settings.volumeMode = .software
             o.settings.softwareVolume = Float(it.next() ?? "1") ?? 1
         case "--device": o.deviceName = it.next()
+        case "--eq":
+            let name = it.next() ?? ""
+            o.equalizer.isEnabled = true
+            o.equalizer.apply(EqualizerPreset.builtIns.first { $0.name.lowercased() == name.lowercased() } ?? .typical)
         default: o.files.append(URL(fileURLWithPath: (arg as NSString).expandingTildeInPath))
         }
     }
@@ -84,6 +92,7 @@ func run() {
         exit(1)
     }
 
+    engine.applyEqualizer(options.equalizer)
     let queue = SimpleQueue(options.files)
     engine.queueSource = queue
 
@@ -126,6 +135,12 @@ func run() {
                     engine.seek(to: max(0, duration - 10))
                     print("  jumped to last 10 seconds")
                 }
+            case "q":
+                var eq = engine.equalizer
+                if eq.isFlat { eq.apply(.rock) }
+                eq.isEnabled.toggle()
+                engine.applyEqualizer(eq)
+                print("  equalizer \(eq.isActive ? "on" : "off")")
             case "s": engine.shutdown(); exit(0)
             case "+": engine.setVolume(engine.volume + 0.05); print("  volume \(Int(engine.volume * 100))%")
             case "-": engine.setVolume(engine.volume - 0.05); print("  volume \(Int(engine.volume * 100))%")

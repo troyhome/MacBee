@@ -31,6 +31,7 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     public private(set) var volume: Float = 1
     public private(set) var lastError: String?
     public private(set) var settings: OutputSettings
+    public private(set) var equalizer: EqualizerSettings = .off
 
     public var hardwareVolumeAvailable: Bool { outputDevice?.hasHardwareVolume ?? false }
 
@@ -43,6 +44,7 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     @ObservationIgnored private let player = AudioPlayer()
     @ObservationIgnored private let devices = AudioDeviceManager()
     @ObservationIgnored private let delegateProxy = PlayerDelegateProxy()
+    @ObservationIgnored private let equalizerNode = EqualizerNode()
     @ObservationIgnored private var decoderFactory: DecoderFactory
 
     /// Next track already handed to the player for gapless playback.
@@ -67,6 +69,7 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         self.settings = settings
         self.decoderFactory = DecoderFactory(dsdMode: settings.dsdMode, loadIntoMemory: settings.loadIntoMemory)
         delegateProxy.engine = self
+        delegateProxy.equalizer = equalizerNode
         player.delegate = delegateProxy
         devices.onDevicesChanged = { [weak self] in self?.devicesChanged() }
         outputDevice = devices.resolveDevice(uid: settings.deviceUID)
@@ -168,6 +171,13 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         }
         applyVolume()
         updateSignalPath()
+    }
+
+    public func applyEqualizer(_ newValue: EqualizerSettings) {
+        let wasActive = equalizer.isActive
+        equalizer = newValue
+        equalizerNode.update(newValue, player: player)
+        if wasActive != newValue.isActive { updateSignalPath() }
     }
 
     public func setVolume(_ newValue: Float) {
@@ -454,7 +464,8 @@ public final class SFBPlaybackEngine: PlaybackEngine {
             volumeMode: settings.volumeMode,
             softwareVolume: settings.softwareVolume,
             exclusiveMode: exclusive,
-            isVirtualDevice: outputDevice?.isVirtual ?? false))
+            isVirtualDevice: outputDevice?.isVirtual ?? false,
+            equalizerActive: equalizer.isActive))
         guard status != signalPath else { return }
         signalPath = status
         if announce { emit(.signalPathChanged(status)) }

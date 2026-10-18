@@ -28,6 +28,10 @@ public protocol PlaybackEngine: AnyObject {
     var queueSource: PlaybackQueueSource? { get set }
     var lastError: String? { get }
 
+    /// The 16-band EQ. Off by default; when off or flat it is taken out of the signal path entirely.
+    var equalizer: EqualizerSettings { get }
+    func applyEqualizer(_ settings: EqualizerSettings)
+
     /// Applies new output settings. Restarts the current track only when required (device or DSD mode change).
     func apply(_ settings: OutputSettings)
 

@@ -21,6 +21,8 @@ final class AppModel {
     /// Plex sign-in and the away-from-home route to the same songs.
     let plex: PlexConnection?
     let themeStore = ThemeStore()
+    /// The 16-band equalizer (off by default).
+    let equalizer: EqualizerStore
     /// Movies, shows and music videos.
     let videos = VideoLibrary()
     /// The video being watched, if any.
@@ -121,6 +123,7 @@ final class AppModel {
 
         engine = SFBPlaybackEngine(settings: OutputSettingsStore.load())
         engine.queueSource = queue
+        equalizer = EqualizerStore(engine: engine)
         let plex = library.map { PlexConnection(library: $0) }
         self.plex = plex
         player = PlayerViewModel(engine: engine, queue: queue, database: library?.database, preferences: preferences,

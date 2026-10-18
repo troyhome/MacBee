@@ -12,6 +12,7 @@ struct OutputControls: View {
                 .padding(.trailing, 6)
             OutputDeviceMenu()
             ExclusiveModeButton()
+            EqualizerButton()
             VolumeControl()
             BarIconButton(systemImage: "quote.bubble", help: app.showLyrics ? "Hide lyrics" : "Show lyrics",
                           isActive: app.showLyrics) { app.showLyrics.toggle() }

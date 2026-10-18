@@ -381,6 +381,14 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     playlists or plays; daily backup Library-before-auto-sync.sqlite. Troy confirmed it works between both Macs.
   - Music (Home) in the sidebar always leaves Track Studio and Playlist Studio (removed from
     `browsableBesideTrackStudio`). Track Studio title stays on one line in a narrow pane.
+- Equalizer (2026-10-18, Troy): 16-band EQ + preamp (±12 dB), Controls > Equalizer… (⌥⌘E) or the sliders icon in
+  the play bar. Package: `EqualizerSettings`/`EqualizerPreset` (Model/, tested), `EqualizerNode` (Engine/) puts an
+  AVAudioUnitEQ between SFB's sourceNode and mainMixer only while active (on and not flat); otherwise it's
+  disconnected, so bit-perfect is untouched. Format changes re-wire it via the SFB delegate
+  `reconfigureProcessingGraph`. Active EQ = SignalPathStatus issue `.equalizer` + orange "EQ" tag by the badge.
+  App: `MacBee/Equalizer/` (EqualizerStore: UserDefaults "equalizer", "equalizerPresets", "equalizerPreset"; per
+  Mac). Presets Flat, Typical, Rock, Soft, Electronic, Indie + unlimited saved ones. Off by default.
+  `macbee-play --eq rock` (q toggles) tests it from Terminal.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

@@ -12,6 +12,8 @@ public struct SignalPathStatus: Sendable, Equatable {
         case dsdConvertedToPCM
         /// Playing through a software device (e.g. Boom 3D) that may add effects or convert the audio.
         case virtualDevice
+        /// The equalizer is on and shaping the sound.
+        case equalizer
     }
 
     /// Informational notes that don't change the data.
@@ -42,10 +44,11 @@ public struct SignalPathStatus: Sendable, Equatable {
         public var softwareVolume: Float
         public var exclusiveMode: Bool
         public var isVirtualDevice: Bool
+        public var equalizerActive: Bool
 
         public init(format: AudioFormatInfo, dsdMode: DSDPlaybackMode, deviceSampleRate: Double,
                     deviceBitDepth: Int?, volumeMode: VolumeMode, softwareVolume: Float, exclusiveMode: Bool,
-                    isVirtualDevice: Bool = false) {
+                    isVirtualDevice: Bool = false, equalizerActive: Bool = false) {
             self.format = format
             self.dsdMode = dsdMode
             self.deviceSampleRate = deviceSampleRate
@@ -54,6 +57,7 @@ public struct SignalPathStatus: Sendable, Equatable {
             self.softwareVolume = softwareVolume
             self.exclusiveMode = exclusiveMode
             self.isVirtualDevice = isVirtualDevice
+            self.equalizerActive = equalizerActive
         }
     }
 
@@ -64,6 +68,9 @@ public struct SignalPathStatus: Sendable, Equatable {
 
         if input.isVirtualDevice {
             issues.append(.virtualDevice)
+        }
+        if input.equalizerActive {
+            issues.append(.equalizer)
         }
         if format.isDSD && input.dsdMode == .pcmConversion {
             issues.append(.dsdConvertedToPCM)
@@ -99,6 +106,8 @@ public struct SignalPathStatus: Sendable, Equatable {
                 lines.append("Bit depth reduced \(from)-bit → \(to)-bit")
             case .dsdConvertedToPCM:
                 lines.append("DSD converted to PCM (enable DoP if your DAC supports it)")
+            case .equalizer:
+                lines.append("Equalizer is on and changing the sound. Turn it off (or choose Flat) for bit-perfect playback.")
             case .virtualDevice:
                 lines.append("Playing through a virtual device (like Boom 3D), which may change the sound. MacBee leaves its settings alone. Pick your speakers or DAC for bit-perfect playback.")
             }
