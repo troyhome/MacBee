@@ -3,51 +3,62 @@ import SwiftUI
 
 extension View {
     /// A two-finger click (secondary click / right-click) anywhere on this view pauses or resumes.
-    /// Ordinary clicks, hovering and scrolling pass straight through to the view underneath.
     /// Used on the play bar, Now Playing and the mini player, which have no right-click menus of their own,
     /// so song, album and playlist menus elsewhere keep working.
     func secondaryClickPlaysPauses() -> some View {
-        modifier(SecondaryClickPlayPause())
+        background(SecondaryClickZone())
     }
 }
 
-private struct SecondaryClickPlayPause: ViewModifier {
-    @Environment(PlayerViewModel.self) private var player
+/// Marks an area of a window. `SecondaryClickMonitor` checks every secondary click against these areas.
+private struct SecondaryClickZone: NSViewRepresentable {
+    func makeNSView(context: Context) -> ZoneView { ZoneView() }
+    func updateNSView(_ view: ZoneView, context: Context) {}
 
-    func body(content: Content) -> some View {
-        content.overlay(SecondaryClickCatcher { [player] in
-            if player.currentTrack != nil { player.togglePlayPause() }
-        })
+    final class ZoneView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window == nil {
+                SecondaryClickMonitor.shared.zones.removeAll { $0.view === self || $0.view == nil }
+            } else if !SecondaryClickMonitor.shared.zones.contains(where: { $0.view === self }) {
+                SecondaryClickMonitor.shared.zones.append(.init(view: self))
+            }
+        }
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil } // never takes clicks itself
     }
 }
 
-private struct SecondaryClickCatcher: NSViewRepresentable {
-    let action: @MainActor () -> Void
+/// Watches the app's own secondary clicks (not other apps') and, inside a zone, plays or pauses instead of
+/// letting the click through.
+@MainActor
+final class SecondaryClickMonitor {
+    static let shared = SecondaryClickMonitor()
 
-    func makeNSView(context: Context) -> CatcherView {
-        let view = CatcherView()
-        view.action = action
-        return view
+    struct Zone { weak var view: NSView? }
+    fileprivate var zones: [Zone] = []
+    private var monitor: Any?
+
+    /// Starts watching. `action` runs for a secondary click inside a zone.
+    func start(action: @escaping @MainActor () -> Void) {
+        guard monitor == nil else { return }
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.rightMouseDown, .rightMouseUp]) { [weak self] event in
+            // Local monitors run on the main thread.
+            nonisolated(unsafe) let event = event
+            let used = MainActor.assumeIsolated {
+                guard let self, self.isInZone(event) else { return false }
+                if event.type == .rightMouseDown { action() }
+                return true
+            }
+            return used ? nil : event // a used click opens no menu
+        }
     }
 
-    func updateNSView(_ view: CatcherView, context: Context) {
-        view.action = action
-    }
-
-    final class CatcherView: NSView {
-        var action: (@MainActor () -> Void)?
-
-        /// Only claims secondary clicks; everything else goes to the views below.
-        override func hitTest(_ point: NSPoint) -> NSView? {
-            guard let event = NSApp.currentEvent, event.type == .rightMouseDown || event.type == .rightMouseUp,
-                  super.hitTest(point) != nil else { return nil }
-            return self
+    private func isInZone(_ event: NSEvent) -> Bool {
+        zones.contains { zone in
+            guard let view = zone.view, let window = view.window, window === event.window, !view.isHiddenOrHasHiddenAncestor
+            else { return false }
+            return view.bounds.contains(view.convert(event.locationInWindow, from: nil))
         }
-
-        override func rightMouseDown(with event: NSEvent) {
-            action?()
-        }
-
-        override func menu(for event: NSEvent) -> NSMenu? { nil }
     }
 }

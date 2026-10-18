@@ -143,6 +143,14 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       Accessibility permission (asked at launch; General preferences has the toggle "Media keys always control
       MacBee", default on, and an Open System Settings button). Nothing loaded = keys go to other apps.
     - Two-finger click now pauses/resumes instead of skipping (`secondaryClickPlaysPauses()`).
+  - Fixes after Troy's second test (2026-10-17):
+    - Playing a video crashed MacBee (SwiftUI `VideoPlayer` from _AVKit_SwiftUI aborts in metadata init on
+      macOS 26). Now uses AppKit `AVPlayerView` via NSViewRepresentable. Don't go back to SwiftUI VideoPlayer.
+    - Two-finger click did nothing (the hitTest overlay trick doesn't get right clicks in SwiftUI). Now an app-wide
+      local NSEvent monitor (`SecondaryClickMonitor`, started in AppModel.start) checks right clicks against
+      registered zones (`secondaryClickPlaysPauses()` = background zone view) and toggles play/pause.
+    - Videos page has a search box; videos can be liked (heart on hover / in the player). Likes are paths in
+      UserDefaults "likedVideos" (per Mac, not in the DB). Collection > Videos shows liked videos only.
 - Roadmap Phases 2-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

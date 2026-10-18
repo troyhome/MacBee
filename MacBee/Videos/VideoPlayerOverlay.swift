@@ -12,7 +12,7 @@ struct VideoPlayerOverlay: View {
         ZStack(alignment: .topLeading) {
             Color.black
             if let player {
-                VideoPlayer(player: player)
+                PlayerView(player: player)
             }
             HStack {
                 CircleButton(systemImage: "chevron.down", help: "Close (Esc)", tinted: false) { app.closeVideo() }
@@ -22,6 +22,7 @@ struct VideoPlayerOverlay: View {
                     .shadow(color: .black.opacity(0.8), radius: 4)
                     .lineLimit(1)
                 Spacer()
+                VideoLikeButton(video: video, diameter: 34)
                 CircleButton(systemImage: "arrow.up.left.and.arrow.down.right", help: "Full screen", tinted: false) {
                     NSApp.keyWindow?.toggleFullScreen(nil)
                 }
@@ -41,5 +42,22 @@ struct VideoPlayerOverlay: View {
             player.play()
         }
         .onDisappear { player?.pause() }
+    }
+}
+
+/// AppKit's video player view with the standard controls. (SwiftUI's own VideoPlayer crashed MacBee on macOS 26.)
+private struct PlayerView: NSViewRepresentable {
+    let player: AVPlayer
+
+    func makeNSView(context: Context) -> AVPlayerView {
+        let view = AVPlayerView()
+        view.player = player
+        view.controlsStyle = .floating
+        view.allowsPictureInPicturePlayback = false
+        return view
+    }
+
+    func updateNSView(_ view: AVPlayerView, context: Context) {
+        if view.player !== player { view.player = player }
     }
 }

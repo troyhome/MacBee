@@ -199,6 +199,9 @@ final class AppModel {
         guard !started else { return }
         started = true
         if preferences.mediaKeysAlwaysMacBee { mediaKeys.start(askForPermission: true) }
+        SecondaryClickMonitor.shared.start { [player] in
+            if player.currentTrack != nil { player.togglePlayPause() }
+        }
         // The permission may be given in System Settings while MacBee is open; try again on coming back.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification,
                                                object: nil, queue: .main) { [weak self] _ in

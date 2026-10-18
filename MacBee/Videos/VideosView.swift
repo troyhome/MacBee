@@ -1,18 +1,20 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// The Videos page: music videos found in the music folders. Click one to play it.
+/// The Videos page: music videos found in the music folders, with a search box. Click one to play it.
+/// Inside Collection it shows only the videos you've liked.
 struct VideosView: View {
-    /// Shown inside the Collection page, which has its own title.
+    /// Shown inside the Collection page (liked videos only), which has its own title.
     var embedded = false
     @Environment(AppModel.self) private var app
     @Environment(MusicLibrary.self) private var library
     @Environment(\.theme) private var theme
+    @State private var searchText = ""
 
     var body: some View {
-        VideosGrid()
+        VideosGrid(videos: shown)
             .safeAreaInset(edge: .top, spacing: 0) {
-                if !embedded { header }
+                if embedded { searchRow.padding(.horizontal, 28).padding(.vertical, 6) } else { header }
             }
             .overlay { emptyState }
             .navigationTitle(embedded ? "Collection" : "Videos")
@@ -35,6 +37,7 @@ struct VideosView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(theme.textTertiary)
             }
+            searchRow
         }
         .padding(.horizontal, 28)
         .padding(.top, 24)
@@ -42,25 +45,59 @@ struct VideosView: View {
         .background(theme.background)
     }
 
+    private var shown: [VideoItem] {
+        app.videos.videos(matching: searchText, likedOnly: embedded)
+    }
+
+    private var searchRow: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 12))
+                .foregroundStyle(theme.textTertiary)
+            TextField("Search videos", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(theme.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Clear search")
+            }
+        }
+        .padding(.horizontal, 8)
+        .frame(width: 240, height: 28)
+        .background(RoundedRectangle(cornerRadius: 7).fill(theme.surface))
+    }
+
     @ViewBuilder
     private var emptyState: some View {
-        if app.videos.hasSearched && app.videos.videos.isEmpty {
-            ContentUnavailableView("No music videos found", systemImage: "play.rectangle",
-                                   description: Text("MacBee looks for MP4, M4V and MOV files inside your music folders."))
+        if app.videos.hasSearched && shown.isEmpty {
+            if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            } else if embedded {
+                ContentUnavailableView("No liked videos yet", systemImage: "heart",
+                                       description: Text("Click the heart on a video in Videos to add it here."))
+            } else {
+                ContentUnavailableView("No music videos found", systemImage: "play.rectangle",
+                                       description: Text("MacBee looks for MP4, M4V and MOV files inside your music folders."))
+            }
         }
     }
 }
 
 /// Video thumbnails in a grid.
 struct VideosGrid: View {
-    @Environment(AppModel.self) private var app
+    let videos: [VideoItem]
 
     private let columns = [GridItem(.adaptive(minimum: 220, maximum: 300), spacing: 20, alignment: .top)]
 
     var body: some View {
         ScrollView {
             LazyVGrid(columns: columns, alignment: .leading, spacing: 24) {
-                ForEach(app.videos.videos) { VideoTile(video: $0) }
+                ForEach(videos) { VideoTile(video: $0) }
             }
             .padding(24)
         }
@@ -98,6 +135,12 @@ private struct VideoTile: View {
             }
             .aspectRatio(16 / 9, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(alignment: .topTrailing) {
+                if hovering || app.videos.isLiked(video) {
+                    VideoLikeButton(video: video, diameter: 28)
+                        .padding(6)
+                }
+            }
             Text(video.title)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(theme.textPrimary)
@@ -112,5 +155,19 @@ private struct VideoTile: View {
         .onTapGesture { app.playVideo(video) }
         .help("Play \(video.title)")
         .task(id: video.url) { thumbnail = await app.videos.thumbnail(for: video) }
+    }
+}
+
+/// Heart that likes or unlikes a video. Liked videos show in Collection > Videos.
+struct VideoLikeButton: View {
+    let video: VideoItem
+    var diameter: CGFloat = 28
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        let liked = app.videos.isLiked(video)
+        CircleButton(systemImage: liked ? "heart.fill" : "heart",
+                     help: liked ? "Unlike (removes it from Collection)" : "Like (adds it to Collection)",
+                     diameter: diameter) { app.videos.toggleLike(video) }
     }
 }

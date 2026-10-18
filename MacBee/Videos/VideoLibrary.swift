@@ -10,6 +10,8 @@ final class VideoLibrary {
     private(set) var videos: [VideoItem] = []
     private(set) var isSearching = false
     private(set) var hasSearched = false
+    /// Paths of liked videos (shown in Collection > Videos). Saved on this Mac.
+    private(set) var likedPaths: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "likedVideos") ?? [])
 
     @ObservationIgnored private var thumbnails: [URL: NSImage] = [:]
 
@@ -21,6 +23,25 @@ final class VideoLibrary {
         videos = found
         isSearching = false
         hasSearched = true
+    }
+
+    func isLiked(_ video: VideoItem) -> Bool {
+        likedPaths.contains(video.url.path)
+    }
+
+    func toggleLike(_ video: VideoItem) {
+        if likedPaths.remove(video.url.path) == nil { likedPaths.insert(video.url.path) }
+        UserDefaults.standard.set(Array(likedPaths).sorted(), forKey: "likedVideos")
+    }
+
+    /// Videos whose title or folder contains the text, optionally only liked ones.
+    func videos(matching text: String, likedOnly: Bool) -> [VideoItem] {
+        let query = text.trimmingCharacters(in: .whitespaces)
+        return videos.filter { video in
+            (!likedOnly || isLiked(video))
+                && (query.isEmpty || video.title.localizedCaseInsensitiveContains(query)
+                    || video.folderName.localizedCaseInsensitiveContains(query))
+        }
     }
 
     /// A frame from about 10 seconds in (or the start of short videos), cached for this session.
