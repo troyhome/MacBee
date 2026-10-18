@@ -309,7 +309,21 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     time): embedded timed -> .lrc -> embedded plain; plain lyrics are spread over the song
     (`LyricsReader.estimatedTiming`) so they scroll along too. Device Sync has "Entire library" (copies every
     song, no playlist file). Two-finger tap stopped working: diagnostic log added (category "SecondaryClick").
-- Roadmap Phase 5: not started.
+- Roadmap Phase 4 PASSED (Troy, 2026-10-18: "Next"). Plex posters came back after Troy signed in to Plex again
+  (the keychain change on the other Mac had lost the token on this Mac: both keychains returned -25300).
+- Roadmap Phase 5 BUILT 2026-10-18, waiting for Troy's smoke tests (needs both Macs updated):
+  - TagBee: Track Studio > TagBee tab = search songs, tick, "Open N in TagBee" (double-click opens one), and a
+    "Send to TagBee" menu (song playing / album playing / just open TagBee). Uses `ExternalTagEditor`, which
+    re-reads files when TagBee saves. (Embedding TagBee inside MacBee isn't possible: it's a separate app.)
+  - Mac-to-Mac sync: Settings > Sync (`MacBee/Sync/`): "Sync with my other Macs" on both Macs; Bonjour service
+    `_macbee-sync._tcp` (NSBonjourServices in MacBee-Info.plist, merged via INFOPLIST_FILE); 6-digit code per Mac
+    (UserDefaults "networkSyncCode"; codes of other Macs in "networkSyncPeerCodes"); "Sync Now" swaps both ways
+    over TCP (length-prefixed JSON). Library logic `Sync/ProfileSync.swift` (tested): songs matched by path below
+    the music folder, else artist|title|album|seconds; plays added if not already there (same song, same minute)
+    with playCount/lastPlayedAt updated; favorites and higher ratings added; playlists matched by folder path +
+    name, created or missing songs appended. Never deletes anything (un-favoriting or removing a playlist song
+    doesn't travel). Music files aren't copied. Not done: syncing through Plex.
+- All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).

@@ -16,6 +16,8 @@ final class AppModel {
     let playlists: PlaylistStore?
     /// Opens songs in TagBee (or another chosen tag editor) and re-reads them after saving.
     let tagEditor: ExternalTagEditor?
+    /// Keeps plays, favorites and playlists in step with MacBee on Troy's other Mac.
+    let networkSync: NetworkSync?
     /// Plex sign-in and the away-from-home route to the same songs.
     let plex: PlexConnection?
     let themeStore = ThemeStore()
@@ -106,6 +108,8 @@ final class AppModel {
         self.preferences = preferences
         location = Location(page: preferences.launchPage)
         tagEditor = library.map { ExternalTagEditor(library: $0, preferences: preferences) }
+        let networkSync = library.map { NetworkSync(library: $0) }
+        self.networkSync = networkSync
 
         engine = SFBPlaybackEngine(settings: OutputSettingsStore.load())
         engine.queueSource = queue
@@ -115,6 +119,10 @@ final class AppModel {
                                  router: PlaybackRouter(plex: plex, preferences: preferences))
         nowPlaying = NowPlayingService(player: player, library: library)
         mediaKeys = MediaKeyTap(player: player)
+        networkSync?.onMerged = { [weak self] in
+            await self?.library?.refreshAfterSync()
+            await self?.playlists?.reload()
+        }
         player.onNewQueue = { [weak self] album in
             guard let self else { return }
             // A whole album started from a grid opens that album's page; anything else returns to the page it was on.

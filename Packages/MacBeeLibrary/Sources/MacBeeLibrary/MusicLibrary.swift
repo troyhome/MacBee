@@ -159,6 +159,11 @@ public final class MusicLibrary {
         await applyVisibility()
     }
 
+    /// After data came in from another Mac (plays, favorites, playlists): refreshes every list.
+    public func refreshAfterSync() async {
+        await applyVisibility()
+    }
+
     /// Re-works out paused folders and duplicates, then refreshes every list.
     func applyVisibility() async {
         do {

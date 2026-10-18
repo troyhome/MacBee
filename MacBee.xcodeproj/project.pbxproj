@@ -195,7 +195,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = MacBee;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MacBee connects to your Plex server on your home network to play your music when the network drive isn't available.";
+				INFOPLIST_FILE = "MacBee-Info.plist";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MacBee connects to your Plex server on your home network, and to MacBee on your other Macs to keep plays, favorites and playlists in step.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -225,7 +226,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = MacBee;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MacBee connects to your Plex server on your home network to play your music when the network drive isn't available.";
+				INFOPLIST_FILE = "MacBee-Info.plist";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MacBee connects to your Plex server on your home network, and to MacBee on your other Macs to keep plays, favorites and playlists in step.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

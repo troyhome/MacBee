@@ -14,6 +14,8 @@ struct PreferencesView: View {
                 .tabItem { Label("Audio", systemImage: "hifispeaker.2") }
             TagEditorPreferences()
                 .tabItem { Label("Tag Editor", systemImage: "tag") }
+            SyncPreferences()
+                .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
         }
         .frame(width: 620)
         .frame(minHeight: 420)
