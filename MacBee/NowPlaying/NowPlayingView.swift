@@ -3,13 +3,29 @@ import MacBeeLibrary
 import SwiftUI
 
 /// Full-window Now Playing: big cover over a blurred copy of it, song details, the full signal path,
-/// scrubber and controls. Esc or the arrow at the top left closes it; the other button toggles full screen.
+/// scrubber and controls. Esc or the arrow at the top left closes it. At the top right: the queue
+/// (History, Now Playing, Up Next, the same panel as in the main window) and full screen.
 struct NowPlayingView: View {
     @Environment(AppModel.self) private var app
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
 
     var body: some View {
+        HStack(spacing: 0) {
+            main
+            if app.showQueue {
+                QueueDrawer()
+                    .transition(.move(edge: .trailing))
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: app.showQueue)
+        .background(Color.black)
+        .environment(\.colorScheme, .dark)
+        .background(closeShortcut)
+        .secondaryClickPlaysPauses()
+    }
+
+    private var main: some View {
         GeometryReader { geometry in
             let coverSize = max(200, min(geometry.size.height * 0.6, geometry.size.width * 0.4, 560))
             ZStack {
@@ -42,16 +58,15 @@ struct NowPlayingView: View {
                 .padding(24)
             }
         }
-        .background(Color.black)
-        .environment(\.colorScheme, .dark)
-        .background(closeShortcut)
-        .secondaryClickPlaysPauses()
+        .clipped()
     }
 
     private var topBar: some View {
         HStack {
             CircleButton(systemImage: "chevron.down", help: "Close (Esc)", tinted: false) { close() }
             Spacer()
+            CircleButton(systemImage: "list.bullet", help: app.showQueue ? "Hide queue" : "Show queue",
+                         tinted: app.showQueue) { app.showQueue.toggle() }
             CircleButton(systemImage: "arrow.up.left.and.arrow.down.right", help: "Full screen", tinted: false) {
                 NSApp.keyWindow?.toggleFullScreen(nil)
             }

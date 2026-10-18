@@ -235,6 +235,7 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       `tracks(inAlbum:)`). Compilation folder rule tightened: only songs with no Album Artist tag, 3+ different
       main artists ("feat." stripped) and no artist with half the folder's songs (Slayyyter etc. were wrongly
       caught). Troy retagged "If I Were A Carpenter" in TagBee (Album Artist = Various Artists).
+    - Now Playing view has a queue button (top right) that opens the same QueueDrawer beside it (Troy).
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.
