@@ -155,6 +155,13 @@ public final class LibraryDatabase: Sendable {
             }
         }
 
+        // Duplicates page: copies Troy has accepted (kept on purpose), so they stop being listed.
+        migrator.registerMigration("v7") { db in
+            try db.alter(table: "track") { t in
+                t.add(column: "duplicateAccepted", .boolean).notNull().defaults(to: false)
+            }
+        }
+
         return migrator
     }
 

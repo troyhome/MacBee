@@ -141,6 +141,12 @@ public final class MusicLibrary {
         await applyVisibility()
     }
 
+    /// Marks duplicates as accepted (kept on purpose) so the Duplicates page stops listing them, or un-accepts them.
+    public func setDuplicatesAccepted(trackIds: [Int64], _ accepted: Bool) async throws {
+        try await database.setDuplicatesAccepted(trackIds: trackIds, accepted)
+        revision += 1
+    }
+
     /// Brings back every copy removed on the Duplicates page.
     public func restoreRemovedCopies() async throws {
         try await database.restoreExcludedTracks()

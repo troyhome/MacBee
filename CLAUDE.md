@@ -254,6 +254,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       right under it. Duplicates tab has a Songs / Videos switch: `VideoDuplicatesView` lists movies with several
       files and music videos with `otherFiles` (same name in another folder/drive/format), with Show in Finder and
       Delete from Disk (Trash, else confirm permanent). Video cards' right-click menu has Show in Finder.
+    - Track Studio header: Duplicates / TagBee tabs beside the title (`PillTabs`, Common/, tabs with icons; also
+      Songs/Videos and Collections tabs). Duplicates: "Remove All Extra Copies" replaced by **Auto Select** (ticks
+      each song's smallest file; equal sizes -> a copy that isn't the shown one), placed before Remove from Library
+      / Delete from Disk. **Accept** / Show accepted / Un-accept: DB v7 `track.duplicateAccepted` (all copies of a
+      song marked; `duplicateGroups(accepted:)`); videos keep accepted ids in UserDefaults "acceptedVideoDuplicates".
+      The video duplicates list has the same tick boxes, Select All, Auto Select, Delete and Accept.
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.

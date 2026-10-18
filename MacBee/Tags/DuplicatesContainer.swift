@@ -8,17 +8,13 @@ struct DuplicatesContainer: View {
         case songs, videos
         var id: String { rawValue }
         var title: String { self == .songs ? "Songs" : "Videos" }
+        var systemImage: String { self == .songs ? "music.note" : "film" }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Picker("Kind", selection: $kind) {
-                ForEach(Kind.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(width: 180)
-            .padding(.horizontal, 28)
+            PillTabs(items: Kind.allCases, selection: $kind, title: \.title, systemImage: \.systemImage)
+                .padding(.horizontal, 28)
             .padding(.top, 6)
             switch kind {
             case .songs: SongDuplicatesView()

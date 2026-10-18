@@ -11,21 +11,15 @@ struct TagsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 14) {
-                    if app.canGoBack {
-                        CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
-                    }
-                    Text("Track Studio")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(theme.textPrimary)
+            HStack(spacing: 18) {
+                if app.canGoBack {
+                    CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
                 }
-                Picker("Show", selection: $section) {
-                    ForEach(TagsSection.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(maxWidth: 320)
+                Text("Track Studio")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(theme.textPrimary)
+                PillTabs(items: TagsSection.allCases, selection: $section, title: \.title, systemImage: \.systemImage)
+                Spacer()
             }
             .padding(.horizontal, 28)
             .padding(.top, 24)
@@ -45,6 +39,7 @@ enum TagsSection: String, CaseIterable, Identifiable {
     case duplicates, tagBee
     var id: String { rawValue }
     var title: String { self == .duplicates ? "Duplicates" : "TagBee" }
+    var systemImage: String { self == .duplicates ? "square.on.square" : "tag" }
 }
 
 /// For now: open TagBee. Roadmap Phase 5 connects it more closely.

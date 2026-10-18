@@ -8,9 +8,14 @@ struct VideoDuplicatesView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.theme) private var theme
     @State private var filter = ""
-    @State private var deleteRequest: VideoFile?
-    @State private var noTrashRequest: VideoFile?
+    @State private var deleteRequest: [VideoFile] = []
+    @State private var noTrashRequest: [VideoFile] = []
     @State private var message: String?
+    /// Ticked copies, by path.
+    @State private var selected = Set<String>()
+    @State private var showingAccepted = false
+    /// Videos whose copies were accepted (kept on purpose), by id. Saved on this Mac.
+    @AppStorage("acceptedVideoDuplicates") private var acceptedRaw = ""
 
     struct Group: Identifiable {
         let id: String
@@ -21,8 +26,8 @@ struct VideoDuplicatesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(groups.isEmpty ? "No duplicate videos." : "\(groups.count) videos have more than one copy.")
+            HStack(spacing: 10) {
+                Text(summary)
                     .font(.system(size: 13))
                     .foregroundStyle(theme.textSecondary)
                 Spacer()
@@ -34,6 +39,28 @@ struct VideoDuplicatesView: View {
             }
             .padding(.horizontal, 28)
             .padding(.vertical, 8)
+            HStack(spacing: 10) {
+                Button(allExtrasSelected ? "Deselect All" : "Select All") {
+                    selected = allExtrasSelected ? [] : Set(shown.flatMap { $0.files.dropFirst() }.map(\.path))
+                }
+                .disabled(shown.isEmpty)
+                Button("Auto Select") { autoSelect() }
+                    .disabled(shown.isEmpty)
+                    .help("Ticks the smallest file of each video (when sizes match, a copy that isn't the shown one)")
+                Button("Delete from Disk…") { deleteRequest = selectedFiles }
+                    .disabled(selected.isEmpty)
+                Button(showingAccepted ? "Un-accept" : "Accept") { accept(!showingAccepted) }
+                    .disabled(selected.isEmpty)
+                    .help(showingAccepted ? "List these videos' copies again" : "Keep these copies on purpose: they stop being listed here")
+                Text(selected.isEmpty ? "" : "\(selected.count) selected")
+                    .font(.system(size: 12))
+                    .foregroundStyle(theme.textTertiary)
+                Spacer()
+                Toggle(showingAccepted ? "Showing accepted" : "Show accepted (\(accepted.count))", isOn: $showingAccepted)
+                    .toggleStyle(.button)
+            }
+            .padding(.horizontal, 28)
+            .padding(.bottom, 8)
             if let message {
                 Text(message)
                     .font(.system(size: 12))
@@ -55,17 +82,18 @@ struct VideoDuplicatesView: View {
                 }
             }
         }
-        .confirmationDialog("Delete “\(deleteRequest?.url.lastPathComponent ?? "")” from the disk?",
-                            isPresented: Binding(get: { deleteRequest != nil }, set: { if !$0 { deleteRequest = nil } })) {
-            Button("Delete from Disk", role: .destructive) { if let file = deleteRequest { delete(file) } }
+        .confirmationDialog(deleteRequest.count == 1 ? "Delete “\(deleteRequest[0].url.lastPathComponent)” from the disk?"
+                                                     : "Delete \(deleteRequest.count) videos from the disk?",
+                            isPresented: Binding(get: { !deleteRequest.isEmpty }, set: { if !$0 { deleteRequest = [] } })) {
+            Button("Delete from Disk", role: .destructive) { delete(deleteRequest) }
         } message: {
-            Text("It goes to the Trash if the drive has one. If not, MacBee asks again before deleting.")
+            Text("Files go to the Trash if the drive has one. If not, MacBee asks again before deleting.")
         }
-        .confirmationDialog("Delete “\(noTrashRequest?.url.lastPathComponent ?? "")” for good?",
-                            isPresented: Binding(get: { noTrashRequest != nil }, set: { if !$0 { noTrashRequest = nil } })) {
-            Button("Delete Permanently", role: .destructive) { if let file = noTrashRequest { deletePermanently(file) } }
+        .confirmationDialog("Delete \(noTrashRequest.count) \(noTrashRequest.count == 1 ? "video" : "videos") for good?",
+                            isPresented: Binding(get: { !noTrashRequest.isEmpty }, set: { if !$0 { noTrashRequest = [] } })) {
+            Button("Delete Permanently", role: .destructive) { deletePermanently(noTrashRequest) }
         } message: {
-            Text("This drive has no Trash, so the file can't be put back afterwards.")
+            Text("The drive has no Trash, so these files can't be put back afterwards.")
         }
     }
 
@@ -83,7 +111,47 @@ struct VideoDuplicatesView: View {
 
     private var shown: [Group] {
         let query = filter.trimmingCharacters(in: .whitespaces)
-        return query.isEmpty ? groups : groups.filter { $0.title.localizedCaseInsensitiveContains(query) }
+        let listed = groups.filter { accepted.contains($0.id) == showingAccepted }
+        return query.isEmpty ? listed : listed.filter { $0.title.localizedCaseInsensitiveContains(query) }
+    }
+
+    private var summary: String {
+        shown.isEmpty ? "No duplicate videos." : "\(shown.count) videos have more than one copy."
+    }
+
+    private var accepted: Set<String> {
+        Set(acceptedRaw.split(separator: "\n").map(String.init))
+    }
+
+    private var selectedFiles: [VideoFile] {
+        groups.flatMap(\.files).filter { selected.contains($0.path) }
+    }
+
+    private var allExtrasSelected: Bool {
+        let all = Set(shown.flatMap { $0.files.dropFirst() }.map(\.path))
+        return !all.isEmpty && all.isSubset(of: selected)
+    }
+
+    /// Ticks each video's smallest file; with equal sizes, a copy other than the shown (first) one.
+    private func autoSelect() {
+        var picks = Set<String>()
+        for group in shown {
+            let indexed = Array(group.files.enumerated())
+            if let smallest = indexed.min(by: { a, b in
+                a.element.size != b.element.size ? a.element.size < b.element.size : (a.offset == 0 ? 1 : 0) < (b.offset == 0 ? 1 : 0)
+            }) { picks.insert(smallest.element.path) }
+        }
+        selected = picks
+    }
+
+    private func accept(_ value: Bool) {
+        let ids = shown.filter { group in group.files.contains { selected.contains($0.path) } }.map(\.id)
+        var set = accepted
+        if value { set.formUnion(ids) } else { set.subtract(ids) }
+        acceptedRaw = set.sorted().joined(separator: "\n")
+        selected = []
+        message = value ? "Accepted \(ids.count) videos: they won't be listed again. Use Show accepted to undo."
+                        : "\(ids.count) videos are listed again."
     }
 
     private func card(_ group: Group) -> some View {
@@ -95,7 +163,10 @@ struct VideoDuplicatesView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(theme.textSecondary)
             ForEach(Array(group.files.enumerated()), id: \.element.path) { index, file in
-                VideoCopyRow(file: file, isShown: index == 0, onDelete: { deleteRequest = file })
+                VideoCopyRow(file: file, isShown: index == 0,
+                             isSelected: Binding(get: { selected.contains(file.path) },
+                                                 set: { isOn in if isOn { selected.insert(file.path) } else { selected.remove(file.path) } }),
+                             onDelete: { deleteRequest = [file] })
             }
         }
         .padding(12)
@@ -103,24 +174,38 @@ struct VideoDuplicatesView: View {
         .background(RoundedRectangle(cornerRadius: 10).fill(theme.surface))
     }
 
-    private func delete(_ file: VideoFile) {
-        do {
-            try FileManager.default.trashItem(at: file.url, resultingItemURL: nil)
-            message = "Moved \(file.url.lastPathComponent) to the Trash."
-            Task { await app.refreshVideos() }
-        } catch {
-            DispatchQueue.main.async { noTrashRequest = file }
+    private func delete(_ files: [VideoFile]) {
+        var trashed = 0
+        var noTrash: [VideoFile] = []
+        for file in files {
+            do {
+                try FileManager.default.trashItem(at: file.url, resultingItemURL: nil)
+                trashed += 1
+            } catch {
+                noTrash.append(file)
+            }
         }
+        selected.subtract(files.map(\.path))
+        if trashed > 0 {
+            message = "Moved \(trashed) \(trashed == 1 ? "video" : "videos") to the Trash."
+            Task { await app.refreshVideos() }
+        }
+        if !noTrash.isEmpty { DispatchQueue.main.async { noTrashRequest = noTrash } }
     }
 
-    private func deletePermanently(_ file: VideoFile) {
-        do {
-            try FileManager.default.removeItem(at: file.url)
-            message = "Deleted \(file.url.lastPathComponent)."
-            Task { await app.refreshVideos() }
-        } catch {
-            message = "Couldn't delete \(file.url.lastPathComponent). \(error.localizedDescription)"
+    private func deletePermanently(_ files: [VideoFile]) {
+        var deleted = 0
+        var failed: [String] = []
+        for file in files {
+            do {
+                try FileManager.default.removeItem(at: file.url)
+                deleted += 1
+            } catch {
+                failed.append(file.url.lastPathComponent)
+            }
         }
+        message = "Deleted \(deleted) \(deleted == 1 ? "video" : "videos")." + (failed.isEmpty ? "" : " Couldn't delete \(failed.joined(separator: ", ")).")
+        Task { await app.refreshVideos() }
     }
 }
 
@@ -128,12 +213,16 @@ struct VideoDuplicatesView: View {
 private struct VideoCopyRow: View {
     let file: VideoFile
     let isShown: Bool
+    @Binding var isSelected: Bool
     let onDelete: () -> Void
     @Environment(\.theme) private var theme
     @State private var hovering = false
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Toggle("", isOn: $isSelected)
+                .toggleStyle(.checkbox)
+                .labelsHidden()
             Text(isShown ? "SHOWN" : "COPY")
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(isShown ? theme.accent : theme.textTertiary)

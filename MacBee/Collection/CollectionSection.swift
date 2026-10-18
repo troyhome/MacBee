@@ -9,6 +9,17 @@ enum CollectionSection: String, CaseIterable, Identifiable {
     static let general: [CollectionSection] = [.playlists, .variousArtists, .savedMixes]
     static let liked: [CollectionSection] = [.albums, .tracks, .videos]
 
+    var systemImage: String {
+        switch self {
+        case .playlists: "music.note.list"
+        case .variousArtists: "person.3"
+        case .savedMixes: "square.stack.3d.up"
+        case .albums: "square.stack"
+        case .tracks: "music.note"
+        case .videos: "play.rectangle"
+        }
+    }
+
     var title: String {
         switch self {
         case .playlists: "Playlists"

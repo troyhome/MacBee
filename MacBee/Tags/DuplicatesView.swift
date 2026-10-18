@@ -17,14 +17,16 @@ struct SongDuplicatesView: View {
     @State private var folderId: Int64?
     /// Ticked copies, by file path.
     @State private var selected = Set<String>()
-    @State private var confirmRemoveAll = false
+    /// Lists the accepted duplicates instead (to un-accept them).
+    @State private var showingAccepted = false
+    @State private var acceptedCount = 0
     @State private var deleteRequest: [DuplicateGroup.Copy] = []
     @State private var noTrashRequest: [DuplicateGroup.Copy] = []
     @State private var message: String?
 
     var body: some View {
         withDialogs(page)
-            .task(id: library.revision) { await load() }
+            .task(id: "\(library.revision)-\(showingAccepted)") { await load() }
             .onChange(of: folderId) { selected = [] }
     }
 
@@ -69,11 +71,6 @@ struct SongDuplicatesView: View {
 
     private func withDialogs<Content: View>(_ content: Content) -> some View {
         content
-            .confirmationDialog("Remove \(extraCount) extra copies from the library?", isPresented: $confirmRemoveAll) {
-                Button("Remove Extra Copies") { remove(shownGroups.flatMap { extras(in: $0) }) }
-            } message: {
-                Text("Each song keeps the copy MacBee shows now. The other files stay on your drives, and you can bring them back with Restore Removed Copies.")
-            }
             .confirmationDialog(deleteTitle, isPresented: deleteShown) {
                 Button("Delete from Disk", role: .destructive) { delete(deleteRequest) }
             } message: {
@@ -126,22 +123,57 @@ struct SongDuplicatesView: View {
             }
             .disabled(shownGroups.isEmpty)
             .help("Ticks every copy except the one each song shows")
-            Text(selected.isEmpty ? "Tick copies to act on them" : "\(selected.count) selected")
-                .font(.system(size: 12))
-                .foregroundStyle(theme.textTertiary)
+            Button("Auto Select") { autoSelect() }
+                .disabled(shownGroups.isEmpty)
+                .help("Ticks the smallest file of each song (when sizes match, a copy that isn't the shown one)")
             Button("Remove from Library") { remove(selectedCopies) }
                 .disabled(selected.isEmpty)
                 .help("MacBee stops showing these copies; the files stay on the drive")
             Button("Delete from Disk…") { deleteRequest = selectedCopies }
                 .disabled(selected.isEmpty)
+            Button(showingAccepted ? "Un-accept" : "Accept") { accept(!showingAccepted) }
+                .disabled(selected.isEmpty)
+                .help(showingAccepted ? "List these songs' copies again"
+                                      : "Keep both copies of the ticked songs on purpose: they stop being listed here")
+            Text(selected.isEmpty ? "" : "\(selected.count) selected")
+                .font(.system(size: 12))
+                .foregroundStyle(theme.textTertiary)
             Spacer()
+            Toggle(showingAccepted ? "Showing accepted" : "Show accepted (\(acceptedCount))", isOn: $showingAccepted)
+                .toggleStyle(.button)
+                .help("See the duplicates you accepted, to un-accept them")
             if removedCount > 0 {
                 Button("Restore Removed Copies (\(removedCount))") {
                     Task { try? await library.restoreRemovedCopies() }
                 }
             }
-            Button("Remove All Extra Copies…") { confirmRemoveAll = true }
-                .disabled(shownGroups.isEmpty)
+        }
+    }
+
+    /// In each listed song, ticks its smallest file. If the sizes are the same, ticks a copy that isn't the shown one.
+    private func autoSelect() {
+        var picks = Set<String>()
+        for group in shownGroups {
+            let smallest = group.copies.min { a, b in
+                if a.track.fileSize != b.track.fileSize { return a.track.fileSize < b.track.fileSize }
+                // Same size: prefer a copy that isn't the one shown, so the shown one is kept.
+                return (a.track.id == group.id ? 1 : 0) < (b.track.id == group.id ? 1 : 0)
+            }
+            if let smallest { picks.insert(smallest.id) }
+        }
+        selected = picks
+    }
+
+    /// Accepts (or un-accepts) every song that has a ticked copy: all its copies are marked.
+    private func accept(_ accepted: Bool) {
+        let groupsWithTicks = shownGroups.filter { group in group.copies.contains { selected.contains($0.id) } }
+        let ids = groupsWithTicks.flatMap { fullGroup($0.id).copies }.compactMap(\.track.id)
+        guard !ids.isEmpty else { return }
+        selected = []
+        Task {
+            try? await library.setDuplicatesAccepted(trackIds: ids, accepted)
+            message = accepted ? "Accepted \(groupsWithTicks.count) songs: their copies won't be listed again. Use Show accepted to undo."
+                               : "\(groupsWithTicks.count) songs are listed again."
         }
     }
 
@@ -220,7 +252,8 @@ struct SongDuplicatesView: View {
     // MARK: - Actions
 
     private func load() async {
-        groups = (try? await library.database.duplicateGroups()) ?? []
+        groups = (try? await library.database.duplicateGroups(accepted: showingAccepted)) ?? []
+        acceptedCount = (try? await library.database.duplicateGroups(accepted: true).count) ?? 0
         removedCount = (try? await library.database.excludedTrackCount()) ?? 0
         let existing = Set(groups.flatMap(\.copies).map(\.id))
         selected.formIntersection(existing)

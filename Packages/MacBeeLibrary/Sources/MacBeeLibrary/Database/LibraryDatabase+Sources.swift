@@ -105,10 +105,11 @@ public extension LibraryDatabase {
     // MARK: - Duplicates page
 
     /// Every song that has more than one copy: the copy that shows first, then the others.
-    func duplicateGroups() async throws -> [DuplicateGroup] {
+    /// `accepted` lists only the groups marked as accepted (kept on purpose); otherwise those are left out.
+    func duplicateGroups(accepted: Bool = false) async throws -> [DuplicateGroup] {
         try await writer.read { db in
             let rows = try Row.fetchAll(db, sql: """
-                SELECT track.*, folder.name AS folderName,
+                SELECT track.*, folder.name AS folderName, track.duplicateAccepted AS accepted,
                        COALESCE(track.duplicateOf, track.id) AS groupId
                 FROM track JOIN folder ON folder.id = track.folderId
                 WHERE COALESCE(track.duplicateOf, track.id) IN (SELECT duplicateOf FROM track WHERE duplicateOf IS NOT NULL)
@@ -116,8 +117,10 @@ public extension LibraryDatabase {
                 ORDER BY groupId, track.duplicateOf IS NOT NULL, folder.priority
                 """)
             var groups: [DuplicateGroup] = []
+            var acceptedCopies: [Int64: [Bool]] = [:]
             for row in rows {
                 let copy = DuplicateGroup.Copy(track: try Track(row: row), folderName: row["folderName"])
+                acceptedCopies[row["groupId"], default: []].append(row["accepted"])
                 let groupId: Int64 = row["groupId"]
                 if groups.last?.id == groupId {
                     groups[groups.count - 1].copies.append(copy)
@@ -125,9 +128,21 @@ public extension LibraryDatabase {
                     groups.append(DuplicateGroup(id: groupId, copies: [copy]))
                 }
             }
-            return groups.filter { $0.copies.count > 1 }.sorted { a, b in
+            // A group counts as accepted when every copy in it was accepted.
+            return groups.filter { group in
+                group.copies.count > 1 && (acceptedCopies[group.id]?.allSatisfy { $0 } ?? false) == accepted
+            }.sorted { a, b in
                 (a.shown.artistKey, a.shown.albumKey, a.shown.discNumber ?? 0, a.shown.trackNumber ?? 0)
                     < (b.shown.artistKey, b.shown.albumKey, b.shown.discNumber ?? 0, b.shown.trackNumber ?? 0)
+            }
+        }
+    }
+
+    /// Marks songs' copies as accepted (kept on purpose) or not, so they stop (or start again) being listed.
+    func setDuplicatesAccepted(trackIds: [Int64], _ accepted: Bool) async throws {
+        try await writer.write { db in
+            for id in trackIds {
+                try db.execute(sql: "UPDATE track SET duplicateAccepted = ? WHERE id = ?", arguments: [accepted, id])
             }
         }
     }
