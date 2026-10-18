@@ -125,6 +125,16 @@ public final class MPVPlayer {
         mpv_terminate_destroy(handle)
     }
 
+    func property(_ name: String) -> String? {
+        guard let handle, let raw = mpv_get_property_string(handle, name) else { return nil }
+        defer { mpv_free(raw) }
+        return String(cString: raw)
+    }
+
+    func setString(_ name: String, _ value: String) {
+        if let handle { mpv_set_property_string(handle, name, value) }
+    }
+
     func resize(to size: CGSize, scale: CGFloat) {
         CATransaction.begin()
         CATransaction.setDisableActions(true) // no animated stretching while the window resizes
@@ -132,6 +142,30 @@ public final class MPVPlayer {
         layer.contentsScale = scale
         layer.drawableSize = CGSize(width: size.width * scale, height: size.height * scale)
         CATransaction.commit()
+        scheduleRefit()
+    }
+
+    @ObservationIgnored private var refitTask: Task<Void, Never>?
+    @ObservationIgnored private var refitWhenPlaying = false
+
+    /// mpv (with MoltenVK) only measures its picture size when the video's shape changes, so after the view
+    /// changes size (a window resize, or moving to the mini player) it keeps drawing at the old size and only
+    /// a corner shows. Briefly overriding the aspect by an invisible amount makes it measure again.
+    private func scheduleRefit() {
+        refitTask?.cancel()
+        refitTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(200)) // wait for a window drag to settle
+            guard let self, !Task.isCancelled, self.handle != nil else { return }
+            let target = self.layer.drawableSize
+            guard let dims = self.property("osd-dimensions"),
+                  !dims.contains("\"w\":\(Int(target.width)),\"h\":\(Int(target.height))"),
+                  let aspect = self.property("video-params/aspect").flatMap(Double.init), aspect > 0 else { return }
+            // A paused picture doesn't re-measure, so wait until playback resumes.
+            guard !self.isPaused else { self.refitWhenPlaying = true; return }
+            self.setString("video-aspect-override", String(aspect * 1.0005))
+            try? await Task.sleep(for: .milliseconds(150))
+            self.setString("video-aspect-override", "no")
+        }
     }
 
     // MARK: - mpv plumbing
@@ -172,7 +206,12 @@ public final class MPVPlayer {
         switch (name, property.format) {
         case ("time-pos", MPV_FORMAT_DOUBLE): position = data.load(as: Double.self)
         case ("duration", MPV_FORMAT_DOUBLE): duration = data.load(as: Double.self)
-        case ("pause", MPV_FORMAT_FLAG): isPaused = data.load(as: Int32.self) != 0
+        case ("pause", MPV_FORMAT_FLAG):
+            isPaused = data.load(as: Int32.self) != 0
+            if !isPaused && refitWhenPlaying {
+                refitWhenPlaying = false
+                scheduleRefit()
+            }
         case ("paused-for-cache", MPV_FORMAT_FLAG): isBuffering = data.load(as: Int32.self) != 0
         case ("eof-reached", MPV_FORMAT_FLAG): reachedEnd = data.load(as: Int32.self) != 0
         default: break
@@ -205,7 +244,7 @@ public final class MPVPlayer {
         mpv_set_property(handle, name, MPV_FORMAT_FLAG, &flag)
     }
 
-    private func command(_ words: [String]) {
+    func command(_ words: [String]) {
         guard let handle else { return }
         var cStrings: [UnsafeMutablePointer<CChar>?] = words.map { strdup($0) }
         cStrings.append(nil)

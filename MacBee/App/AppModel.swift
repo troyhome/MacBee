@@ -154,7 +154,8 @@ final class AppModel {
     func go(to page: SidebarItem) {
         if page == .playlistStudio && !isInStudio { locationBeforeStudio = location }
         if page == .tags && !isInTrackStudio { locationBeforeTrackStudio = location }
-        // In Track Studio, library pages open beside it instead of leaving the mode.
+        // In Track Studio, library pages open beside it instead of leaving the mode. Music (Home) isn't one of
+        // them: it always leaves both studios.
         if isInTrackStudio && Self.browsableBesideTrackStudio.contains(page) {
             trackStudioBrowse = page
             location.albums = []
@@ -164,7 +165,7 @@ final class AppModel {
         location = Location(page: page)
     }
 
-    static let browsableBesideTrackStudio: Set<SidebarItem> = [.home, .collection, .artists, .albums, .search]
+    static let browsableBesideTrackStudio: Set<SidebarItem> = [.collection, .artists, .albums, .search]
 
     /// The Track Studio button: enters the mode, or leaves it back to where you were.
     func toggleTrackStudio() {

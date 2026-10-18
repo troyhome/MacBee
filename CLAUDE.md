@@ -360,6 +360,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   - Mini player went black again: several `MPVVideoView`s can exist during the switch, so each now has a `host`
     ("main"/"mini") and only the one matching `MPVPlayer.activeHost` takes the surface (set to "mini" before the
     mini window shows, back to "main" when it closes). Probe checked: picture shows in the small window.
+  - Mini player showed a zoomed-in corner: MPVKit's moltenvk context only measures the drawable on video reconfig,
+    so after any view resize mpv kept rendering at the old size. `MPVPlayer.scheduleRefit()` (200 ms after a resize)
+    briefly sets `video-aspect-override` to aspect*1.0005 then "no", forcing a reconfig; when paused it waits
+    until playback resumes (seek/frame-step don't trigger it while paused). Probe confirmed whole picture.
+  - Music (Home) in the sidebar always leaves Track Studio and Playlist Studio (removed from
+    `browsableBesideTrackStudio`). Track Studio title stays on one line in a narrow pane.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
