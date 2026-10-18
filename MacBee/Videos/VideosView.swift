@@ -50,26 +50,8 @@ struct VideosView: View {
     }
 
     private var searchRow: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 12))
-                .foregroundStyle(theme.textTertiary)
-            TextField("Search videos", text: $searchText)
-                .textFieldStyle(.plain)
-                .font(.system(size: 13))
-            if !searchText.isEmpty {
-                Button { searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(theme.textTertiary)
-                }
-                .buttonStyle(.plain)
-                .help("Clear search")
-            }
-        }
-        .padding(.horizontal, 8)
-        .frame(width: 240, height: 28)
-        .background(RoundedRectangle(cornerRadius: 7).fill(theme.surface))
+        FilterField(prompt: "Search videos", text: $searchText)
+            .frame(width: 240)
     }
 
     @ViewBuilder

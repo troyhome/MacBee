@@ -151,6 +151,16 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       registered zones (`secondaryClickPlaysPauses()` = background zone view) and toggles play/pause.
     - Videos page has a search box; videos can be liked (heart on hover / in the player). Likes are paths in
       UserDefaults "likedVideos" (per Mac, not in the DB). Collection > Videos shows liked videos only.
+  - Fixes after Troy's third test (2026-10-17):
+    - Two-finger pause confirmed working by Troy (the zone monitor was fine; earlier "nothing" was likely
+      two clicks pausing and resuming).
+    - Search box above the Artists list (`FilterField`, Common/, also used by Videos).
+    - A–Z strip (`AlphabetIndex`, Common/) beside the Artists list and the Albums grid/list (Albums: only when
+      sorted by Artist or Title). Placed in an HStack next to the ScrollView, not as an overlay, so the scroll
+      bar doesn't cover it.
+    - Albums toolbar Grid / List switch (`AlbumLayout`, @AppStorage "albumLayout"); list rows have round covers.
+    - `ColumnResizer`: 12-pt grab area above both neighbouring columns (zIndex), accent line while hovered or
+      dragged, double-click restores `defaultWidth`. Troy found the old 7-pt one hard to grab.
 - Roadmap Phases 2-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

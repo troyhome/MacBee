@@ -24,7 +24,7 @@ struct PlaylistStudioView: View {
                 .padding(20)
                 .frame(maxWidth: .infinity)
                 .background(theme.accent.opacity(0.06))
-            ColumnResizer(width: $panelWidth, range: 300...700, resizesLeftColumn: false)
+            ColumnResizer(width: $panelWidth, range: 300...700, resizesLeftColumn: false, defaultWidth: 380)
             StudioPlaylistPanel(playlistId: targetBinding,
                                 selectedTracks: model.results.filter { selection.contains($0.path) })
                 .padding(20)

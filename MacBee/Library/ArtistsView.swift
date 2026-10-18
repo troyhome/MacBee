@@ -10,12 +10,24 @@ struct ArtistsView: View {
     @AppStorage("selectedArtist") private var selectedKey = ""
     /// Width of the artist list, adjustable by dragging the divider.
     @AppStorage("artistColumnWidth") private var columnWidth = 300.0
+    /// Text in the search box above the artist list.
+    @State private var filter = ""
 
     var body: some View {
         HStack(spacing: 0) {
-            ArtistListColumn(artists: model.artists, selectedKey: $selectedKey)
-                .frame(width: columnWidth)
-            ColumnResizer(width: $columnWidth, range: 200...520)
+            VStack(spacing: 0) {
+                FilterField(prompt: "Search artists", text: $filter)
+                    .padding(.horizontal, 10)
+                    .padding(.top, 10)
+                ArtistListColumn(artists: shownArtists, selectedKey: $selectedKey)
+                    .overlay {
+                        if shownArtists.isEmpty && !filter.isEmpty {
+                            ContentUnavailableView.search(text: filter)
+                        }
+                    }
+            }
+            .frame(width: columnWidth)
+            ColumnResizer(width: $columnWidth, range: 200...520, defaultWidth: 300)
             Group {
                 if let artist = selectedArtist {
                     ArtistPageView(artist: artist)
@@ -34,6 +46,13 @@ struct ArtistsView: View {
             await model.load(from: library.database)
             if selectedArtist == nil { selectedKey = model.artists.first?.artistKey ?? "" }
         }
+    }
+
+    /// Artists whose name contains the search text.
+    private var shownArtists: [ArtistSummary] {
+        let query = filter.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return model.artists }
+        return model.artists.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 
     private var selectedArtist: ArtistSummary? {

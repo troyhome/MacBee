@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 
+
 extension View {
     /// A two-finger click (secondary click / right-click) anywhere on this view pauses or resumes.
     /// Used on the play bar, Now Playing and the mini player, which have no right-click menus of their own,

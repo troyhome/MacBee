@@ -13,31 +13,40 @@ struct ArtistListColumn: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 2) {
-                    ForEach(artists) { artist in
-                        ArtistRow(artist: artist, isSelected: artist.artistKey == selectedKey)
-                            .id(artist.artistKey)
-                            .onTapGesture(count: 2) { Task { await player.playArtist(artist) } }
-                            .onTapGesture {
-                                selectedKey = artist.artistKey
-                                focused = true
-                            }
-                            .contextMenu { ArtistContextMenu(artist: artist) }
-                            .draggable(DragPayload.artist(artist.artistKey).string)
+            HStack(spacing: 0) {
+                ScrollView {
+                    LazyVStack(spacing: 2) {
+                        ForEach(artists) { artist in
+                            ArtistRow(artist: artist, isSelected: artist.artistKey == selectedKey)
+                                .id(artist.artistKey)
+                                .onTapGesture(count: 2) { Task { await player.playArtist(artist) } }
+                                .onTapGesture {
+                                    selectedKey = artist.artistKey
+                                    focused = true
+                                }
+                                .contextMenu { ArtistContextMenu(artist: artist) }
+                                .draggable(DragPayload.artist(artist.artistKey).string)
+                        }
+                    }
+                    .padding(10)
+                }
+                .focusable()
+                .focused($focused)
+                .focusEffectDisabled()
+                .onKeyPress(.upArrow) { move(by: -1, proxy) }
+                .onKeyPress(.downArrow) { move(by: 1, proxy) }
+                .onKeyPress(.return) {
+                    guard let artist = artists.first(where: { $0.artistKey == selectedKey }) else { return .ignored }
+                    Task { await player.playArtist(artist) }
+                    return .handled
+                }
+                // The A–Z strip sits beside the list, clear of its scroll bar.
+                AlphabetIndex(available: Set(artists.map { AlphabetIndex.letter(for: $0.name) })) { letter in
+                    if let first = artists.first(where: { AlphabetIndex.letter(for: $0.name) == letter }) {
+                        proxy.scrollTo(first.artistKey, anchor: .top)
                     }
                 }
-                .padding(10)
-            }
-            .focusable()
-            .focused($focused)
-            .focusEffectDisabled()
-            .onKeyPress(.upArrow) { move(by: -1, proxy) }
-            .onKeyPress(.downArrow) { move(by: 1, proxy) }
-            .onKeyPress(.return) {
-                guard let artist = artists.first(where: { $0.artistKey == selectedKey }) else { return .ignored }
-                Task { await player.playArtist(artist) }
-                return .handled
+                .padding(.horizontal, 3)
             }
             .onChange(of: artists) {
                 // Show the remembered artist when the list first loads.
