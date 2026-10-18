@@ -22,11 +22,13 @@ private struct SyncPreferencesForm: View {
         Form {
             Section {
                 Toggle("Sync with my other Macs", isOn: $sync.isEnabled)
-                PreferenceNote("Keeps play counts, play history, favorites, ratings and playlists the same on your Macs. Turn this on on both Macs, on the same network. Nothing is deleted by a sync, and music files aren't copied: both Macs need the same music (the same drive, or a copy).")
+                PreferenceNote("Keeps play counts, play history, favorites, ratings, playlists and liked videos the same on your Macs. Turn this on on both Macs, on the same network. Music files aren't copied: both Macs need the same music (the same drive, or a copy).")
                 if sync.isEnabled {
                     LabeledContent("This Mac's code", value: sync.code)
                         .font(.system(size: 13, weight: .semibold).monospacedDigit())
                     PreferenceNote("Your other Mac asks for this code the first time it syncs with this one.")
+                    Toggle("Keep my Macs in step automatically", isOn: $sync.syncsAutomatically)
+                    PreferenceNote("After you've synced two Macs once, changes go across by themselves within about 20 seconds whenever MacBee is open on both: likes, favorites, ratings, playlists, plays and liked videos. Removing something on one Mac removes it on the other too. A copy of the library is saved each day before the first automatic sync.")
                 }
             }
             if sync.isEnabled {

@@ -364,6 +364,16 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     so after any view resize mpv kept rendering at the old size. `MPVPlayer.scheduleRefit()` (200 ms after a resize)
     briefly sets `video-aspect-override` to aspect*1.0005 then "no", forcing a reconfig; when paused it waits
     until playback resumes (seek/frame-step don't trigger it while paused). Probe confirmed whole picture.
+  - Automatic sync (NetworkSync Mode.automatic, on by default, toggle "Keep my Macs in step automatically"):
+    every 20 s, if this Mac's snapshot digest changed since the last sync, it syncs with every peer whose code it
+    knows; also when a peer comes online. Requests now carry `senderCode`, so the receiving Mac learns the
+    sender's code and can start syncs too. Merge is `ProfileSnapshot.merged(mine:myBase:theirs:theirBase:)`:
+    each Mac compares only with its OWN snapshot right after the last sync (SyncBase, App Support/MacBee/Sync/
+    <peer>.json, sent along as `Request.base`), so removals carry across but songs one Mac lacks never look
+    removed. Applied with `LibraryDatabase.applyProfile` (minimal diff, keeps playlist ids). Video likes sync
+    by file/folder name (`VideoLibrary.syncedLikeKeys` / `setSyncedLikes`, unmatched keys kept). Snapshots now
+    include favorites/ratings of missing (unplugged) songs. Safety: refuses when either side has no favorites,
+    playlists or plays; daily backup Library-before-auto-sync.sqlite. Not yet tested between the two real Macs.
   - Music (Home) in the sidebar always leaves Track Studio and Playlist Studio (removed from
     `browsableBesideTrackStudio`). Track Studio title stays on one line in a narrow pane.
 - All five roadmap phases built.

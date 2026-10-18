@@ -3,7 +3,8 @@ import MacBeeVideo
 import Observation
 
 /// The Videos section's data: the catalog of movies, shows and music videos (saved between launches and
-/// re-scanned in the background), likes, and how far each video was watched. Likes and positions are per Mac.
+/// re-scanned in the background), likes, and how far each video was watched. Likes travel to your other Macs with
+/// Sync (by file or folder name, since drive paths differ); positions stay per Mac.
 @MainActor
 @Observable
 final class VideoLibrary {
@@ -45,6 +46,7 @@ final class VideoLibrary {
         if reachable.count == roots.count || !found.isEmpty || previous.isEmpty {
             catalog = found
             VideoCatalogStore.save(found)
+            setSyncedLikes(syncedLikeKeys) // likes that arrived before these videos were found
         }
         isScanning = false
     }
@@ -150,6 +152,47 @@ final class VideoLibrary {
     func toggleLike(_ id: String) {
         if liked.remove(id) == nil { liked.insert(id) }
         UserDefaults.standard.set(Array(liked).sorted(), forKey: "likedVideos")
+    }
+
+    // MARK: - Likes on other Macs
+
+    /// Likes from other Macs not yet matched to a video here (that drive may not be scanned yet).
+    private var unmatchedLikeKeys: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "unmatchedVideoLikes") ?? [])
+
+    /// A like's name on every Mac: the file name (movies, music videos) or folder name (shows), lowercased.
+    static func syncKey(_ id: String) -> String { (id as NSString).lastPathComponent.lowercased() }
+
+    /// Every name a liked id could arrive under (a movie's other copies count too).
+    private var idsByKey: [String: [String]] {
+        var ids: [String: [String]] = [:]
+        for movie in catalog.movies {
+            for file in movie.files { ids[Self.syncKey(file.path), default: []].append(movie.id) }
+        }
+        for show in catalog.shows { ids[Self.syncKey(show.id), default: []].append(show.id) }
+        for video in catalog.musicVideos {
+            for file in video.allFiles { ids[Self.syncKey(file.path), default: []].append(video.id) }
+        }
+        return ids
+    }
+
+    /// The likes to send to another Mac.
+    var syncedLikeKeys: [String] { Set(liked.map(Self.syncKey)).union(unmatchedLikeKeys).sorted() }
+
+    /// Makes the likes here exactly `keys` (after a sync). Returns how many likes were added and removed.
+    @discardableResult
+    func setSyncedLikes(_ keys: [String]) -> Int {
+        let wanted = Set(keys)
+        let ids = idsByKey
+        var updated = liked.filter { wanted.contains(Self.syncKey($0)) }
+        var matched = Set<String>()
+        for key in wanted { if let found = ids[key] { updated.formUnion(found); matched.insert(key) } }
+        matched.formUnion(updated.map(Self.syncKey))
+        let changes = updated.symmetricDifference(liked).count
+        liked = updated
+        unmatchedLikeKeys = wanted.subtracting(matched)
+        UserDefaults.standard.set(Array(liked).sorted(), forKey: "likedVideos")
+        UserDefaults.standard.set(Array(unmatchedLikeKeys).sorted(), forKey: "unmatchedVideoLikes")
+        return changes
     }
 
     // MARK: - Watching

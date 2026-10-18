@@ -131,6 +131,8 @@ final class AppModel {
             await self?.library?.refreshAfterSync()
             await self?.playlists?.reload()
         }
+        networkSync?.likedVideos = { [weak self] in self?.videos.syncedLikeKeys ?? [] }
+        networkSync?.setLikedVideos = { [weak self] keys in self?.videos.setSyncedLikes(keys) ?? 0 }
         player.onNewQueue = { [weak self] album in
             guard let self else { return }
             // A whole album started from a grid opens that album's page; anything else returns to the page it was on.

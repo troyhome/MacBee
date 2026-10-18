@@ -7,6 +7,7 @@ import Observation
 /// ratings and playlists. Each Mac with "Sync with my other Macs" on announces itself on the local network
 /// (Bonjour) and shows a 6-digit code; the other Mac enters that code once, then "Sync Now" swaps everything
 /// both ways. Nothing is ever deleted by a sync. Music files are not copied: both Macs need the same music.
+/// After two Macs have synced once, they keep each other up to date automatically (see "Automatic sync").
 @MainActor
 @Observable
 final class NetworkSync {
@@ -26,6 +27,8 @@ final class NetworkSync {
         case sendMine
         /// This Mac's favorites and playlists are replaced by the other Mac's.
         case takeTheirs
+        /// The automatic sync between Macs that synced before: whichever Mac changed something wins, removals too.
+        case automatic
         var id: String { rawValue }
     }
 
@@ -55,11 +58,22 @@ final class NetworkSync {
 
     let deviceName = Host.current().localizedName ?? "Mac"
 
+    /// After the first sync, changes go across on their own whenever both Macs have MacBee open.
+    var syncsAutomatically: Bool = UserDefaults.standard.object(forKey: "networkSyncAuto") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(syncsAutomatically, forKey: "networkSyncAuto") }
+    }
+
     @ObservationIgnored private let library: MusicLibrary
     @ObservationIgnored private var listener: NWListener?
     @ObservationIgnored private var browser: NWBrowser?
     /// Called after another Mac's data was added here (to refresh playlists and lists).
     @ObservationIgnored var onMerged: (() async -> Void)?
+    /// Liked videos, by name (from the Videos library), and setting them after a sync.
+    @ObservationIgnored var likedVideos: (() -> [String])?
+    @ObservationIgnored var setLikedVideos: (([String]) -> Int)?
+    @ObservationIgnored private var autoTimer: Timer?
+    /// This Mac's data right after the last sync, to tell when something changed since.
+    @ObservationIgnored private var syncedDigest: String?
 
     init(library: MusicLibrary) {
         self.library = library
@@ -71,9 +85,11 @@ final class NetworkSync {
         (UserDefaults.standard.dictionary(forKey: "networkSyncPeerCodes") as? [String: String])?[peer.name]
     }
 
-    private func saveCode(_ code: String, for peer: Peer) {
+    private func saveCode(_ code: String, for peer: Peer) { saveCode(code, forName: peer.name) }
+
+    private func saveCode(_ code: String, forName name: String) {
         var codes = UserDefaults.standard.dictionary(forKey: "networkSyncPeerCodes") as? [String: String] ?? [:]
-        codes[peer.name] = code
+        codes[name] = code
         UserDefaults.standard.set(codes, forKey: "networkSyncPeerCodes")
     }
 
@@ -100,14 +116,24 @@ final class NetworkSync {
             }
             Task { @MainActor in
                 guard let self else { return }
+                let before = Set(self.peers.map(\.name))
                 self.peers = found.filter { $0.name != self.deviceName }.sorted { $0.name < $1.name }
+                // A Mac that just came online catches up with what changed while it was away.
+                for peer in self.peers where !before.contains(peer.name) {
+                    Task { await self.syncAutomatically(with: [peer]) }
+                }
             }
         }
         browser.start(queue: .main)
         self.browser = browser
+        autoTimer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.syncIfChanged() }
+        }
     }
 
     private func stop() {
+        autoTimer?.invalidate()
+        autoTimer = nil
         listener?.cancel()
         browser?.cancel()
         listener = nil
@@ -121,14 +147,35 @@ final class NetworkSync {
     private func mySnapshot() async throws -> ProfileSnapshot {
         var snapshot = try await library.database.profileSnapshot(deviceName: deviceName)
         snapshot.removedPlaylists = RemovedPlaylistsLog.recent
+        snapshot.likedVideos = likedVideos?()
         return snapshot
     }
 
     /// Adds another Mac's data here (never bringing back playlists deleted here), then notes its deletions.
     private func combine(_ snapshot: ProfileSnapshot) async throws -> ProfileMergeReport {
         let skipping = Set(RemovedPlaylistsLog.recent.map(\.key))
-        let report = try await library.database.mergeProfile(snapshot, skipping: skipping)
+        var report = try await library.database.mergeProfile(snapshot, skipping: skipping)
+        if let theirs = snapshot.likedVideos {
+            report.videoLikesChanged = setLikedVideos?(Array(Set(theirs).union(likedVideos?() ?? []))) ?? 0
+        }
         await noteRemovals(in: snapshot)
+        return report
+    }
+
+    /// Replaces this Mac's favorites, playlists and video likes with `snapshot`'s (backing up first).
+    private func mirror(_ snapshot: ProfileSnapshot) async throws -> URL {
+        let backup = try await backUpLibrary()
+        _ = try await library.database.mirrorProfile(snapshot)
+        if let theirs = snapshot.likedVideos { _ = setLikedVideos?(theirs) }
+        return backup
+    }
+
+    /// Makes this Mac match the agreed state of an automatic sync, and remembers how this Mac then looks.
+    private func applyAgreed(_ agreed: ProfileSnapshot, mine: ProfileSnapshot, peer: String) async throws -> ProfileMergeReport {
+        try await dailyBackup()
+        var report = try await library.database.applyProfile(agreed, deleting: mine.playlistKeysMissing(from: agreed))
+        if let videos = agreed.likedVideos { report.videoLikesChanged = setLikedVideos?(videos) ?? 0 }
+        SyncBase.save(try await mySnapshot(), peer: peer)
         return report
     }
 
@@ -156,7 +203,8 @@ final class NetworkSync {
         do {
             try await Wire.open(connection)
             let mine = try await mySnapshot()
-            try await Wire.send(Request(code: code, snapshot: mine, mode: mode), on: connection)
+            try await Wire.send(Request(code: code, snapshot: mine, mode: mode, senderCode: self.code,
+                                        base: mode == .automatic ? SyncBase.load(peer: peer.name) : nil), on: connection)
             let response: Response = try await Wire.receive(on: connection)
             guard response.ok, let theirs = response.snapshot else {
                 lastMessage = response.error ?? "\(peer.name) didn't accept the sync."
@@ -170,14 +218,75 @@ final class NetworkSync {
             case .sendMine:
                 lastMessage = "\(peer.name) now matches this Mac. \(response.report ?? "")"
             case .takeTheirs:
-                let backup = try await backUpLibrary()
-                _ = try await library.database.mirrorProfile(theirs)
+                let backup = try await mirror(theirs)
                 lastMessage = "This Mac now matches \(peer.name). A copy of this Mac's library from before is in \(backup.lastPathComponent)."
+            case .automatic:
+                let report = try await applyAgreed(theirs, mine: mine, peer: peer.name)
+                if report.changedSomething || response.report != nil {
+                    lastMessage = "Synced with \(peer.name) automatically at \(Date().formatted(date: .omitted, time: .shortened)). "
+                        + "Here: \(report.summary) There: \(response.report ?? "")"
+                }
+                await rememberSynced()
+                if report.changedSomething { await onMerged?() }
+                return
             }
+            if mode != .automatic { SyncBase.save(try await mySnapshot(), peer: peer.name) }
+            await rememberSynced()
             await onMerged?()
         } catch {
             lastMessage = "Couldn't sync with \(peer.name). \(error.localizedDescription)"
         }
+    }
+
+    // MARK: - Automatic sync
+
+    /// Every 20 seconds: if anything changed here since the last sync, send it to the Macs synced with before.
+    private func syncIfChanged() async {
+        guard isEnabled, syncsAutomatically, syncingWith == nil,
+              let digest = try? await Self.digest(mySnapshot()), digest != syncedDigest else { return }
+        await syncAutomatically(with: peers)
+    }
+
+    /// Syncs with each of `peers` that this Mac has synced with before (it knows their code).
+    func syncAutomatically(with peers: [Peer]) async {
+        guard isEnabled, syncsAutomatically else { return }
+        for peer in peers {
+            guard syncingWith == nil, let code = savedCode(for: peer) else { continue }
+            await sync(with: peer, code: code, mode: .automatic)
+        }
+    }
+
+    /// An empty library (a new install, or the database not opened yet) would look like everything was deleted,
+    /// so automatic sync stops and asks for a sync by hand instead.
+    static func emptyLibraryProblem(_ a: ProfileSnapshot, _ b: ProfileSnapshot) -> String? {
+        for snapshot in [a, b] where snapshot.songs.isEmpty && snapshot.playlists.isEmpty && snapshot.plays.isEmpty {
+            return "Automatic sync paused: MacBee on “\(snapshot.deviceName)” has no favorites, playlists or plays yet. Use Sync Now and choose Combine."
+        }
+        return nil
+    }
+
+    private func rememberSynced() async {
+        syncedDigest = try? await Self.digest(mySnapshot())
+    }
+
+    /// A summary of the data that syncs, independent of order, to notice changes.
+    private static func digest(_ snapshot: ProfileSnapshot) throws -> String {
+        var parts = snapshot.songs.map { "s\($0.key.fingerprint)|\($0.isFavorite)|\($0.rating ?? -1)" }.sorted()
+        parts.append("plays \(snapshot.plays.count) \(snapshot.plays.map(\.playedAt).max()?.timeIntervalSince1970 ?? 0)")
+        parts += snapshot.playlists.map { (["p"] + $0.folders + [$0.name, "\($0.capacitySeconds ?? 0)"] + $0.songs.map(\.fingerprint)).joined(separator: "|") }.sorted()
+        parts += (snapshot.likedVideos ?? []).map { "v" + $0 }
+        return parts.joined(separator: "\n")
+    }
+
+    /// Automatic syncs change things without asking, so a copy of the library is kept from each day's first one.
+    private func dailyBackup() async throws {
+        let day = Date().formatted(.iso8601.year().month().day())
+        guard UserDefaults.standard.string(forKey: "networkSyncBackupDay") != day else { return }
+        let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MacBee/Library-before-auto-sync.sqlite")
+        try? FileManager.default.removeItem(at: url)
+        try await library.database.backup(to: url)
+        UserDefaults.standard.set(day, forKey: "networkSyncBackupDay")
     }
 
     /// Another Mac asked to sync: check its code, add its data here, send ours back.
@@ -192,6 +301,8 @@ final class NetworkSync {
                 return
             }
             let from = request.snapshot.deviceName
+            // Remember the other Mac's code so this Mac can sync with it automatically too.
+            if let senderCode = request.senderCode { saveCode(senderCode, forName: from) }
             switch request.mode ?? .combine {
             case .combine:
                 let report = try await combine(request.snapshot)
@@ -200,8 +311,7 @@ final class NetworkSync {
                 lastMessage = "\(from) combined with this Mac. \(report.summary)"
             case .sendMine:
                 // The other Mac asked for this one to match it.
-                let backup = try await backUpLibrary()
-                _ = try await library.database.mirrorProfile(request.snapshot)
+                let backup = try await mirror(request.snapshot)
                 let mine = try await mySnapshot()
                 try await Wire.send(Response(ok: true, snapshot: mine, report: "Its playlists and favorites were replaced; a backup was saved there."),
                                     on: connection)
@@ -211,7 +321,27 @@ final class NetworkSync {
                 let mine = try await mySnapshot()
                 try await Wire.send(Response(ok: true, snapshot: mine, report: nil), on: connection)
                 lastMessage = "\(from) copied this Mac's playlists and favorites."
+            case .automatic:
+                let mine = try await mySnapshot()
+                if let problem = Self.emptyLibraryProblem(mine, request.snapshot) {
+                    try await Wire.send(Response(ok: false, error: problem), on: connection)
+                    lastMessage = problem
+                    return
+                }
+                let agreed = ProfileSnapshot.merged(mine: mine, myBase: SyncBase.load(peer: from),
+                                                    theirs: request.snapshot, theirBase: request.base)
+                let report = try await applyAgreed(agreed, mine: mine, peer: from)
+                try await Wire.send(Response(ok: true, snapshot: agreed, report: report.changedSomething ? report.summary : nil),
+                                    on: connection)
+                await rememberSynced()
+                if report.changedSomething {
+                    lastMessage = "\(from) synced with this Mac automatically at \(Date().formatted(date: .omitted, time: .shortened)). \(report.summary)"
+                    await onMerged?()
+                }
+                return
             }
+            if request.mode != .automatic { SyncBase.save(try await mySnapshot(), peer: from) }
+            await rememberSynced()
             await onMerged?()
         } catch {
             lastMessage = "A sync from another Mac didn't finish. \(error.localizedDescription)"
@@ -233,6 +363,10 @@ final class NetworkSync {
         var snapshot: ProfileSnapshot
         /// Missing from older versions: combine.
         var mode: Mode?
+        /// The sending Mac's own code, so the other Mac can start automatic syncs too. Missing from older versions.
+        var senderCode: String?
+        /// Automatic sync: how the sending Mac looked right after its last sync with this one.
+        var base: ProfileSnapshot?
     }
 
     struct Response: Codable {
@@ -240,6 +374,27 @@ final class NetworkSync {
         var error: String?
         var snapshot: ProfileSnapshot?
         var report: String?
+    }
+}
+
+/// How this Mac's data looked right after its last sync with each other Mac, so the next automatic sync can
+/// tell what changed here since (including removals). Kept in Application Support > MacBee > Sync.
+private enum SyncBase {
+    static func url(peer: String) -> URL {
+        let safe = peer.map { $0.isLetter || $0.isNumber ? $0 : "-" }
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MacBee/Sync/\(String(safe)).json")
+    }
+
+    static func load(peer: String) -> ProfileSnapshot? {
+        guard let data = try? Data(contentsOf: url(peer: peer)) else { return nil }
+        return try? JSONDecoder().decode(ProfileSnapshot.self, from: data)
+    }
+
+    static func save(_ snapshot: ProfileSnapshot, peer: String) {
+        let url = url(peer: peer)
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? JSONEncoder().encode(snapshot).write(to: url, options: .atomic)
     }
 }
 

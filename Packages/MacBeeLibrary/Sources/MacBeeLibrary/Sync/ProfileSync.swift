@@ -53,6 +53,10 @@ public struct ProfileSnapshot: Codable, Sendable {
     public var playlists: [PlaylistCopy] = []
     /// Missing from older versions.
     public var removedPlaylists: [RemovedPlaylist]?
+    public init(deviceName: String) { self.deviceName = deviceName }
+
+    /// Liked movies, shows and music videos, by file or folder name (filled in by the app). Missing from older versions.
+    public var likedVideos: [String]?
 }
 
 /// What a merge changed, for the message after syncing.
@@ -63,6 +67,18 @@ public struct ProfileMergeReport: Sendable, Equatable {
     public var playlistsAdded = 0
     public var playlistSongsAdded = 0
     public var songsNotFound = 0
+    public var favoritesRemoved = 0
+    public var playlistsChanged = 0
+    public var playlistsRemoved = 0
+    /// Set by the app (video likes aren't in the music library).
+    public var videoLikesChanged = 0
+
+    /// Whether anything here changed (songs that couldn't be found don't count).
+    public var changedSomething: Bool {
+        var copy = self
+        copy.songsNotFound = 0
+        return copy != ProfileMergeReport()
+    }
 
     public var summary: String {
         var parts: [String] = []
@@ -71,7 +87,15 @@ public struct ProfileMergeReport: Sendable, Equatable {
         if ratingsUpdated > 0 { parts.append("\(ratingsUpdated) ratings") }
         if playlistsAdded > 0 { parts.append("\(playlistsAdded) new playlists") }
         if playlistSongsAdded > 0 { parts.append("\(playlistSongsAdded) playlist songs") }
-        return parts.isEmpty ? "Already in step, nothing new." : "Added " + parts.joined(separator: ", ") + "."
+        var removed: [String] = []
+        if favoritesRemoved > 0 { removed.append("\(favoritesRemoved) favorites") }
+        if playlistsRemoved > 0 { removed.append("\(playlistsRemoved) playlists") }
+        var lines: [String] = []
+        if !parts.isEmpty { lines.append("Added " + parts.joined(separator: ", ") + ".") }
+        if videoLikesChanged > 0 { lines.append("Changed \(videoLikesChanged) video like\(videoLikesChanged == 1 ? "" : "s").") }
+        if playlistsChanged > 0 { lines.append("Updated \(playlistsChanged) playlist\(playlistsChanged == 1 ? "" : "s").") }
+        if !removed.isEmpty { lines.append("Removed " + removed.joined(separator: ", ") + ".") }
+        return lines.isEmpty ? "Already in step, nothing new." : lines.joined(separator: " ")
     }
 }
 
@@ -83,7 +107,7 @@ public extension LibraryDatabase {
             let keys = try Self.songKeys(db)
             var snapshot = ProfileSnapshot(deviceName: deviceName)
             let states = try Row.fetchAll(db, sql: """
-                SELECT id, isFavorite, rating FROM track WHERE isMissing = 0 AND (isFavorite = 1 OR rating IS NOT NULL)
+                SELECT id, isFavorite, rating FROM track WHERE isFavorite = 1 OR rating IS NOT NULL
                 """)
             snapshot.songs = states.compactMap { row in
                 keys[row["id"] as Int64].map { .init(key: $0, isFavorite: row["isFavorite"], rating: row["rating"]) }
