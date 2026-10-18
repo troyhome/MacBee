@@ -140,3 +140,24 @@ final class SourcesTests: XCTestCase {
         XCTAssertEqual(tribute.map(\.artist), ["Band One", "Band Two", "Band Three"])
     }
 }
+
+final class ArtistPageQueriesTests: XCTestCase {
+    func testSimilarArtistsShareGenres() async throws {
+        let db = try LibraryDatabase()
+        let folder = try await db.insertFolder(path: "/M", name: "M")
+        func song(_ artist: String, _ genre: String, _ n: Int) -> ScannedTrack {
+            var t = ScannedTrack(path: "/M/\(artist)/\(n).flac", fileSize: 1, modifiedAt: Date())
+            t.title = "\(artist) \(n)"; t.artist = artist; t.album = "\(artist) LP"; t.genre = genre; t.duration = 200; t.codec = "FLAC"
+            return t
+        }
+        _ = try await db.save([song("Ride", "Shoegaze; Rock", 1), song("Slowdive", "Shoegaze", 1),
+                               song("Kraftwerk", "Electronic", 1), song("Moby", "Electronic", 1)], folderId: folder.id!)
+        try await db.refreshVisibility()
+        let similar = try await db.similarArtists(to: LibraryKeys.normalize("Ride"))
+        XCTAssertEqual(similar.map(\.name), ["Slowdive"])
+        let ride = try await db.artists().first { $0.name == "Ride" }!
+        let mixes = try await db.artistMixes(for: ride)
+        XCTAssertEqual(mixes.first?.title, "Ride Radio")
+        XCTAssertEqual(Set(mixes.first?.tracks.map(\.displayArtist) ?? []), ["Ride", "Slowdive"])
+    }
+}

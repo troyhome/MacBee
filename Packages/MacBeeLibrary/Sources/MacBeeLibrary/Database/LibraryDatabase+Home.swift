@@ -117,6 +117,8 @@ public extension LibraryDatabase {
         case .favorites:
             return try Track.fetchAll(db, sql: "\(base) AND isFavorite = 1 ORDER BY \(dailyOrder) LIMIT ?",
                                       arguments: [limit])
+        case .artist:
+            return [] // artist-page mixes are built by `artistMixes(for:)`
         }
     }
 }

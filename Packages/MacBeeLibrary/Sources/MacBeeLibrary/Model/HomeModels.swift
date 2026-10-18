@@ -59,6 +59,15 @@ public struct Mix: Identifiable, Hashable, Sendable {
         case decade(Int)
         case hiRes
         case favorites
+        /// Mixes on an artist's page; the text tells them apart (e.g. "radio:<artistKey>").
+        case artist(String)
+    }
+
+    public init(kind: Kind, title: String, subtitle: String, tracks: [Track]) {
+        self.kind = kind
+        self.title = title
+        self.subtitle = subtitle
+        self.tracks = tracks
     }
 
     public var kind: Kind

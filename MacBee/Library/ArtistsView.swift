@@ -31,7 +31,7 @@ struct ArtistsView: View {
             ColumnResizer(width: $columnWidth, range: 200...520, defaultWidth: 300)
             Group {
                 if let artist = selectedArtist {
-                    ArtistPageView(artist: artist)
+                    ArtistPageView(artist: artist) { other in selectedKey = other.artistKey }
                 } else if model.isLoaded {
                     ContentUnavailableView("No artists yet", systemImage: "music.mic",
                                            description: Text("Add a music folder on the Music page."))

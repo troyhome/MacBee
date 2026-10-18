@@ -240,6 +240,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       (Scanning/) reads the frame's value for MP3s. One-time re-read of MP3s marked compilation at launch
       (UserDefaults "MacBee.rereadMP3Compilations.v1"). Mintzkov's albums were under Various Artists because of it.
       `refreshFiles` (tag editor saves) now re-runs `applyVisibility` (duplicates/compilations).
+    - Artist page layout switch (header, next to Play; @AppStorage "artistLayout"): "Albums and songs" (original)
+      or "Overview (TIDAL style)" = `ArtistOverviewView`: Albums (covers), EPs & Singles (<= 6 songs and < 30 min;
+      <= 3 = Single), Mixes (`artistMixes(for:)`: <Artist> Radio with similar artists, Top Tracks, Deep Cuts,
+      Favorites), Videos (music videos whose title/folder has the artist's name), Similar Artists
+      (`similarArtists(to:)`: genre overlap, compilations left out).
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.

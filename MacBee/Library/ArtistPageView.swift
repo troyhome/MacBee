@@ -1,10 +1,28 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// Right column of the Artists page: header, then every album with its songs.
-/// Double-click a song to play its album from there; click an album title to open it.
+/// Right column of the Artists page. Two layouts, switched in the header: every album with its songs
+/// (double-click a song to play its album from there; click an album title to open it), or the TIDAL-style
+/// overview (`ArtistOverviewView`).
 struct ArtistPageView: View {
     let artist: ArtistSummary
+    /// Opens another artist (from Similar Artists).
+    var onSelectArtist: (ArtistSummary) -> Void = { _ in }
+    @AppStorage("artistLayout") private var layout: ArtistLayout = .albumsWithSongs
+
+    var body: some View {
+        if layout == .overview {
+            ArtistOverviewView(artist: artist, layout: $layout, onSelectArtist: onSelectArtist)
+        } else {
+            ArtistAlbumsWithSongsView(artist: artist, layout: $layout)
+        }
+    }
+}
+
+/// Every album of the artist, each with its songs.
+private struct ArtistAlbumsWithSongsView: View {
+    let artist: ArtistSummary
+    @Binding var layout: ArtistLayout
 
     @Environment(MusicLibrary.self) private var library
     @Environment(PlayerViewModel.self) private var player
@@ -15,7 +33,7 @@ struct ArtistPageView: View {
 
     var body: some View {
         List(selection: $selection) {
-            ArtistPageHeader(artist: artist,
+            ArtistPageHeader(artist: artist, layout: $layout,
                              onPlay: { player.play(model.allTracks) },
                              onShuffle: { player.playShuffled(model.allTracks) })
                 .listRowSeparator(.hidden)
@@ -68,8 +86,9 @@ struct ArtistPageView: View {
     }
 }
 
-private struct ArtistPageHeader: View {
+struct ArtistPageHeader: View {
     let artist: ArtistSummary
+    @Binding var layout: ArtistLayout
     let onPlay: () -> Void
     let onShuffle: () -> Void
     @Environment(\.theme) private var theme
@@ -82,6 +101,13 @@ private struct ArtistPageHeader: View {
                     .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
                 Spacer()
+                Picker("Layout", selection: $layout) {
+                    ForEach(ArtistLayout.allCases) { Image(systemName: $0.systemImage).help($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .help("Show albums with their songs, or a TIDAL-style overview")
                 CircleButton(systemImage: "play.fill", help: "Play", action: onPlay)
                 CircleButton(systemImage: "shuffle", help: "Shuffle", action: onShuffle)
             }
