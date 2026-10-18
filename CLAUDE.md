@@ -311,6 +311,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     song, no playlist file). Two-finger tap stopped working: diagnostic log added (category "SecondaryClick").
 - Roadmap Phase 4 PASSED (Troy, 2026-10-18: "Next"). Plex posters came back after Troy signed in to Plex again
   (the keychain change on the other Mac had lost the token on this Mac: both keychains returned -25300).
+- Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
+  builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
+  run `brew install gh && gh auth login` once per Mac. The repo is private, so Releases are only downloadable by
+  Troy. Plan: no Mac App Store (sandbox blocks hog mode, media-key tap, free network-drive access); once the
+  Developer membership is active, add Developer ID signing + notarization to the release step.
 - Roadmap Phase 5 PASSED 2026-10-18 (Troy confirmed automatic sync works between CMBA and DDMBA). Roadmap complete:
   - TagBee: Track Studio > TagBee tab = search songs, tick, "Open N in TagBee" (double-click opens one), and a
     "Send to TagBee" menu (song playing / album playing / just open TagBee). Uses `ExternalTagEditor`, which
