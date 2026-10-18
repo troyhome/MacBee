@@ -22,7 +22,7 @@ public enum VideoScanner {
         var movies: [String: Movie] = [:]
         var shows: [String: Show] = [:]
         var musicVideos: [MusicVideo] = []
-        var seenMusicVideos = Set<String>()
+        var musicVideoIndex: [String: Int] = [:]
 
         for root in roots {
             // Resolved, so paths from the walk line up with it (/var vs /private/var, symlinked drives).
@@ -33,7 +33,11 @@ public enum VideoScanner {
                     // The same video in another music folder (a second drive) shows once: the first folder wins,
                     // and folders come in priority order.
                     let key = VideoScanner.sortKey(found.url.deletingPathExtension().lastPathComponent)
-                    guard seenMusicVideos.insert(key).inserted else { continue }
+                    if let index = musicVideoIndex[key] {
+                        musicVideos[index].otherFiles = (musicVideos[index].otherFiles ?? []) + [found.file]
+                        continue
+                    }
+                    musicVideoIndex[key] = musicVideos.count
                     musicVideos.append(MusicVideo(title: found.url.deletingPathExtension().lastPathComponent,
                                                   folderName: found.url.deletingLastPathComponent().lastPathComponent,
                                                   file: found.file))

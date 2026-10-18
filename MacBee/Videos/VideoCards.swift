@@ -1,3 +1,4 @@
+import AppKit
 import MacBeeVideo
 import SwiftUI
 
@@ -38,6 +39,14 @@ struct VideoPosterCard: View {
         .contentShape(Rectangle())
         .onHover { isHovering in withAnimation(.easeOut(duration: 0.15)) { hovering = isHovering } }
         .onTapGesture(perform: onOpen)
+        .contextMenu {
+            if case .musicVideo = title { Button("Play", action: onOpen) } else { Button("Open", action: onOpen) }
+            Button(app.videos.isLiked(title.id) ? "Unlike" : "Like") { app.videos.toggleLike(title.id) }
+            if let file = title.previewFile {
+                Divider()
+                Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }
+            }
+        }
         .help(title.title)
     }
 

@@ -250,6 +250,10 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       wins). Paused music folders aren't searched for music videos.
     - Playing From remembers the artist when music starts on the Artists page (`Location.artistKey`, restored into
       @AppStorage "selectedArtist").
+    - "Tags" sidebar item renamed "Track Studio" (code still `.tags` / `MacBee/Tags/`); Playlist Studio row moved
+      right under it. Duplicates tab has a Songs / Videos switch: `VideoDuplicatesView` lists movies with several
+      files and music videos with `otherFiles` (same name in another folder/drive/format), with Show in Finder and
+      Delete from Disk (Trash, else confirm permanent). Video cards' right-click menu has Show in Finder.
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.

@@ -25,6 +25,13 @@ struct SidebarView: View {
                 SidebarRow(item: item, isSelected: isSelected(item), collapsed: collapsed) {
                     app.go(to: item)
                 }
+                if item == .tags {
+                    // Playlist Studio sits right under Track Studio.
+                    SidebarRow(item: .playlistStudio, isSelected: selection == .playlistStudio, collapsed: collapsed) {
+                        app.toggleStudio()
+                    }
+                    .help(app.isInStudio ? "Leave Playlist Studio" : "Open Playlist Studio")
+                }
             }
             if collapsed {
                 // Playlists stay reachable as small pictures; hover for the name.
@@ -36,10 +43,6 @@ struct SidebarView: View {
                     .padding(.top, 14)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
-            SidebarRow(item: .playlistStudio, isSelected: selection == .playlistStudio, collapsed: collapsed) {
-                app.toggleStudio()
-            }
-            .help(app.isInStudio ? "Leave Playlist Studio" : "Open Playlist Studio")
             LibrarySourceStatus(collapsed: collapsed)
                 .padding(.horizontal, 18)
                 .padding(.top, 2)

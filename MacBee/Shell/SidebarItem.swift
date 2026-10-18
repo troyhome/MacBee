@@ -16,7 +16,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .artists: "Artists"
         case .albums: "Albums"
         case .playlists: "Playlists"
-        case .tags: "Tags"
+        case .tags: "Track Studio"
         case .playlistStudio: "Playlist Studio"
         }
     }
@@ -31,7 +31,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .artists: "music.mic"
         case .albums: "square.stack"
         case .playlists: "music.note.list"
-        case .tags: "tag"
+        case .tags: "slider.horizontal.3"
         case .playlistStudio: "wand.and.stars"
         }
     }

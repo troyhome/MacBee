@@ -6,7 +6,7 @@ import SwiftUI
 /// in Preferences > Library); here you can see every copy and deal with the extras: tick copies and take them
 /// out of the library (the files stay on the drive) or delete them from the disk.
 /// The folder menu limits the list to duplicates inside one folder.
-struct DuplicatesView: View {
+struct SongDuplicatesView: View {
     @Environment(MusicLibrary.self) private var library
     @Environment(\.theme) private var theme
     @State private var groups: [DuplicateGroup] = []

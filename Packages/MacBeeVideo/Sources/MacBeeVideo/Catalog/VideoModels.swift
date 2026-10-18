@@ -88,7 +88,11 @@ public struct MusicVideo: Codable, Hashable, Sendable, Identifiable {
     public var title: String
     public var folderName: String
     public var file: VideoFile
+    /// Other copies of the same video (same name, another folder, drive or format). Only `file` is shown.
+    public var otherFiles: [VideoFile]? = nil
     public var id: String { file.path }
+
+    public var allFiles: [VideoFile] { [file] + (otherFiles ?? []) }
 }
 
 /// Everything found in the video folders.

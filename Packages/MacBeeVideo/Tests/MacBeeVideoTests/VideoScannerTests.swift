@@ -75,6 +75,7 @@ final class VideoScannerTests: XCTestCase {
                                          .init(url: root.appendingPathComponent("B"), kind: .musicVideos)])
         XCTAssertEqual(catalog.musicVideos.count, 1)
         XCTAssertTrue(catalog.musicVideos[0].file.path.contains("/A/"))
+        XCTAssertEqual(catalog.musicVideos[0].otherFiles?.count, 1, "the other drive's copy is kept for the Duplicates page")
     }
 
     func testStoreRoundTrip() throws {

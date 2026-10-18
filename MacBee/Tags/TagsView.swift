@@ -1,7 +1,8 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// The Tags page: tools for keeping the library tidy. Duplicates lists songs with more than one copy;
+/// The Track Studio page (sidebar item "tags" in code): tools for keeping the library tidy. Duplicates lists
+/// songs and videos with more than one copy;
 /// TagBee opens the tag editor (fuller TagBee integration comes in roadmap Phase 5).
 struct TagsView: View {
     @Environment(AppModel.self) private var app
@@ -15,7 +16,7 @@ struct TagsView: View {
                     if app.canGoBack {
                         CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
                     }
-                    Text("Tags")
+                    Text("Track Studio")
                         .font(.system(size: 30, weight: .bold))
                         .foregroundStyle(theme.textPrimary)
                 }
@@ -31,12 +32,12 @@ struct TagsView: View {
             .padding(.bottom, 8)
 
             switch section {
-            case .duplicates: DuplicatesView()
+            case .duplicates: DuplicatesContainer()
             case .tagBee: TagBeePanel()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .navigationTitle("Tags")
+        .navigationTitle("Track Studio")
     }
 }
 
