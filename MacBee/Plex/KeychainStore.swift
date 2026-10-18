@@ -1,5 +1,8 @@
 import Foundation
+import OSLog
 import Security
+
+private let keychainLog = Logger(subsystem: "com.troyhomenchuk.MacBee", category: "Keychain")
 
 /// Stores MacBee's Plex token in the modern (data protection) keychain,
 /// which doesn't show the "wants to access key" password prompt.
@@ -72,8 +75,9 @@ enum KeychainStore {
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: AnyObject?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data else { return nil }
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        keychainLog.notice("read \(modern ? "modern" : "old", privacy: .public) keychain: \(status, privacy: .public)")
+        guard status == errSecSuccess, let data = result as? Data else { return nil }
         return String(data: data, encoding: .utf8)
     }
 }

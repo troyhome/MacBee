@@ -93,7 +93,8 @@ struct NowPlayingView: View {
                 .padding(.top, 18)
             TransportControls()
                 .frame(maxWidth: .infinity)
-            LyricsPlaceholder()
+            LyricsPanel(track: track)
+                .frame(maxHeight: 260)
                 .padding(.top, 18)
         }
     }
@@ -108,17 +109,5 @@ struct NowPlayingView: View {
 
     private func close() {
         app.showNowPlaying = false
-    }
-}
-
-/// Reserved space for lyrics (a later phase).
-private struct LyricsPlaceholder: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "quote.bubble")
-            Text("Lyrics will appear here in a future version.")
-        }
-        .font(.system(size: 12))
-        .foregroundStyle(.white.opacity(0.45))
     }
 }

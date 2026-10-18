@@ -290,7 +290,21 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     couldn't reach any music folder keeps the previous music videos. Playlist Studio: double-click / Return plays
     or pauses a song (`PlayerViewModel.playOrToggle`) in both lists (adding is drag, Add Selected, ⌘Return); the
     studio playlist's Play button is a small play/pause icon.
-- Roadmap Phases 4-5: not started.
+- Roadmap Phase 3 PASSED (Troy, 2026-10-18: "next").
+- Roadmap Phase 4 BUILT 2026-10-18, waiting for Troy's smoke tests:
+  - Device Sync = Track Studio tab (`Tags/DeviceSyncView.swift`; logic in MacBeeLibrary `Sync/DeviceSync.swift`,
+    tested): choose a device/folder (UserDefaults "syncDestination"), tick smart playlists / playlists / saved mixes
+    ("syncSelection"), Check What Changes, Sync Now (progress, Stop). Songs -> Artist/Album/## - Title.ext
+    (disc prefix "2-03" on multi-disc; FAT-unsafe characters -> "_"), Playlists/<name>.m3u8 with "../" paths,
+    copies only when missing or a different size, removes only files listed in the device's .macbee-sync.json
+    (what MacBee put there before) and cleans empty folders.
+  - Lyrics (`Lyrics/Lyrics.swift`): `LyricsReader` = embedded tag lyrics first (SFB metadata.lyrics; LRC-formatted
+    text shows timed), then <same name>.lrc next to the file (`LRCParser`: multiple stamps per line, [offset:]).
+    Now Playing `LyricsPanel`: timed lines highlight and scroll with playback; click a line to jump there.
+    Troy's 2 Set Music has ~878 .lrc files.
+  - Plex videos debug: Keychain reads log their OSStatus (category "Keychain"); PlexVideos log said "not signed in"
+    on 2026-10-18 02:14 right after a reinstall, i.e. the token wasn't readable at that launch.
+- Roadmap Phase 5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).

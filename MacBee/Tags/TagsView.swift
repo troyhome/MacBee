@@ -28,6 +28,7 @@ struct TagsView: View {
             switch section {
             case .duplicates: DuplicatesContainer()
             case .tagBee: TagBeePanel()
+            case .sync: DeviceSyncView()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -36,10 +37,22 @@ struct TagsView: View {
 }
 
 enum TagsSection: String, CaseIterable, Identifiable {
-    case duplicates, tagBee
+    case duplicates, tagBee, sync
     var id: String { rawValue }
-    var title: String { self == .duplicates ? "Duplicates" : "TagBee" }
-    var systemImage: String { self == .duplicates ? "square.on.square" : "tag" }
+    var title: String {
+        switch self {
+        case .duplicates: "Duplicates"
+        case .tagBee: "TagBee"
+        case .sync: "Device Sync"
+        }
+    }
+    var systemImage: String {
+        switch self {
+        case .duplicates: "square.on.square"
+        case .tagBee: "tag"
+        case .sync: "externaldrive.badge.checkmark"
+        }
+    }
 }
 
 /// For now: open TagBee. Roadmap Phase 5 connects it more closely.
