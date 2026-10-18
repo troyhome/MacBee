@@ -36,7 +36,7 @@ public final class MPVSurfaceView: NSView {
     }
 }
 
-/// Shows an `MPVPlayer`'s picture. Wherever this view appears, it takes the player's surface.
+/// Shows an `MPVPlayer`'s picture. When this view appears, it takes the player's surface.
 public struct MPVVideoView: NSViewRepresentable {
     let player: MPVPlayer
 
@@ -50,8 +50,11 @@ public struct MPVVideoView: NSViewRepresentable {
         return container
     }
 
+    /// Takes the surface back only if nothing else is showing it. (Taking it whenever SwiftUI refreshes this view
+    /// would pull it out of the mini player window while the old full-size view is still going away.)
     public func updateNSView(_ container: NSView, context: Context) {
-        if player.surface.superview !== container { adopt(into: container) }
+        let surface = player.surface
+        if surface.superview !== container && surface.window == nil { adopt(into: container) }
     }
 
     private func adopt(into container: NSView) {

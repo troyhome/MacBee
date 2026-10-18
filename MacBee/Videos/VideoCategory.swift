@@ -1,4 +1,4 @@
-/// The sections in the Videos sidebar, like the Apple TV app's library. `liked` is Collection > Videos.
+/// The sections in the Videos sidebar, like the Apple TV app's library. `liked` is Collections > Videos.
 enum VideoCategory: String, CaseIterable, Identifiable {
     case recentlyPlayed, movies, shows, musicVideos, genres, liked
 

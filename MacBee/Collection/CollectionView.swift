@@ -16,7 +16,7 @@ struct CollectionView: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationTitle("Collection")
+        .navigationTitle("Collections")
         .task(id: "\(library.revision)-\(player.favoritesSaved)") {
             await model.load(from: library.database)
         }
@@ -28,7 +28,7 @@ struct CollectionView: View {
                 if app.canGoBack {
                     CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
                 }
-                Text("Collection")
+                Text("Collections")
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(theme.textPrimary)
             }

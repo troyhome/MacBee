@@ -75,7 +75,7 @@ struct VideoBadge: View {
     }
 }
 
-/// Heart that likes or unlikes a movie, show or music video. Liked ones show in Collection > Videos.
+/// Heart that likes or unlikes a movie, show or music video. Liked ones show in Collections > Videos.
 struct VideoLikeButton: View {
     let id: String
     var diameter: CGFloat = 28
@@ -84,7 +84,7 @@ struct VideoLikeButton: View {
     var body: some View {
         let liked = app.videos.isLiked(id)
         CircleButton(systemImage: liked ? "heart.fill" : "heart",
-                     help: liked ? "Unlike (removes it from Collection)" : "Like (adds it to Collection)",
+                     help: liked ? "Unlike (removes it from Collections)" : "Like (adds it to Collections)",
                      diameter: diameter) { app.videos.toggleLike(id) }
     }
 }

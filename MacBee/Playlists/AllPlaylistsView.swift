@@ -48,7 +48,7 @@ struct AllPlaylistsView: View {
                 }
             }
         }
-        .navigationTitle(embedded ? "Collection" : "Playlists")
+        .navigationTitle(embedded ? "Collections" : "Playlists")
     }
 
     /// Top-level playlists first, then one group per folder (in sidebar order).

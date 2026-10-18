@@ -191,7 +191,7 @@ private struct AlbumActions: View {
             .fixedSize()
             .help("Add this album to a playlist")
             ActionPill(title: isFavorite ? "Favorited" : "Favorite", systemImage: isFavorite ? "heart.fill" : "heart",
-                       help: isFavorite ? "Remove from Favorites" : "Add to Favorites (shows in Collection)") {
+                       help: isFavorite ? "Remove from Favorites" : "Add to Favorites (shows in Collections)") {
                 player.setFavorite(tracks, !isFavorite)
             }
         }

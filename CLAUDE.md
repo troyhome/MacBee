@@ -69,6 +69,7 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
 - Phase 6 DONE (checked by Troy): Preferences window (⌘,) in `MacBee/Preferences/` with General, Appearance,
   Library, Audio, Plex (placeholder) and Tag Editor (choose app) tabs. App settings live in `PreferencesStore`;
   audio in `OutputSettingsStore` (now with loadIntoMemory); theme/accent (incl. custom color) in `ThemeStore`.
+- The "Collection" page is called "Collections" in the UI (Troy, 2026-10-17); code names stay `collection`.
 - Phase 7 DONE (checked by Troy): playlists + nested folders (DB migration v2; `LibraryDatabase+Playlists.swift`,
   `M3UPlaylist`, tests in `PlaylistTests`), app code in `MacBee/Playlists/` (PlaylistStore, sidebar tree, pages,
   drag payloads as "macbee:..." strings), Add to Playlist menus in `MacBee/Menus/`, Playlist Studio in
@@ -188,7 +189,9 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       "Back to MacBee" (or double-click) returns the video to the main window; its close button stops the video.
       Playback state lives in `VideoSession` (AppModel.videoSession: MPVPlayer, current item, next episodes,
       position saving) so it survives the move. `MPVPlayer.surface` is the one NSView mpv draws into; each
-      `MPVVideoView` adopts it (reparenting), because mpv's `wid` layer can't change after start. Checked: playback
+      `MPVVideoView` adopts it (reparenting), because mpv's `wid` layer can't change after start. It adopts only in
+      makeNSView or when the surface is orphaned: adopting on every update pulled the picture back out of the mini
+      window (Troy saw black with sound). Checked: playback
       continues and the drawable resizes when the surface moves windows. (The first in-window version cropped the
       picture; Troy asked for a separate window.)
     - Show pages list seasons as tabs (was a pull-down menu), per Troy.

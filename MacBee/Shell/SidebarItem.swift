@@ -11,7 +11,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .search: "Search"
         case .playingFrom: "Playing From"
         case .home: "Music"
-        case .collection: "Collection"
+        case .collection: "Collections"
         case .videos: "Videos"
         case .artists: "Artists"
         case .albums: "Albums"

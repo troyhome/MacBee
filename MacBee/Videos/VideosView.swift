@@ -36,7 +36,7 @@ struct VideosView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationTitle(embedded ? "Collection" : "Videos")
+        .navigationTitle(embedded ? "Collections" : "Videos")
         .task(id: "\(library.revision)-\(preferences.videoFolders.count)") { await app.refreshVideosIfStale() }
     }
 
