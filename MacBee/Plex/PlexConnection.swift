@@ -64,7 +64,7 @@ final class PlexConnection: PlexService {
         self.library = library
         selectedServerId = UserDefaults.standard.string(forKey: "plexServerId")
         selectedSectionKey = UserDefaults.standard.string(forKey: "plexSectionKey")
-        if let saved = PlexKeychain.load() {
+        if let saved = KeychainStore.read(account: KeychainStore.plexTokenAccount) {
             token = saved
             status = .signedIn
             Task { await loadAccount() }
@@ -86,7 +86,7 @@ final class PlexConnection: PlexService {
                 try? await Task.sleep(for: .seconds(2))
                 if Task.isCancelled { return }
                 if let checked = try? await api.checkPin(pin), let authToken = checked.authToken {
-                    PlexKeychain.save(authToken)
+                    KeychainStore.save(authToken, account: KeychainStore.plexTokenAccount)
                     token = authToken
                     status = .signedIn
                     await loadAccount()
@@ -106,7 +106,7 @@ final class PlexConnection: PlexService {
 
     func signOut() {
         signInTask?.cancel()
-        PlexKeychain.delete()
+        KeychainStore.delete(account: KeychainStore.plexTokenAccount)
         token = nil
         baseURL = nil
         status = .signedOut
