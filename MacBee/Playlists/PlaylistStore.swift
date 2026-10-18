@@ -204,6 +204,23 @@ final class PlaylistStore {
         }
     }
 
+    /// Asks where to save the playlist file (and whether to use relative or full paths), then saves it.
+    /// Used by the playlist page and the playlists' right-click menus.
+    func exportWithPanel(_ playlist: Playlist) {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = ["m3u8", "m3u"].compactMap { UTType(filenameExtension: $0) }
+        panel.nameFieldStringValue = playlist.name + ".m3u8"
+        panel.message = "Relative paths work when the playlist moves with the music or is opened from another computer."
+        let style = NSPopUpButton(frame: .zero, pullsDown: false)
+        style.addItems(withTitles: ["Relative paths (from where you save it)", "Full paths"])
+        let accessory = NSStackView(views: [NSTextField(labelWithString: "Song paths:"), style])
+        accessory.edgeInsets = NSEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        panel.accessoryView = accessory
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let pathStyle: M3UPlaylist.PathStyle = style.indexOfSelectedItem == 1 ? .absolute : .relative
+        Task { await exportM3U(playlist, to: url, style: pathStyle) }
+    }
+
     func exportM3U(_ playlist: Playlist, to url: URL, style: M3UPlaylist.PathStyle = .relative) async {
         guard let id = playlist.id else { return }
         do {

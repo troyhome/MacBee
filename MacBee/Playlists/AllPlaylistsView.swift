@@ -96,6 +96,8 @@ private struct PlaylistCard: View {
         .contextMenu {
             Button("Play") { Task { await play(shuffled: false) } }
             Button("Shuffle") { Task { await play(shuffled: true) } }
+            Divider()
+            Button("Export Playlist…") { store.exportWithPanel(playlist) }
         }
         .draggable(DragPayload.playlist(playlist.id ?? -1).string)
         .task(id: store.contentRevision) {

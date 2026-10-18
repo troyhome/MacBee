@@ -43,8 +43,12 @@ final class SecondaryClickMonitor {
     fileprivate var zones: [Zone] = []
     private var monitor: Any?
 
+    /// Extra check by position, for when a zone view doesn't report its place (seen after some updates).
+    private var fallbackZone: (@MainActor (NSEvent) -> Bool)?
+
     /// Starts watching. `action` runs for a secondary click inside a zone.
-    func start(action: @escaping @MainActor () -> Void) {
+    func start(fallbackZone: (@MainActor (NSEvent) -> Bool)? = nil, action: @escaping @MainActor () -> Void) {
+        self.fallbackZone = fallbackZone
         guard monitor == nil else { return }
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.rightMouseDown, .rightMouseUp]) { [weak self] event in
             // Local monitors run on the main thread.
@@ -52,7 +56,7 @@ final class SecondaryClickMonitor {
             let used = MainActor.assumeIsolated {
                 guard let self else { return false }
                 let inZone = self.isInZone(event)
-                clickLog.notice("secondary click \(event.type.rawValue, privacy: .public): zones \(self.zones.count, privacy: .public), live \(self.zones.filter { $0.view?.window != nil }.count, privacy: .public), in zone \(inZone, privacy: .public)")
+                clickLog.notice("secondary click \(event.type.rawValue, privacy: .public): zones \(self.zones.count, privacy: .public), live \(self.zones.filter { $0.view?.window != nil }.count, privacy: .public), in zone \(inZone, privacy: .public), window \(event.window?.identifier?.rawValue ?? "none", privacy: .public), y \(Int(event.locationInWindow.y), privacy: .public)")
                 guard inZone else { return false }
                 if event.type == .rightMouseDown { action() }
                 return true
@@ -62,7 +66,8 @@ final class SecondaryClickMonitor {
     }
 
     private func isInZone(_ event: NSEvent) -> Bool {
-        zones.contains { zone in
+        if fallbackZone?(event) == true { return true }
+        return zones.contains { zone in
             guard let view = zone.view, let window = view.window, window === event.window, !view.isHiddenOrHasHiddenAncestor
             else { return false }
             return view.bounds.contains(view.convert(event.locationInWindow, from: nil))

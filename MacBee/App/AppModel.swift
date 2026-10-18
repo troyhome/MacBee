@@ -288,7 +288,12 @@ final class AppModel {
         guard !started else { return }
         started = true
         if preferences.mediaKeysAlwaysMacBee { mediaKeys.start(askForPermission: true) }
-        SecondaryClickMonitor.shared.start { [player] in
+        SecondaryClickMonitor.shared.start(fallbackZone: { [weak self] event in
+            // The play bar is the bottom strip of the main window; Now Playing covers the whole window.
+            guard let self, let window = event.window, window.identifier?.rawValue.hasPrefix(MacBeeApp.mainWindowID) == true
+            else { return event.window?.identifier?.rawValue.hasPrefix(MacBeeApp.miniPlayerWindowID) == true }
+            return self.showNowPlaying || event.locationInWindow.y <= Metrics.playBarHeight
+        }) { [player] in
             if player.currentTrack != nil { player.togglePlayPause() }
         }
         // The permission may be given in System Settings while MacBee is open; try again on coming back.

@@ -110,6 +110,7 @@ struct PlaylistTreeRow: View {
                 UserDefaults.standard.set(Int(node.id), forKey: "studioPlaylistId")
                 app.go(to: .playlistStudio)
             }
+            Button("Export Playlist…") { store.exportWithPanel(playlist) }
         }
         Divider()
         Button("Rename…") { onRename(playlist) }

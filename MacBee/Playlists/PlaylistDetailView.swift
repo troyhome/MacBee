@@ -209,19 +209,6 @@ struct PlaylistDetailView: View {
     }
 
     private func export(_ playlist: Playlist) {
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = ["m3u8", "m3u"].compactMap { UTType(filenameExtension: $0) }
-        panel.nameFieldStringValue = playlist.name + ".m3u8"
-        panel.message = "Relative paths work when the playlist moves with the music or is opened from another computer."
-        // A menu under the file name: relative or full paths.
-        let style = NSPopUpButton(frame: .zero, pullsDown: false)
-        style.addItems(withTitles: ["Relative paths (from where you save it)", "Full paths"])
-        let label = NSTextField(labelWithString: "Song paths:")
-        let accessory = NSStackView(views: [label, style])
-        accessory.edgeInsets = NSEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
-        panel.accessoryView = accessory
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        let pathStyle: M3UPlaylist.PathStyle = style.indexOfSelectedItem == 1 ? .absolute : .relative
-        Task { await store.exportM3U(playlist, to: url, style: pathStyle) }
+        store.exportWithPanel(playlist)
     }
 }
