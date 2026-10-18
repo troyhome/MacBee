@@ -7,12 +7,20 @@ struct SidebarView: View {
     @Environment(\.theme) private var theme
     @Environment(PreferencesStore.self) private var preferences
     @Environment(AppModel.self) private var app
+    @Environment(PlayerViewModel.self) private var player
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             header
             SidebarSearchField(collapsed: $collapsed)
                 .padding(.bottom, 8)
+            if player.currentTrack != nil {
+                SidebarRow(item: .playingFrom, isSelected: false, collapsed: collapsed) {
+                    Task { await app.showPlayingFrom() }
+                }
+                .help("Go to where the current music was started")
+                .padding(.bottom, 4)
+            }
             ForEach(SidebarItem.library) { item in
                 SidebarRow(item: item, isSelected: isSelected(item), collapsed: collapsed) {
                     app.go(to: item)

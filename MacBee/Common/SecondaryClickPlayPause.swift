@@ -2,21 +2,21 @@ import AppKit
 import SwiftUI
 
 extension View {
-    /// A two-finger click (secondary click / right-click) anywhere on this view skips to the next song.
+    /// A two-finger click (secondary click / right-click) anywhere on this view pauses or resumes.
     /// Ordinary clicks, hovering and scrolling pass straight through to the view underneath.
     /// Used on the play bar, Now Playing and the mini player, which have no right-click menus of their own,
     /// so song, album and playlist menus elsewhere keep working.
-    func secondaryClickSkipsToNext() -> some View {
-        modifier(SecondaryClickSkip())
+    func secondaryClickPlaysPauses() -> some View {
+        modifier(SecondaryClickPlayPause())
     }
 }
 
-private struct SecondaryClickSkip: ViewModifier {
+private struct SecondaryClickPlayPause: ViewModifier {
     @Environment(PlayerViewModel.self) private var player
 
     func body(content: Content) -> some View {
         content.overlay(SecondaryClickCatcher { [player] in
-            if player.currentTrack != nil { player.next() }
+            if player.currentTrack != nil { player.togglePlayPause() }
         })
     }
 }

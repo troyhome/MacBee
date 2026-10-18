@@ -1,16 +1,18 @@
 /// Destinations in the sidebar.
 enum SidebarItem: String, CaseIterable, Identifiable {
-    case search, home, collection, artists, albums, playlists, tags, playlistStudio
+    case search, playingFrom, home, collection, videos, artists, albums, playlists, tags, playlistStudio
 
     var id: String { rawValue }
 
-    static let library: [SidebarItem] = [.home, .collection, .artists, .albums, .playlists, .tags]
+    static let library: [SidebarItem] = [.home, .collection, .videos, .artists, .albums, .playlists, .tags]
 
     var title: String {
         switch self {
         case .search: "Search"
+        case .playingFrom: "Playing From"
         case .home: "Music"
         case .collection: "Collection"
+        case .videos: "Videos"
         case .artists: "Artists"
         case .albums: "Albums"
         case .playlists: "Playlists"
@@ -22,8 +24,10 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .search: "magnifyingglass"
+        case .playingFrom: "waveform"
         case .home: "house"
         case .collection: "heart.square"
+        case .videos: "play.rectangle"
         case .artists: "music.mic"
         case .albums: "square.stack"
         case .playlists: "music.note.list"

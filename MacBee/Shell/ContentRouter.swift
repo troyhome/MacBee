@@ -16,8 +16,10 @@ struct ContentRouter: View {
         switch selection {
         case .search:
             stack { SearchView() }
-        case .home:
+        case .home, .playingFrom: // Playing From is a shortcut, not a page of its own
             stack { HomeView() }
+        case .videos:
+            stack { VideosView() }
         case .collection:
             stack { CollectionView() }
         case .artists:

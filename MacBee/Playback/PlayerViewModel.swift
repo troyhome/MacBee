@@ -21,6 +21,9 @@ final class PlayerViewModel {
 
     @ObservationIgnored private let database: LibraryDatabase?
     @ObservationIgnored private let preferences: PreferencesStore
+    /// Called when a new list of songs starts playing; the album when a whole album was started.
+    /// AppModel uses it to remember the page the music was started from ("Playing From" in the sidebar).
+    @ObservationIgnored var onNewQueue: ((AlbumSummary?) -> Void)?
     /// Network drive or Plex, per song.
     let router: PlaybackRouter
     @ObservationIgnored private var recorder = PlayRecorder()
@@ -56,6 +59,7 @@ final class PlayerViewModel {
         guard tracks.indices.contains(index) else { return }
         queue.replace(with: tracks, startAt: index)
         if let track = queue.current { start(track) }
+        onNewQueue?(nil)
     }
 
     /// Turns shuffle on and plays the tracks from a random one.
@@ -67,6 +71,7 @@ final class PlayerViewModel {
 
     func playAlbum(_ album: AlbumSummary) async {
         play(await tracks(of: album))
+        onNewQueue?(album)
     }
 
     /// Plays all of an artist's albums, oldest first.

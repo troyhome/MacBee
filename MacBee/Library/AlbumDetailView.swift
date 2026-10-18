@@ -1,8 +1,8 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// One album: big cover, title, artist, Shuffle / Play, the Apple Music style actions
-/// (Play Next, Play Later, Add to Playlist, Favorite), and the track list.
+/// One album: big cover, title, artist, Shuffle / Play, the labeled actions
+/// (Play Next, Add to Queue, Add to Playlist, Favorite), and the track list.
 /// Double-click a track to play from there. The back button returns to where you came from.
 struct AlbumDetailView: View {
     let album: AlbumSummary
@@ -118,10 +118,10 @@ private struct AlbumHeader: View {
                 HStack(spacing: 12) {
                     CircleButton(systemImage: "shuffle", help: "Shuffle", diameter: 40, action: onShuffle)
                     PlayCapsuleButton(action: onPlay)
-                    AlbumActions(tracks: tracks)
-                        .padding(.leading, 8)
                 }
                 .padding(.top, 14)
+                AlbumActions(tracks: tracks)
+                    .padding(.top, 6)
             }
             Spacer(minLength: 0)
         }
@@ -169,21 +169,31 @@ private struct PlayCapsuleButton: View {
     }
 }
 
-/// Play Next, Play Later, Add to Playlist… and Favorite, as round buttons next to Play.
+/// Play Next, Add to Queue, Add to Playlist and Favorite, as small labeled buttons under Play.
 private struct AlbumActions: View {
     let tracks: [Track]
     @Environment(PlayerViewModel.self) private var player
 
     var body: some View {
-        HStack(spacing: 10) {
-            CircleButton(systemImage: "text.line.first.and.arrowtriangle.forward", help: "Play Next",
-                         diameter: 40) { player.playNext(tracks) }
-            CircleButton(systemImage: "text.line.last.and.arrowtriangle.forward", help: "Play Later",
-                         diameter: 40) { player.addToQueue(tracks) }
-            AddToPlaylistCircle(tracks: tracks)
-            CircleButton(systemImage: isFavorite ? "heart.fill" : "heart",
-                         help: isFavorite ? "Remove from Favorites" : "Favorite",
-                         diameter: 40) { player.setFavorite(tracks, !isFavorite) }
+        HStack(spacing: 8) {
+            ActionPill(title: "Play Next", systemImage: "text.line.first.and.arrowtriangle.forward",
+                       help: "Play these songs right after the current one") { player.playNext(tracks) }
+            ActionPill(title: "Add to Queue", systemImage: "text.line.last.and.arrowtriangle.forward",
+                       help: "Add these songs to the end of Up Next") { player.addToQueue(tracks) }
+            Menu {
+                AddToPlaylistItems { tracks }
+            } label: {
+                ActionPillLabel(title: "Add to Playlist", systemImage: "text.badge.plus")
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Add this album to a playlist")
+            ActionPill(title: isFavorite ? "Favorited" : "Favorite", systemImage: isFavorite ? "heart.fill" : "heart",
+                       help: isFavorite ? "Remove from Favorites" : "Add to Favorites (shows in Collection)") {
+                player.setFavorite(tracks, !isFavorite)
+            }
         }
         .disabled(tracks.isEmpty)
     }
@@ -194,27 +204,36 @@ private struct AlbumActions: View {
     }
 }
 
-/// Round "Add to Playlist…" button that opens the playlist menu.
-private struct AddToPlaylistCircle: View {
-    let tracks: [Track]
+private struct ActionPill: View {
+    let title: String
+    let systemImage: String
+    let help: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ActionPillLabel(title: title, systemImage: systemImage)
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+}
+
+/// Icon and text in a rounded pill, brighter while hovered.
+private struct ActionPillLabel: View {
+    let title: String
+    let systemImage: String
     @Environment(\.theme) private var theme
     @State private var hovering = false
 
     var body: some View {
-        Menu {
-            AddToPlaylistItems { tracks }
-        } label: {
-            Image(systemName: "text.badge.plus")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(theme.accent)
-                .frame(width: 40, height: 40)
-                .background(Circle().fill(hovering ? theme.elevated : theme.surface))
-                .contentShape(Circle())
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .onHover { hovering = $0 }
-        .help("Add to Playlist…")
+        Label(title, systemImage: systemImage)
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(theme.textPrimary)
+            .padding(.horizontal, 12)
+            .frame(height: 28)
+            .background(Capsule().fill(hovering ? theme.elevated : theme.surface))
+            .contentShape(Capsule())
+            .onHover { hovering = $0 }
     }
 }

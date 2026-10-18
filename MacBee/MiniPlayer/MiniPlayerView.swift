@@ -45,7 +45,7 @@ struct MiniPlayerView: View {
         .frame(width: 400)
         .background(theme.bar)
         .background(WindowLevelSetter(floating: onTop))
-        .secondaryClickSkipsToNext()
+        .secondaryClickPlaysPauses()
         .onDisappear {
             // Closing the mini player brings back the main window.
             openWindow(id: MacBeeApp.mainWindowID)

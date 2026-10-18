@@ -18,6 +18,10 @@ final class AppModel {
     /// Plex sign-in and the away-from-home route to the same songs.
     let plex: PlexConnection?
     let themeStore = ThemeStore()
+    /// Music videos found in the music folders.
+    let videos = VideoLibrary()
+    /// The video playing over the window, if any.
+    var playingVideo: VideoItem?
     let preferences: PreferencesStore
 
     /// Where you are now. Every change remembers the previous place for the back arrow.
@@ -58,6 +62,8 @@ final class AppModel {
         get { location.albums }
         set { location.albums = newValue }
     }
+    /// The page the current music was started from, for "Playing From" in the sidebar.
+    private(set) var playingFrom: Location?
     /// Text in the sidebar search field.
     var searchText = ""
     /// The queue drawer on the right of the window.
@@ -71,6 +77,8 @@ final class AppModel {
     @ObservationIgnored private let queue = QueueManager()
     @ObservationIgnored private var started = false
     @ObservationIgnored private var nowPlaying: NowPlayingService?
+    /// Catches the media keys so other players (Qobuz, Spotify) don't get them.
+    let mediaKeys: MediaKeyTap
 
     init() {
         var library: MusicLibrary?
@@ -95,6 +103,13 @@ final class AppModel {
         player = PlayerViewModel(engine: engine, queue: queue, database: library?.database, preferences: preferences,
                                  router: PlaybackRouter(plex: plex, preferences: preferences))
         nowPlaying = NowPlayingService(player: player, library: library)
+        mediaKeys = MediaKeyTap(player: player)
+        player.onNewQueue = { [weak self] album in
+            guard let self else { return }
+            // A whole album started from a grid opens that album's page; anything else returns to the page it was on.
+            playingVideo = nil
+            playingFrom = album.map { Location(page: .albums, albums: [$0]) } ?? location
+        }
 
         // Stop playback and give up exclusive access when the app quits.
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
@@ -147,6 +162,26 @@ final class AppModel {
         location = Location(page: .albums, albums: [album])
     }
 
+    /// Plays a music video over the window, pausing the music first.
+    func playVideo(_ video: VideoItem) {
+        if player.isPlaying { player.togglePlayPause() }
+        showNowPlaying = false
+        playingVideo = video
+    }
+
+    func closeVideo() {
+        playingVideo = nil
+    }
+
+    /// "Playing From": back to the page the music was started from (or the playing song's album).
+    func showPlayingFrom() async {
+        if let playingFrom, playingFrom.page != .search || !searchText.isEmpty {
+            location = playingFrom
+        } else {
+            await showCurrentAlbum()
+        }
+    }
+
     /// Returns to the previous place, wherever it was.
     func goBack() {
         guard let previous = backStack.popLast() else { return }
@@ -163,6 +198,15 @@ final class AppModel {
     func start() async {
         guard !started else { return }
         started = true
+        if preferences.mediaKeysAlwaysMacBee { mediaKeys.start(askForPermission: true) }
+        // The permission may be given in System Settings while MacBee is open; try again on coming back.
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification,
+                                               object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.preferences.mediaKeysAlwaysMacBee else { return }
+                self.mediaKeys.start(askForPermission: false)
+            }
+        }
         library?.periodicCheckInterval = preferences.routineCheck.interval
         await library?.start(checkForChanges: preferences.checkLibraryAtLaunch)
     }

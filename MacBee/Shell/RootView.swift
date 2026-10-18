@@ -36,6 +36,13 @@ struct RootView: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: model.showNowPlaying)
+            .overlay {
+                if let video = model.playingVideo {
+                    VideoPlayerOverlay(video: video)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: model.playingVideo)
             .environment(library)
             .alert("Tag editor", isPresented: Binding(
                 get: { model.tagEditor?.problem != nil },

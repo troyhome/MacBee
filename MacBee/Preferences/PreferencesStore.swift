@@ -19,6 +19,8 @@ final class PreferencesStore {
     var playbackSource: PlaybackSourcePreference { didSet { save(playbackSource.rawValue, "playbackSource") } }
     /// The external tag editor app chosen in Preferences (Phase 8 opens songs in it).
     var tagEditorPath: String? { didSet { save(tagEditorPath, "tagEditorPath") } }
+    /// The keyboard's media keys control MacBee whenever it has music loaded, even with other players open.
+    var mediaKeysAlwaysMacBee: Bool { didSet { save(mediaKeysAlwaysMacBee, "mediaKeysAlwaysMacBee") } }
 
     static let sidebarWidthRange: ClosedRange<Double> = 170...280
 
@@ -33,6 +35,7 @@ final class PreferencesStore {
         routineCheck = (d.object(forKey: "routineCheck") as? Int).flatMap(RoutineCheck.init) ?? .every30
         playbackSource = d.string(forKey: "playbackSource").flatMap(PlaybackSourcePreference.init) ?? .automatic
         tagEditorPath = d.string(forKey: "tagEditorPath")
+        mediaKeysAlwaysMacBee = d.object(forKey: "mediaKeysAlwaysMacBee") as? Bool ?? true
         useDefaultTagEditorIfNeeded()
     }
 

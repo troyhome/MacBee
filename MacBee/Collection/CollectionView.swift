@@ -3,6 +3,7 @@ import SwiftUI
 
 /// The Collection page: your playlists plus the albums and songs you've hearted, with tabs along the top.
 struct CollectionView: View {
+    @Environment(AppModel.self) private var app
     @Environment(MusicLibrary.self) private var library
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
@@ -23,9 +24,14 @@ struct CollectionView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Collection")
-                .font(.system(size: 30, weight: .bold))
-                .foregroundStyle(theme.textPrimary)
+            HStack(spacing: 14) {
+                if app.canGoBack {
+                    CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
+                }
+                Text("Collection")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(theme.textPrimary)
+            }
             Picker("Show", selection: $section) {
                 ForEach(CollectionSection.allCases) { Text($0.title).tag($0) }
             }
@@ -60,8 +66,7 @@ struct CollectionView: View {
                     }
                 }
         case .videos:
-            ContentUnavailableView("No videos", systemImage: "play.rectangle",
-                                   description: Text("MacBee plays music only for now. Music videos may come later."))
+            VideosView(embedded: true)
         case .savedMixes:
             ContentUnavailableView("No saved mixes yet", systemImage: "square.stack.3d.up",
                                    description: Text("Saving suggested mixes from the Music page comes in a later update."))

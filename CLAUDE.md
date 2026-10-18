@@ -127,8 +127,22 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     1 s later) and enables only the commands MacBee handles. macOS gives media keys to the app that most recently
     reported playing; an app can't fully block others that start playing afterwards.
   - Two-finger click (secondary click) skips to the next song on the play bar, Now Playing and the mini player
-    (`secondaryClickSkipsToNext()`). Deliberately NOT window-wide: that would break every right-click menu
+    (now `secondaryClickPlaysPauses()`). Deliberately NOT window-wide: that would break every right-click menu
     (Edit Tags, Add to Playlist…). Revisit if Troy wants it elsewhere.
+  - Fixes after Troy's first test (2026-10-17):
+    - Album actions are now labeled pills on a row under Play: Play Next, Add to Queue (Troy found "Play Later"
+      unclear), Add to Playlist, Favorite/Favorited. The old round + menu rendered badly.
+    - Collection and Videos pages have a back arrow (`app.canGoBack`).
+    - "Playing From" sidebar row (shown while something is loaded): returns to the page the music was started
+      from (`AppModel.playingFrom`, set via `PlayerViewModel.onNewQueue`; a whole album opens its album page).
+    - Videos sidebar page + Collection Videos tab (`MacBee/Videos/`): finds MP4/M4V/MOV in the music folders
+      (not in the database; re-searched when the page opens), thumbnails via AVAssetImageGenerator, plays in an
+      AVKit overlay over the window (Esc closes; music pauses; starting music closes the video).
+    - Media keys: MPRemoteCommandCenter alone lost to Qobuz. `MediaKeyTap` (Playback/) is a CGEvent tap on
+      NX_SYSDEFINED media keys that swallows play/next/previous while MacBee has a song loaded. Needs the
+      Accessibility permission (asked at launch; General preferences has the toggle "Media keys always control
+      MacBee", default on, and an Open System Settings button). Nothing loaded = keys go to other apps.
+    - Two-finger click now pauses/resumes instead of skipping (`secondaryClickPlaysPauses()`).
 - Roadmap Phases 2-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
