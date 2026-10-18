@@ -30,6 +30,7 @@ struct ArtistListColumn: View {
                     }
                     .padding(10)
                 }
+                .frame(maxWidth: .infinity)
                 .focusable()
                 .focused($focused)
                 .focusEffectDisabled()

@@ -43,7 +43,9 @@ struct AlbumGrid: View {
                         }
                     }
                     .padding(24)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
+                .frame(maxWidth: .infinity) // fill the page; inside the HStack it would shrink to one column
                 // The A–Z strip sits beside the albums, clear of the scroll bar.
                 if let indexName {
                     AlphabetIndex(available: Set(albums.map { AlphabetIndex.letter(for: indexName($0)) })) { letter in
