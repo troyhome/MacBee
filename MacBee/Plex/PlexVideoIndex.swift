@@ -1,20 +1,37 @@
 import Foundation
 
 /// What Plex knows about a movie or show, looked up by the video's file name.
-struct PlexVideoInfo: Sendable {
+struct PlexVideoInfo: Codable, Sendable {
     var title: String
     var year: Int?
     var genres: [String]
     var summary: String?
     /// Plex's poster path, for `PlexConnection.posterFile`.
     var thumb: String?
+    /// The poster downloaded to this Mac.
+    var posterPath: String?
 }
 
 /// Plex movie and show details keyed by file name (just the name, since Plex sees the drive under a
 /// different path than this Mac does).
-struct PlexVideoIndex: Sendable {
+struct PlexVideoIndex: Codable, Sendable {
     var movies: [String: PlexVideoInfo] = [:]
     var shows: [String: PlexVideoInfo] = [:]
+
+    /// Kept on this Mac so titles, posters and summaries stay when Plex can't be reached (or isn't signed in).
+    static var savedURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MacBee/plex-videos.json")
+    }
+
+    static func loadSaved() -> PlexVideoIndex? {
+        guard let data = try? Data(contentsOf: savedURL) else { return nil }
+        return try? JSONDecoder().decode(PlexVideoIndex.self, from: data)
+    }
+
+    func save() {
+        if let data = try? JSONEncoder().encode(self) { try? data.write(to: Self.savedURL, options: .atomic) }
+    }
 
     static func fileName(_ path: String) -> String {
         (path as NSString).lastPathComponent.lowercased()

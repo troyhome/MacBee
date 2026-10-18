@@ -2,8 +2,9 @@ import AppKit
 import MacBeeVideo
 import SwiftUI
 
-/// Movies and music videos with more than one file (another drive, folder or format). Videos aren't in the
-/// music database, so there's no "remove from library" here: show a copy in Finder or delete it from the disk.
+/// Movies and music videos with more than one file (another drive, folder or format), with the same tools as
+/// the songs list: Duplicates in (one folder), search, tick boxes, Select All, Auto Select, Remove from Library
+/// (the file stays on disk), Delete from Disk, Accept and Restore.
 struct VideoDuplicatesView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.theme) private var theme
@@ -14,6 +15,8 @@ struct VideoDuplicatesView: View {
     /// Ticked copies, by path.
     @State private var selected = Set<String>()
     @State private var showingAccepted = false
+    /// Only duplicates inside this folder (nil = all folders).
+    @State private var folder: String?
     /// Videos whose copies were accepted (kept on purpose), by id. Saved on this Mac.
     @AppStorage("acceptedVideoDuplicates") private var acceptedRaw = ""
 
@@ -34,6 +37,14 @@ struct VideoDuplicatesView: View {
                 Button("Look Again") { Task { await app.refreshVideos() } }
                     .disabled(app.videos.isScanning)
                     .help("Search the video and music folders again")
+                Picker("Duplicates in", selection: $folder) {
+                    Text("All folders").tag(String?.none)
+                    ForEach(folders, id: \.self) { path in
+                        Text("Only \((path as NSString).lastPathComponent)").tag(Optional(path))
+                    }
+                }
+                .fixedSize()
+                .help("Show copies across all folders, or only duplicates inside one folder")
                 FilterField(prompt: "Search duplicate videos", text: $filter)
                     .frame(width: 220)
             }
@@ -47,6 +58,9 @@ struct VideoDuplicatesView: View {
                 Button("Auto Select") { autoSelect() }
                     .disabled(shown.isEmpty)
                     .help("Ticks the smallest file of each video (when sizes match, a copy that isn't the shown one)")
+                Button("Remove from Library") { removeSelected() }
+                    .disabled(selected.isEmpty)
+                    .help("MacBee stops showing these copies; the files stay on the drive")
                 Button("Delete from Disk…") { deleteRequest = selectedFiles }
                     .disabled(selected.isEmpty)
                 Button(showingAccepted ? "Un-accept" : "Accept") { accept(!showingAccepted) }
@@ -58,6 +72,12 @@ struct VideoDuplicatesView: View {
                 Spacer()
                 Toggle(showingAccepted ? "Showing accepted" : "Show accepted (\(accepted.count))", isOn: $showingAccepted)
                     .toggleStyle(.button)
+                if !app.videos.excluded.isEmpty {
+                    Button("Restore Removed Copies (\(app.videos.excluded.count))") {
+                        app.videos.restoreExcluded()
+                        Task { await app.refreshVideos() }
+                    }
+                }
             }
             .padding(.horizontal, 28)
             .padding(.bottom, 8)
@@ -82,6 +102,7 @@ struct VideoDuplicatesView: View {
                 }
             }
         }
+        .onChange(of: folder) { selected = [] }
         .confirmationDialog(deleteRequest.count == 1 ? "Delete “\(deleteRequest[0].url.lastPathComponent)” from the disk?"
                                                      : "Delete \(deleteRequest.count) videos from the disk?",
                             isPresented: Binding(get: { !deleteRequest.isEmpty }, set: { if !$0 { deleteRequest = [] } })) {
@@ -109,9 +130,27 @@ struct VideoDuplicatesView: View {
         return movies + videos
     }
 
+    /// Video folders and music folders, for the "Duplicates in" menu.
+    private var folders: [String] {
+        app.preferences.videoFolders + (app.library?.folders.filter { !$0.folder.isPaused }.map(\.folder.path) ?? [])
+    }
+
+    private func removeSelected() {
+        let paths = Array(selected)
+        app.videos.setExcluded(paths, true)
+        selected = []
+        message = "Removed \(paths.count) \(paths.count == 1 ? "copy" : "copies") from MacBee. The files are still on the drive."
+    }
+
     private var shown: [Group] {
         let query = filter.trimmingCharacters(in: .whitespaces)
-        let listed = groups.filter { accepted.contains($0.id) == showingAccepted }
+        var listed = groups.filter { accepted.contains($0.id) == showingAccepted }
+        if let folder {
+            listed = listed.compactMap { group in
+                let files = group.files.filter { $0.path.hasPrefix(folder + "/") }
+                return files.count > 1 ? Group(id: group.id, title: group.title, subtitle: group.subtitle, files: files) : nil
+            }
+        }
         return query.isEmpty ? listed : listed.filter { $0.title.localizedCaseInsensitiveContains(query) }
     }
 

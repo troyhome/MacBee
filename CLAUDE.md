@@ -260,6 +260,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       / Delete from Disk. **Accept** / Show accepted / Un-accept: DB v7 `track.duplicateAccepted` (all copies of a
       song marked; `duplicateGroups(accepted:)`); videos keep accepted ids in UserDefaults "acceptedVideoDuplicates".
       The video duplicates list has the same tick boxes, Select All, Auto Select, Delete and Accept.
+    - Plex video details are saved in ~/Library/Application Support/MacBee/plex-videos.json (`PlexVideoIndex`,
+      with local poster paths) and re-applied after every video scan, so posters/titles survive a scan while Plex
+      is unreachable or signed out (that's how they disappeared once, right after the keychain change).
+    - Video duplicates have the same tools as songs: Duplicates in (video + music folders), Remove from Library
+      (UserDefaults "excludedVideos"; the next copy shows instead), Restore Removed Copies, Accept, Auto Select.
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.

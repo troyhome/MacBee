@@ -27,9 +27,14 @@ final class VideoLibrary {
         let reachable = roots.filter { FileManager.default.fileExists(atPath: $0.url.path) }
         let previous = catalog
         var found = await Task.detached(priority: .utility) { VideoScanner.scan(reachable) }.value
-        if let plex, let index = await plex.videoIndex() {
-            found = await Self.enrich(found, with: index, plex: plex)
+        // Fresh details from Plex when it can be reached; otherwise the ones saved last time.
+        var index = PlexVideoIndex.loadSaved()
+        if let plex, let fresh = await plex.videoIndex() {
+            index = await Self.downloadPosters(for: found, in: fresh, plex: plex)
+            index?.save()
         }
+        if let index { found = Self.enrich(found, with: index) }
+        found = Self.removingExcluded(from: found)
         // A drive that's away keeps its videos listed until it's back.
         if reachable.count == roots.count || !found.isEmpty || previous.isEmpty {
             catalog = found
@@ -38,8 +43,32 @@ final class VideoLibrary {
         isScanning = false
     }
 
+    /// Downloads (or reuses) the Plex posters of the videos found, and notes where each was saved.
+    private static func downloadPosters(for catalog: VideoCatalog, in index: PlexVideoIndex,
+                                        plex: PlexConnection) async -> PlexVideoIndex {
+        var index = index
+        let movieFiles = catalog.movies.flatMap(\.files).map { PlexVideoIndex.fileName($0.path) }
+        for name in movieFiles {
+            guard var info = index.movies[name], info.posterPath == nil, let thumb = info.thumb else { continue }
+            info.posterPath = await plex.posterFile(for: thumb)
+            index.movies[name] = info
+        }
+        // One episode per show is enough to find the show's poster.
+        for show in catalog.shows {
+            guard let name = show.seasons.flatMap(\.episodes).map({ PlexVideoIndex.fileName($0.file.path) })
+                .first(where: { index.shows[$0] != nil }),
+                  var info = index.shows[name], info.posterPath == nil, let thumb = info.thumb else { continue }
+            info.posterPath = await plex.posterFile(for: thumb)
+            for episode in show.seasons.flatMap(\.episodes) {
+                let key = PlexVideoIndex.fileName(episode.file.path)
+                if index.shows[key] != nil { index.shows[key]?.posterPath = info.posterPath }
+            }
+        }
+        return index
+    }
+
     /// Fills in proper titles, years, genres, descriptions and posters from Plex for videos it knows.
-    private static func enrich(_ catalog: VideoCatalog, with index: PlexVideoIndex, plex: PlexConnection) async -> VideoCatalog {
+    private static func enrich(_ catalog: VideoCatalog, with index: PlexVideoIndex) -> VideoCatalog {
         var catalog = catalog
         for i in catalog.movies.indices {
             guard let info = catalog.movies[i].files.lazy.compactMap({ index.movies[PlexVideoIndex.fileName($0.path)] }).first
@@ -48,9 +77,7 @@ final class VideoLibrary {
             if let year = info.year { catalog.movies[i].year = year }
             if !info.genres.isEmpty { catalog.movies[i].genres = info.genres }
             catalog.movies[i].summary = info.summary
-            if catalog.movies[i].posterPath == nil, let thumb = info.thumb {
-                catalog.movies[i].posterPath = await plex.posterFile(for: thumb)
-            }
+            if catalog.movies[i].posterPath == nil { catalog.movies[i].posterPath = existing(info.posterPath) }
         }
         for i in catalog.shows.indices {
             let files = catalog.shows[i].seasons.flatMap(\.episodes).map(\.file.path)
@@ -59,12 +86,54 @@ final class VideoLibrary {
             if let year = info.year { catalog.shows[i].year = year }
             if !info.genres.isEmpty { catalog.shows[i].genres = info.genres }
             catalog.shows[i].summary = info.summary
-            if catalog.shows[i].posterPath == nil, let thumb = info.thumb {
-                catalog.shows[i].posterPath = await plex.posterFile(for: thumb)
-            }
+            let poster = files.lazy.compactMap { index.shows[PlexVideoIndex.fileName($0)]?.posterPath }.first
+            if catalog.shows[i].posterPath == nil { catalog.shows[i].posterPath = existing(poster) }
         }
         catalog.movies.sort { VideoScanner.sortKey($0.title) < VideoScanner.sortKey($1.title) }
         catalog.shows.sort { VideoScanner.sortKey($0.title) < VideoScanner.sortKey($1.title) }
+        return catalog
+    }
+
+    private static func existing(_ path: String?) -> String? {
+        path.flatMap { FileManager.default.fileExists(atPath: $0) ? $0 : nil }
+    }
+
+    // MARK: - Copies removed from the Videos library (Duplicates page)
+
+    /// Video files taken out of MacBee (they stay on disk), by path. Saved on this Mac.
+    private(set) var excluded: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "excludedVideos") ?? [])
+
+    func setExcluded(_ paths: [String], _ isExcluded: Bool) {
+        if isExcluded { excluded.formUnion(paths) } else { excluded.subtract(paths) }
+        UserDefaults.standard.set(Array(excluded).sorted(), forKey: "excludedVideos")
+        catalog = Self.removingExcluded(from: catalog)
+        VideoCatalogStore.save(catalog)
+    }
+
+    /// Brings back every removed copy (the folders are searched again to find them).
+    func restoreExcluded() {
+        excluded = []
+        UserDefaults.standard.removeObject(forKey: "excludedVideos")
+    }
+
+    /// Drops removed copies; a video whose shown copy was removed shows its next copy instead.
+    private static func removingExcluded(from catalog: VideoCatalog) -> VideoCatalog {
+        let excluded = Set(UserDefaults.standard.stringArray(forKey: "excludedVideos") ?? [])
+        guard !excluded.isEmpty else { return catalog }
+        var catalog = catalog
+        catalog.movies = catalog.movies.compactMap { movie in
+            var movie = movie
+            movie.files.removeAll { excluded.contains($0.path) }
+            return movie.files.isEmpty ? nil : movie
+        }
+        catalog.musicVideos = catalog.musicVideos.compactMap { video in
+            let files = video.allFiles.filter { !excluded.contains($0.path) }
+            guard let first = files.first else { return nil }
+            var video = video
+            video.file = first
+            video.otherFiles = Array(files.dropFirst())
+            return video
+        }
         return catalog
     }
 
