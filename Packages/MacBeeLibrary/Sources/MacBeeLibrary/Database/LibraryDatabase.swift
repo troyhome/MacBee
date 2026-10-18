@@ -128,6 +128,36 @@ public final class LibraryDatabase: Sendable {
             }
         }
 
+        // Roadmap Phase 2: folder priority and pausing, duplicates merged into one visible song.
+        migrator.registerMigration("v5") { db in
+            try db.alter(table: "folder") { t in
+                t.add(column: "priority", .integer).notNull().defaults(to: 0)
+                t.add(column: "isPaused", .boolean).notNull().defaults(to: false)
+            }
+            // Existing folders keep their old order (alphabetical by path) as their priority.
+            let ids = try Int64.fetchAll(db, sql: "SELECT id FROM folder ORDER BY path")
+            for (index, id) in ids.enumerated() {
+                try db.execute(sql: "UPDATE folder SET priority = ? WHERE id = ?", arguments: [index, id])
+            }
+            try db.alter(table: "track") { t in
+                t.add(column: "isPaused", .boolean).notNull().defaults(to: false)
+                t.add(column: "duplicateOf", .integer)
+            }
+            try db.create(index: "track_on_isPaused", on: "track", columns: ["isPaused"])
+            try db.create(index: "track_on_duplicateOf", on: "track", columns: ["duplicateOf"])
+        }
+
         return migrator
+    }
+
+    /// SQL for songs that show in the library: present, not in a paused folder, and not a second copy of a
+    /// song (duplicates show once, as their best copy). `prefix` is a table name with a dot, e.g. "track.".
+    static func visible(_ prefix: String = "") -> String {
+        "\(prefix)isMissing = 0 AND \(prefix)isPaused = 0 AND \(prefix)duplicateOf IS NULL"
+    }
+
+    /// SQL for songs a playlist shows: like `visible`, but a duplicate copy someone put in a playlist stays.
+    static func playable(_ prefix: String = "") -> String {
+        "\(prefix)isMissing = 0 AND \(prefix)isPaused = 0"
     }
 }

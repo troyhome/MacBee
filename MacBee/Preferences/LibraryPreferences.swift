@@ -32,10 +32,18 @@ private struct LibraryPreferencesForm: View {
         Form {
             Section("Music folders") {
                 ForEach(library.folders) { state in
-                    FolderPreferenceRow(state: state) { folderToRemove = state }
+                    FolderPreferenceRow(state: state, library: library) { folderToRemove = state }
+                        .draggable(String(state.id))
+                        .dropDestination(for: String.self) { items, _ in
+                            guard let moved = items.first.flatMap(Int64.init) else { return false }
+                            move(folder: moved, to: state.id)
+                            return true
+                        }
                 }
                 if library.folders.isEmpty {
                     PreferenceNote("No folders yet.")
+                } else if library.folders.count > 1 {
+                    PreferenceNote("Drag folders to set their priority: when the same song is in more than one folder, MacBee shows the copy from the folder highest in the list, and plays another folder's copy if that one can't be reached. Switch a folder off to leave its songs out without removing it.")
                 }
                 HStack {
                     Button("Add Folder…", action: addFolder)
@@ -49,6 +57,11 @@ private struct LibraryPreferencesForm: View {
                 if let message {
                     PreferenceNote(message)
                 }
+            }
+
+            Section("Artists") {
+                Toggle("Hide compilation-only artists from Artists view", isOn: $preferences.hideCompilationOnlyArtists)
+                PreferenceNote("Leaves out artists who only appear on compilations, unless they also have an album of their own.")
             }
 
             VideoFoldersSection(preferences: preferences)
@@ -118,6 +131,17 @@ private struct LibraryPreferencesForm: View {
         }
     }
 
+    /// Puts a dragged folder where the folder it was dropped on is, and saves the new priority order.
+    private func move(folder id: Int64, to target: Int64) {
+        var ids = library.folders.map(\.id)
+        guard id != target, let from = ids.firstIndex(of: id), let to = ids.firstIndex(of: target) else { return }
+        ids.remove(at: from)
+        ids.insert(id, at: to)
+        Task {
+            do { try await library.setFolderOrder(ids) } catch { message = error.localizedDescription }
+        }
+    }
+
     private var scanStatus: String {
         if let progress = library.scanProgress {
             switch progress.phase {
@@ -149,10 +173,22 @@ private struct LibraryPreferencesForm: View {
 
 private struct FolderPreferenceRow: View {
     let state: MusicLibrary.FolderState
+    let library: MusicLibrary
     let onRemove: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.tertiary)
+                .help("Drag to change priority")
+            Toggle("", isOn: Binding(get: { !state.folder.isPaused }, set: { on in
+                Task { try? await library.setFolderPaused(id: state.id, !on) }
+            }))
+            .toggleStyle(.switch)
+            .controlSize(.mini)
+            .labelsHidden()
+            .help(state.folder.isPaused ? "Paused: this folder's songs are left out. Switch on to include them."
+                                         : "Switch off to leave this folder's songs out without removing it")
             Image(systemName: state.isNetwork ? "externaldrive.connected.to.line.below" : "folder")
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 2) {
@@ -164,9 +200,9 @@ private struct FolderPreferenceRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text(state.isOnline ? "Connected" : "Not connected")
+            Text(state.folder.isPaused ? "Paused" : (state.isOnline ? "Connected" : "Not connected"))
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(state.isOnline ? .green : .orange)
+                .foregroundStyle(state.folder.isPaused ? Color.secondary : (state.isOnline ? Color.green : Color.orange))
             Button("Remove…", action: onRemove)
         }
     }

@@ -76,7 +76,7 @@ public extension LibraryDatabase {
             try Row.fetchAll(db, sql: """
                 SELECT playlistItem.id AS itemId, track.*
                 FROM playlistItem JOIN track ON track.id = playlistItem.trackId
-                WHERE playlistItem.playlistId = ? AND track.isMissing = 0
+                WHERE playlistItem.playlistId = ? AND \(Self.playable("track."))
                 ORDER BY playlistItem.position, playlistItem.id
                 """, arguments: [playlistId]).map { row in
                 PlaylistEntry(itemId: row["itemId"], track: try Track(row: row))
@@ -127,11 +127,11 @@ public extension LibraryDatabase {
             let row = try Row.fetchOne(db, sql: """
                 SELECT COUNT(*) AS count, COALESCE(SUM(track.duration), 0) AS duration
                 FROM playlistItem JOIN track ON track.id = playlistItem.trackId
-                WHERE playlistItem.playlistId = ? AND track.isMissing = 0
+                WHERE playlistItem.playlistId = ? AND \(Self.playable("track."))
                 """, arguments: [playlistId])
             let artwork = try Int64.fetchAll(db, sql: """
                 SELECT track.artworkId FROM playlistItem JOIN track ON track.id = playlistItem.trackId
-                WHERE playlistItem.playlistId = ? AND track.isMissing = 0 AND track.artworkId IS NOT NULL
+                WHERE playlistItem.playlistId = ? AND \(Self.playable("track.")) AND track.artworkId IS NOT NULL
                 GROUP BY track.artworkId ORDER BY MIN(playlistItem.position) LIMIT 4
                 """, arguments: [playlistId])
             return PlaylistSummary(trackCount: row?["count"] ?? 0, duration: row?["duration"] ?? 0, artworkIds: artwork)
@@ -165,7 +165,7 @@ public extension LibraryDatabase {
         try await writer.read { db in
             try String.fetchAll(db, sql: """
                 SELECT MAX(genre) FROM track
-                WHERE isMissing = 0 AND genre IS NOT NULL AND TRIM(genre) != ''
+                WHERE \(Self.visible()) AND genre IS NOT NULL AND TRIM(genre) != ''
                 GROUP BY genre COLLATE NOCASE ORDER BY COUNT(*) DESC
                 """)
         }
@@ -173,7 +173,7 @@ public extension LibraryDatabase {
 
     /// Library songs matching Playlist Studio's filters, by artist, album and track number.
     func tracks(matching filter: TrackFilter, limit: Int = 1000) async throws -> [Track] {
-        var conditions = ["isMissing = 0"]
+        var conditions = [Self.visible()]
         var arguments: StatementArguments = []
         let text = filter.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !text.isEmpty {

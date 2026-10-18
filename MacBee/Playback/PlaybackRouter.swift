@@ -31,6 +31,10 @@ final class PlaybackRouter {
     @ObservationIgnored private let plex: PlexConnection?
     @ObservationIgnored private let preferences: PreferencesStore
     @ObservationIgnored private var downloads: [Int64: Task<URL, Error>] = [:]
+    /// For finding another folder's copy of a song whose own file can't be reached (set by PlayerViewModel).
+    @ObservationIgnored var database: LibraryDatabase?
+    /// Songs whose file was unreachable: the other copy found for them (nil = none found).
+    @ObservationIgnored private var backupCopies: [Int64: String?] = [:]
 
     private static let cacheLimitBytes: Int64 = 3_000_000_000 // 3 GB of fetched songs at most
 
@@ -53,13 +57,17 @@ final class PlaybackRouter {
     /// Whether this URL is the one used to play `track` (drive file or Plex copy).
     func matches(_ track: Track, _ url: URL?) -> Bool {
         guard let url else { return false }
-        return url == track.url || url == cacheURL(for: track)
+        if url == track.url || url == cacheURL(for: track) { return true }
+        if let id = track.id, let backup = backupCopies[id] ?? nil { return url.path == backup }
+        return false
     }
 
     // MARK: - Choosing the file
 
-    /// The file to play, fetching it from Plex first if needed (may take a few seconds).
+    /// The file to play: the song's own file; if that can't be reached, the same song in another folder
+    /// (best priority first); otherwise a copy fetched from Plex (may take a few seconds).
     func playableURL(for track: Track) async throws -> URL {
+        if let backup = await backupCopy(for: track) { return URL(fileURLWithPath: backup) }
         guard usePlex(for: track), let id = track.id else { return track.url }
         return try await fetch(track, id: id)
     }
@@ -67,11 +75,35 @@ final class PlaybackRouter {
     /// The file to play right now, without waiting. Nil means it's still being fetched (fetching starts).
     /// Used to line up the next song for gapless playback.
     func readyURL(for track: Track) -> URL? {
+        if needsBackup(track), let id = track.id {
+            guard let known = backupCopies[id] else {
+                // Not looked up yet: look now, then line the song up again.
+                Task { _ = await backupCopy(for: track); onPrefetched?() }
+                return nil
+            }
+            if let path = known { return URL(fileURLWithPath: path) }
+        }
         guard usePlex(for: track), let id = track.id else { return track.url }
         let cached = cacheURL(for: track)
         if FileManager.default.fileExists(atPath: cached.path) { return cached }
         Task { _ = try? await fetch(track, id: id); onPrefetched?() }
         return nil
+    }
+
+    // MARK: - Another folder's copy
+
+    /// Only when the song's own file is unreachable, and Plex isn't chosen for everything.
+    private func needsBackup(_ track: Track) -> Bool {
+        preferences.playbackSource != .plex && database != nil && !FileManager.default.fileExists(atPath: track.path)
+    }
+
+    /// Another folder's copy of the song that can be reached right now.
+    private func backupCopy(for track: Track) async -> String? {
+        guard needsBackup(track), let id = track.id, let database else { return nil }
+        let candidates = (try? await database.alternativeFiles(forTrackId: id)) ?? []
+        let found = candidates.first { FileManager.default.fileExists(atPath: $0) }
+        backupCopies[id] = .some(found)
+        return found
     }
 
     private func usePlex(for track: Track) -> Bool {

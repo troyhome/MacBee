@@ -38,6 +38,7 @@ final class PlayerViewModel {
         self.preferences = preferences
         self.router = router
         queue.router = router
+        router.database = database
         // A song finished downloading from Plex: line up the next one for gapless playback.
         router.onPrefetched = { [weak engine] in engine?.queueDidChange() }
         recorderTask = Task { [weak self] in

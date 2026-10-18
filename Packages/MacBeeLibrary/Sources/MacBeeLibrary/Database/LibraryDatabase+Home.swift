@@ -12,7 +12,7 @@ public extension LibraryDatabase {
             var sql = """
                 SELECT play.id AS playId, play.playedAt AS playedAt, track.*
                 FROM play JOIN track ON track.id = play.trackId
-                WHERE track.isMissing = 0
+                WHERE \(Self.visible("track."))
                 """
             var arguments: StatementArguments = []
             if let before {
@@ -38,7 +38,7 @@ public extension LibraryDatabase {
         return try await writer.read { db in
             try AlbumSummary.fetchAll(db, sql: """
                 SELECT \(Self.albumSummaryColumns)
-                FROM track WHERE isMissing = 0
+                FROM track WHERE \(Self.visible())
                 GROUP BY albumKey
                 HAVING (SUM(playCount) >= 3 AND MAX(lastPlayedAt) < ?)
                     OR (MAX(isFavorite) = 1 AND (MAX(lastPlayedAt) IS NULL OR MAX(lastPlayedAt) < ?))
@@ -63,7 +63,7 @@ public extension LibraryDatabase {
             try add(.mostPlayed, "Most Played", "Your favourites, by play count", minimum: 5)
             let genres = try String.fetchAll(db, sql: """
                 SELECT MAX(genre) FROM track
-                WHERE isMissing = 0 AND genre IS NOT NULL AND TRIM(genre) != ''
+                WHERE \(Self.visible()) AND genre IS NOT NULL AND TRIM(genre) != ''
                 GROUP BY genre COLLATE NOCASE
                 HAVING COUNT(*) >= 20
                 ORDER BY COUNT(*) DESC LIMIT 2
@@ -74,7 +74,7 @@ public extension LibraryDatabase {
             }
             if let decade = try Int.fetchOne(db, sql: """
                 SELECT (year / 10) * 10 AS decade FROM track
-                WHERE isMissing = 0 AND year >= 1900
+                WHERE \(Self.visible()) AND year >= 1900
                 GROUP BY decade HAVING COUNT(*) >= 20
                 ORDER BY COUNT(*) DESC LIMIT 1
                 """) {
@@ -98,7 +98,7 @@ public extension LibraryDatabase {
         let multiplier = (seed >> 32) | 1                 // odd, below 2^32, very different each day
         let offset = seed & 0xFFFF_FFFF
         let dailyOrder = "((id * \(multiplier)) + \(offset)) % 4294967296"
-        let base = "SELECT * FROM track WHERE isMissing = 0"
+        let base = "SELECT * FROM track WHERE \(Self.visible())"
         switch kind {
         case .mostPlayed:
             return try Track.fetchAll(db, sql: "\(base) AND playCount > 0 ORDER BY playCount DESC, lastPlayedAt DESC LIMIT ?",

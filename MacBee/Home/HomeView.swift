@@ -26,10 +26,14 @@ struct HomeView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 34) {
-                Text("Music")
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(theme.textPrimary)
-                    .padding(.horizontal, 32)
+                HStack {
+                    Text("Music")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer()
+                    SourceBadge()
+                }
+                .padding(.horizontal, 32)
 
                 StatCardsRow(stats: library.stats)
                     .padding(.horizontal, 32)

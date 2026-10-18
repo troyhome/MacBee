@@ -77,6 +77,7 @@ public final class MusicLibrary {
     /// Loads folders and stats, starts watching, and (unless turned off) does a quick check for changes.
     public func start(watch: Bool = true, checkForChanges: Bool = true) async {
         await reloadFolders()
+        try? await database.refreshVisibility()
         await refreshStats()
         if watch {
             monitor.watch(folders.map(\.folder.path))
@@ -106,6 +107,33 @@ public final class MusicLibrary {
         if let id = folder.id { requestScan([id]) }
     }
 
+    /// Saves a new folder order (first = highest priority) and re-picks which copy of each duplicate shows.
+    public func setFolderOrder(_ ids: [Int64]) async throws {
+        try await database.setFolderOrder(ids)
+        await reloadFolders()
+        await applyVisibility()
+    }
+
+    /// Pauses (leaves the folder's songs out of the library, keeping the folder) or resumes a folder.
+    public func setFolderPaused(id: Int64, _ paused: Bool) async throws {
+        try await database.setFolderPaused(id: id, paused)
+        await reloadFolders()
+        await applyVisibility()
+        if !paused { requestScan([id]) }
+    }
+
+    /// Re-works out paused folders and duplicates, then refreshes every list.
+    func applyVisibility() async {
+        do {
+            try await database.refreshVisibility()
+        } catch {
+            reportError(error)
+        }
+        await refreshStats()
+        revision += 1
+        emit(.foldersChanged)
+    }
+
     /// Removes a folder and its tracks from the library. Files on disk are not touched.
     public func removeFolder(id: Int64) async throws {
         pendingFolderIds.removeAll { $0 == id }
@@ -121,13 +149,13 @@ public final class MusicLibrary {
 
     /// Checks every folder for new, changed and removed files (the "Scan/Refresh Library" action).
     public func scanAll() {
-        requestScan(folders.compactMap(\.folder.id))
+        requestScan(folders.filter { !$0.folder.isPaused }.compactMap(\.folder.id))
     }
 
     /// Force Rescan: reads every file in every folder again, even ones that look unchanged.
     /// Slower than `scanAll` (on a network drive, many minutes for a large library).
     public func forceRescanAll() {
-        let ids = folders.compactMap(\.folder.id)
+        let ids = folders.filter { !$0.folder.isPaused }.compactMap(\.folder.id)
         forcedFolderIds.formUnion(ids)
         requestScan(ids)
     }
@@ -144,7 +172,9 @@ public final class MusicLibrary {
     }
 
     private func requestScan(_ ids: [Int64]) {
-        for id in ids where !pendingFolderIds.contains(id) { pendingFolderIds.append(id) }
+        // Paused folders aren't scanned until they're resumed.
+        let paused = Set(folders.filter(\.folder.isPaused).compactMap(\.folder.id))
+        for id in ids where !pendingFolderIds.contains(id) && !paused.contains(id) { pendingFolderIds.append(id) }
         guard scanTask == nil, !pendingFolderIds.isEmpty else { return }
         scanTask = Task { await runPendingScans() }
     }
@@ -175,6 +205,8 @@ public final class MusicLibrary {
             }
         }
         await reloadFolders()
+        // New or changed songs may be duplicates of others (or no longer be).
+        if reports.contains(where: \.changedAnything) { await applyVisibility() }
         scanProgress = nil
         scanTask = nil
         lastReports = reports

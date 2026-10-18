@@ -4,6 +4,11 @@ import GRDB
 /// Read queries used by the UI (Home stats, Artists, Albums, search, history).
 public extension LibraryDatabase {
 
+    /// `visible()` as a GRDB filter.
+    internal static var isVisible: SQLExpression {
+        Column("isMissing") == false && Column("isPaused") == false && Column("duplicateOf") == nil
+    }
+
     /// Columns that build an `AlbumSummary` from `track` rows grouped by albumKey.
     internal static let albumSummaryColumns = """
         albumKey,
@@ -28,7 +33,7 @@ public extension LibraryDatabase {
                        COUNT(DISTINCT albumKey) AS albums,
                        COUNT(*) AS tracks,
                        COALESCE(SUM(duration), 0) AS totalDuration
-                FROM track WHERE isMissing = 0
+                FROM track WHERE \(Self.visible())
                 """) ?? .empty
         }
     }
@@ -46,7 +51,7 @@ public extension LibraryDatabase {
             having = "HAVING MAX(lastPlayedAt) IS NOT NULL"
         }
         var arguments: StatementArguments = []
-        var whereClause = "WHERE isMissing = 0"
+        var whereClause = "WHERE \(Self.visible())"
         if let artistKey {
             whereClause += " AND artistKey = ?"
             arguments += [artistKey]
@@ -73,22 +78,25 @@ public extension LibraryDatabase {
         try await writer.read { db in
             try AlbumSummary.fetchOne(db, sql: """
                 SELECT \(Self.albumSummaryColumns)
-                FROM track WHERE isMissing = 0 AND albumKey = ?
+                FROM track WHERE \(Self.visible()) AND albumKey = ?
                 GROUP BY albumKey
                 """, arguments: [albumKey])
         }
     }
 
-    func artists() async throws -> [ArtistSummary] {
-        try await writer.read { db in
+    /// Every album artist. `hidingCompilationOnly` leaves out artists whose songs are all on compilations
+    /// (they have no album of their own).
+    func artists(hidingCompilationOnly: Bool = false) async throws -> [ArtistSummary] {
+        let having = hidingCompilationOnly ? "HAVING MIN(isCompilation) = 0" : ""
+        return try await writer.read { db in
             try ArtistSummary.fetchAll(db, sql: """
                 SELECT artistKey,
                        MAX(displayAlbumArtist) AS name,
                        COUNT(DISTINCT albumKey) AS albumCount,
                        COUNT(*) AS trackCount,
                        MAX(artworkId) AS artworkId
-                FROM track WHERE isMissing = 0
-                GROUP BY artistKey
+                FROM track WHERE \(Self.visible())
+                GROUP BY artistKey \(having)
                 ORDER BY artistKey
                 """)
         }
@@ -97,7 +105,7 @@ public extension LibraryDatabase {
     func tracks(inAlbum albumKey: String) async throws -> [Track] {
         try await writer.read { db in
             try Track
-                .filter(Column("albumKey") == albumKey && Column("isMissing") == false)
+                .filter(Column("albumKey") == albumKey && Self.isVisible)
                 .order(Column("discNumber"), Column("trackNumber"), Column("path"))
                 .fetchAll(db)
         }
@@ -119,7 +127,7 @@ public extension LibraryDatabase {
         return try await writer.read { db in
             try Track.fetchAll(db, sql: """
                 SELECT * FROM track
-                WHERE isMissing = 0 AND (
+                WHERE \(Self.visible()) AND (
                     title LIKE ?1 ESCAPE '\\' OR artist LIKE ?1 ESCAPE '\\' OR
                     displayAlbum LIKE ?1 ESCAPE '\\' OR displayAlbumArtist LIKE ?1 ESCAPE '\\')
                 ORDER BY artistKey, albumKey, discNumber, trackNumber
@@ -131,7 +139,7 @@ public extension LibraryDatabase {
     func recentlyPlayedTracks(limit: Int = 50) async throws -> [Track] {
         try await writer.read { db in
             try Track
-                .filter(Column("lastPlayedAt") != nil && Column("isMissing") == false)
+                .filter(Column("lastPlayedAt") != nil && Self.isVisible)
                 .order(Column("lastPlayedAt").desc)
                 .limit(limit)
                 .fetchAll(db)
@@ -176,12 +184,14 @@ public extension LibraryDatabase {
     // MARK: - Folders
 
     func folders() async throws -> [MusicFolder] {
-        try await writer.read { db in try MusicFolder.order(Column("path")).fetchAll(db) }
+        try await writer.read { db in try MusicFolder.order(Column("priority"), Column("path")).fetchAll(db) }
     }
 
     func insertFolder(path: String, name: String) async throws -> MusicFolder {
         try await writer.write { db in
-            var folder = MusicFolder(id: nil, path: path, name: name, addedAt: Date(), lastScanAt: nil)
+            // New folders go to the bottom of the priority list.
+            let next = (try Int.fetchOne(db, sql: "SELECT MAX(priority) + 1 FROM folder")) ?? 0
+            var folder = MusicFolder(id: nil, path: path, name: name, addedAt: Date(), lastScanAt: nil, priority: next)
             try folder.insert(db)
             return folder
         }

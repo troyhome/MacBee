@@ -4,6 +4,7 @@ import SwiftUI
 /// The Artists page: artist list on the left, the selected artist's albums and songs on the right.
 struct ArtistsView: View {
     @Environment(MusicLibrary.self) private var library
+    @Environment(PreferencesStore.self) private var preferences
     @Environment(\.theme) private var theme
     @State private var model = ArtistsViewModel()
     /// Remembered between launches.
@@ -42,8 +43,8 @@ struct ArtistsView: View {
         }
         .navigationTitle("Artists")
         .navigationSubtitle(model.isLoaded ? "\(model.artists.count) artists" : "")
-        .task(id: library.revision) {
-            await model.load(from: library.database)
+        .task(id: "\(library.revision)-\(preferences.hideCompilationOnlyArtists)") {
+            await model.load(from: library.database, hidingCompilationOnly: preferences.hideCompilationOnlyArtists)
             if selectedArtist == nil { selectedKey = model.artists.first?.artistKey ?? "" }
         }
     }

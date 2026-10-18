@@ -195,7 +195,23 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       continues and the drawable resizes when the surface moves windows. (The first in-window version cropped the
       picture; Troy asked for a separate window.)
     - Show pages list seasons as tabs (was a pull-down menu), per Troy.
-- Roadmap Phases 2-5: not started.
+- Roadmap Phase 2 BUILT 2026-10-18, waiting for Troy's smoke tests:
+  - DB migration v5: folder.priority + folder.isPaused; track.isPaused + track.duplicateOf. Library queries use
+    `LibraryDatabase.visible()` (not missing, not paused, not a duplicate copy); playlists use `playable()` (a
+    duplicate someone put in a playlist stays). `refreshVisibility()` re-flags paused songs and re-runs
+    `DuplicateFinder` (artist + title + album normalized, lengths within 2 s; best = highest-priority folder,
+    then quality, then lowest id). Runs at launch, after scans that changed anything, and on folder order/pause
+    changes. On Troy's library: 98 duplicates (e.g. Art School Girlfriend album twice, Appetite twice) of 9,449.
+    Backup of the DB before this migration: ~/Library/Application Support/MacBee/Library-before-phase2.sqlite.
+  - Preferences > Library > Music folders: drag rows to set priority (draggable/dropDestination, not onMove),
+    switch per folder to pause (paused folders aren't scanned or shown). "Artists" section: Hide
+    compilation-only artists (`PreferencesStore.hideCompilationOnlyArtists`; `artists(hidingCompilationOnly:)`
+    = HAVING MIN(isCompilation) = 0).
+  - Failover: `PlaybackRouter` plays another folder's copy (`alternativeFiles(forTrackId:)`, best priority first,
+    paused folders skipped) when the song's file can't be reached, before falling back to Plex.
+  - Home: `SourceBadge` (Local Library / Plex Server / Library offline) with a switch: on = playbackSource .plex,
+    off = .automatic. It switches where songs play from; the library list itself stays the same songs.
+- Roadmap Phases 3-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).

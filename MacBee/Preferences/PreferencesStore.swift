@@ -19,6 +19,8 @@ final class PreferencesStore {
     var playbackSource: PlaybackSourcePreference { didSet { save(playbackSource.rawValue, "playbackSource") } }
     /// The external tag editor app chosen in Preferences (Phase 8 opens songs in it).
     var tagEditorPath: String? { didSet { save(tagEditorPath, "tagEditorPath") } }
+    /// Artists who only appear on compilations are left out of the Artists page.
+    var hideCompilationOnlyArtists: Bool { didSet { save(hideCompilationOnlyArtists, "hideCompilationOnlyArtists") } }
     /// Folders (or whole drives) with movies and TV shows, for the Videos page.
     var videoFolders: [String] { didSet { save(videoFolders, "videoFolders") } }
     /// The keyboard's media keys control MacBee whenever it has music loaded, even with other players open.
@@ -37,6 +39,7 @@ final class PreferencesStore {
         routineCheck = (d.object(forKey: "routineCheck") as? Int).flatMap(RoutineCheck.init) ?? .every30
         playbackSource = d.string(forKey: "playbackSource").flatMap(PlaybackSourcePreference.init) ?? .automatic
         tagEditorPath = d.string(forKey: "tagEditorPath")
+        hideCompilationOnlyArtists = d.object(forKey: "hideCompilationOnlyArtists") as? Bool ?? false
         videoFolders = d.stringArray(forKey: "videoFolders") ?? []
         mediaKeysAlwaysMacBee = d.object(forKey: "mediaKeysAlwaysMacBee") as? Bool ?? true
         useDefaultTagEditorIfNeeded()

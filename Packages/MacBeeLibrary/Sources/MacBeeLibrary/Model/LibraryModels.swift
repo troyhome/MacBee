@@ -8,6 +8,10 @@ public struct MusicFolder: Codable, Identifiable, Hashable, Sendable, FetchableR
     public var name: String
     public var addedAt: Date
     public var lastScanAt: Date?
+    /// Lower comes first: decides which copy of a duplicated song is shown and played.
+    public var priority: Int = 0
+    /// Paused folders stay in the list but their songs are left out of the library.
+    public var isPaused: Bool = false
 
     public static let databaseTableName = "folder"
 

@@ -9,7 +9,7 @@ public extension LibraryDatabase {
         try await writer.read { db in
             try Track.fetchAll(db, sql: """
                 SELECT * FROM track
-                WHERE isMissing = 0 AND isFavorite = 1
+                WHERE \(Self.visible()) AND isFavorite = 1
                 ORDER BY artistKey, albumKey, discNumber, trackNumber, path
                 """)
         }
@@ -20,7 +20,7 @@ public extension LibraryDatabase {
         try await writer.read { db in
             try AlbumSummary.fetchAll(db, sql: """
                 SELECT \(Self.albumSummaryColumns)
-                FROM track WHERE isMissing = 0
+                FROM track WHERE \(Self.visible())
                 GROUP BY albumKey
                 HAVING MIN(isFavorite) = 1
                 ORDER BY artistKey, year, title COLLATE NOCASE
