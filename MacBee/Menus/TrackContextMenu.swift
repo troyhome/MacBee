@@ -18,7 +18,7 @@ struct TrackContextMenu: View {
             Button("Add to Queue") { player.addToQueue(tracks) }
             if tracks.count == 1, let track = tracks.first {
                 Divider()
-                Button("Start Mix from This Song") { Task { await player.startMix(from: track) } }
+                Button("Make Mix from Song") { Task { await player.startMix(from: track) } }
                 Button("Play More from \(track.displayArtist)") { Task { await player.playMore(fromArtistOf: track) } }
             }
             Divider()

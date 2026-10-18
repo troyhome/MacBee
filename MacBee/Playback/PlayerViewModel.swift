@@ -24,7 +24,8 @@ final class PlayerViewModel {
     /// Called when a new list of songs starts playing; the album when a whole album was started.
     /// AppModel uses it to remember the page the music was started from ("Playing From" in the sidebar).
     @ObservationIgnored var onNewQueue: ((AlbumSummary?) -> Void)?
-    /// The song a running mix was started from. While set, more similar songs are added as the queue runs low.
+    /// The song the running mix was last built from. While set, the mix never ends: when the queue runs low,
+    /// the next batch is built from the last song in it (the 25th, then the 50th, ...), so the mix drifts (Troy).
     private(set) var mixSeed: Track?
     @ObservationIgnored private var isToppingUpMix = false
     /// Network drive or Plex, per song.
@@ -134,20 +135,23 @@ final class PlayerViewModel {
         }
     }
 
-    /// Adds more mix songs when three or fewer are left after the current one.
+    /// Adds the next batch when three or fewer songs are left after the current one, built from the last
+    /// song in the queue.
     private func topUpMixIfNeeded() {
-        guard let seed = mixSeed, !isToppingUpMix, queue.upNext.count <= 3, let database else { return }
+        guard let running = mixSeed, !isToppingUpMix, queue.upNext.count <= 3, let database else { return }
+        let seed = queue.tracks.last ?? running
         isToppingUpMix = true
         let played = Set(queue.tracks.compactMap(\.id))
         Task {
             defer { isToppingUpMix = false }
-            guard let more = try? await database.songMix(from: seed, excluding: played), mixSeed == seed else { return }
-            // Ran out of new songs: start over with everything except what's still queued.
+            guard let more = try? await database.songMix(from: seed, excluding: played), mixSeed == running else { return }
+            // Ran out of new songs: allow repeats of anything not still queued.
             let songs = more.isEmpty
                 ? ((try? await database.songMix(from: seed, excluding: Set(queue.upNext.compactMap(\.track.id)))) ?? [])
                 : more
-            guard !songs.isEmpty, mixSeed == seed else { return }
+            guard !songs.isEmpty, mixSeed == running else { return }
             queue.append(songs)
+            mixSeed = seed
             engine.queueDidChange()
         }
     }

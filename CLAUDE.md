@@ -392,9 +392,10 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   from the menu, Troy: same as no EQ; Reset still uses it);
   saved ones listed first in the menu. Window stays in front (WindowLevelSetter). Off by default.
   `macbee-play --eq punchy` (q toggles) tests it from Terminal.
-- Song mixes (2026-10-18, Troy): song right-click > "Start Mix from This Song" (`PlayerViewModel.startMix`,
+- Song mixes (2026-10-18, Troy): song right-click > "Make Mix from Song" (renamed by Troy) (`PlayerViewModel.startMix`,
   `LibraryDatabase.songMix`: ~1/3 same artist, rest similar artists then same genre, shuffled) keeps going: while
-  `mixSeed` is set, `topUpMixIfNeeded` (on `QueueManager.onAdvance` and Next) appends more when <= 3 are left; any
+  `mixSeed` is set, `topUpMixIfNeeded` (on `QueueManager.onAdvance` and Next) appends 25 more when <= 3 are left,
+  built from the LAST song in the queue (25th, 50th, ...), so the mix is endless and drifts (Troy); any
   other play() ends the mix. "Play More from <artist>" = that song, then the artist's others shuffled.
   If that song is the one playing, it keeps playing and the rest replaces Up Next (`continueOrPlay`), per Troy.
   Playing From (and showCurrentAlbum) in Track Studio opens beside the studio instead of leaving it (Troy).
