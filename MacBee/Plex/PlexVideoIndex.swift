@@ -1,4 +1,7 @@
 import Foundation
+import OSLog
+
+private let plexVideoLog = Logger(subsystem: "com.troyhomenchuk.MacBee", category: "PlexVideos")
 
 /// What Plex knows about a movie or show, looked up by the video's file name.
 struct PlexVideoInfo: Codable, Sendable {
@@ -41,9 +44,23 @@ struct PlexVideoIndex: Codable, Sendable {
 extension PlexConnection {
     /// Reads every Plex movie and TV library. Nil when not signed in or the server can't be reached.
     func videoIndex() async -> PlexVideoIndex? {
-        guard isSignedIn, let (base, token) = await serverAccess() else { return nil }
+        guard isSignedIn else {
+            plexVideoLog.notice("Plex videos: not signed in")
+            return nil
+        }
+        guard let (base, token) = await serverAccess() else {
+            plexVideoLog.notice("Plex videos: no server reachable")
+            return nil
+        }
         let api = PlexAPI()
-        guard let sections = try? await api.videoSections(base: base, token: token) else { return nil }
+        let sections: [PlexSection]
+        do {
+            sections = try await api.videoSections(base: base, token: token)
+        } catch {
+            plexVideoLog.notice("Plex videos: sections failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+        plexVideoLog.notice("Plex videos: \(sections.count) movie/TV libraries")
         var index = PlexVideoIndex()
         for section in sections {
             if section.type == "movie" {
@@ -70,6 +87,7 @@ extension PlexConnection {
                 }
             }
         }
+        plexVideoLog.notice("Plex videos: \(index.movies.count) movie files, \(index.shows.count) episode files")
         return index
     }
 
