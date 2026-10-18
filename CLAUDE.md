@@ -392,6 +392,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   from the menu, Troy: same as no EQ; Reset still uses it);
   saved ones listed first in the menu. Window stays in front (WindowLevelSetter). Off by default.
   `macbee-play --eq punchy` (q toggles) tests it from Terminal.
+- Song mixes (2026-10-18, Troy): song right-click > "Start Mix from This Song" (`PlayerViewModel.startMix`,
+  `LibraryDatabase.songMix`: ~1/3 same artist, rest similar artists then same genre, shuffled) keeps going: while
+  `mixSeed` is set, `topUpMixIfNeeded` (on `QueueManager.onAdvance` and Next) appends more when <= 3 are left; any
+  other play() ends the mix. "Play More from <artist>" = that song, then the artist's others shuffled.
+  Artist page album headers (Albums and songs layout): heart button + "…" menu (`AlbumMoreMenu`: Play Next,
+  Add to Queue, Add to Playlist) next to Play.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

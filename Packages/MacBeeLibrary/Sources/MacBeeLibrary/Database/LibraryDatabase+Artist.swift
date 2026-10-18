@@ -74,6 +74,39 @@ public extension LibraryDatabase {
         return mixes
     }
 
+    /// Every visible song by one artist.
+    func tracks(byArtistKey artistKey: String) async throws -> [Track] {
+        try await writer.read { db in
+            try Track.fetchAll(db, sql: "SELECT * FROM track WHERE \(Self.visible()) AND artistKey = ?",
+                               arguments: [artistKey])
+        }
+    }
+
+    /// Songs for a mix started from one song (right-click > Start Mix): about a third by the same artist,
+    /// the rest by similar artists, topped up with songs of the same genre. Shuffled; never includes `excluding`.
+    func songMix(from seed: Track, excluding: Set<Int64> = [], count: Int = 25) async throws -> [Track] {
+        var skip = excluding
+        if let id = seed.id { skip.insert(id) }
+        let similar = try await similarArtists(to: seed.artistKey, limit: 8).map(\.artistKey)
+        let genres = Self.splitGenres(seed.genre)
+        let all = try await writer.read { db in
+            try Track.fetchAll(db, sql: "SELECT * FROM track WHERE \(Self.visible())")
+        }.filter { $0.id.map { !skip.contains($0) } ?? false }
+
+        let sameArtist = all.filter { $0.artistKey == seed.artistKey }.shuffled()
+        let similarSongs = all.filter { similar.contains($0.artistKey) }.shuffled()
+        let sameGenre = genres.isEmpty ? [] : all.filter { track in
+            track.artistKey != seed.artistKey && !similar.contains(track.artistKey)
+                && Self.splitGenres(track.genre).contains(where: genres.contains)
+        }.shuffled()
+
+        var picked = Array(sameArtist.prefix(max(1, count / 3)))
+        for track in similarSongs + sameGenre + sameArtist.dropFirst(picked.count) where picked.count < count {
+            if !picked.contains(where: { $0.id == track.id }) { picked.append(track) }
+        }
+        return picked.shuffled()
+    }
+
     /// "Rock; Indie Rock" -> ["rock", "indie rock"]
     internal static func splitGenres(_ raw: String?) -> [String] {
         (raw ?? "").split(whereSeparator: { ";,/".contains($0) })

@@ -16,6 +16,11 @@ struct TrackContextMenu: View {
             Button("Play", action: onPlay)
             Button("Play Next") { player.playNext(tracks) }
             Button("Add to Queue") { player.addToQueue(tracks) }
+            if tracks.count == 1, let track = tracks.first {
+                Divider()
+                Button("Start Mix from This Song") { Task { await player.startMix(from: track) } }
+                Button("Play More from \(track.displayArtist)") { Task { await player.playMore(fromArtistOf: track) } }
+            }
             Divider()
             Button(allFavorites ? "Remove from Favorites" : "Add to Favorites") {
                 player.setFavorite(tracks, !allFavorites)

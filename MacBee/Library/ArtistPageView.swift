@@ -131,6 +131,7 @@ private struct ArtistAlbumHeader: View {
     let section: ArtistPageViewModel.AlbumSection
     let onOpen: () -> Void
     let onPlay: () -> Void
+    @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -156,6 +157,11 @@ private struct ArtistAlbumHeader: View {
                     .foregroundStyle(theme.textSecondary)
             }
             Spacer()
+            CircleButton(systemImage: isFavorite ? "heart.fill" : "heart",
+                         help: isFavorite ? "Remove album from Favorites" : "Add album to Favorites") {
+                player.setFavorite(section.tracks, !isFavorite)
+            }
+            AlbumMoreMenu(tracks: section.tracks)
             CircleButton(systemImage: "play.fill", help: "Play album", action: onPlay)
         }
         .padding(14)
@@ -167,6 +173,10 @@ private struct ArtistAlbumHeader: View {
                 .overlay(theme.background.opacity(0.4))
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var isFavorite: Bool {
+        !section.tracks.isEmpty && section.tracks.allSatisfy(player.isFavorite)
     }
 
     private var details: String {

@@ -67,6 +67,30 @@ final class Phase3Tests: XCTestCase {
         XCTAssertTrue(none.isEmpty)
     }
 
+    func testSongMixUsesSameAndSimilarArtists() async throws {
+        let db = try LibraryDatabase()
+        let folder = try await db.insertFolder(path: "/M", name: "M")
+        var batch: [ScannedTrack] = []
+        for (artist, genre) in [("Ride", "Shoegaze"), ("Slowdive", "Shoegaze"), ("Slayer", "Metal")] {
+            for n in 1...10 {
+                var t = ScannedTrack(path: "/M/\(artist)/\(n).flac", fileSize: 1, modifiedAt: Date())
+                t.title = "\(artist) \(n)"; t.artist = artist; t.album = artist; t.genre = genre
+                t.duration = 100; t.codec = "FLAC"
+                batch.append(t)
+            }
+        }
+        _ = try await db.save(batch, folderId: folder.id!)
+        let seed = try await db.search("Ride 1").first { $0.title == "Ride 1" }!
+        let mix = try await db.songMix(from: seed, count: 12)
+        XCTAssertEqual(mix.count, 12)
+        XCTAssertFalse(mix.contains { $0.id == seed.id })
+        XCTAssertFalse(mix.contains { $0.artist == "Slayer" })
+        XCTAssertTrue(mix.contains { $0.artist == "Ride" })
+        XCTAssertTrue(mix.contains { $0.artist == "Slowdive" })
+        let more = try await db.songMix(from: seed, excluding: Set(mix.compactMap(\.id)), count: 12)
+        XCTAssertTrue(Set(more.compactMap(\.id)).isDisjoint(with: Set(mix.compactMap(\.id))))
+    }
+
     func testImportMatchesPathsFromAnotherComputer() async throws {
         let db = try LibraryDatabase()
         let folder = try await db.insertFolder(path: "/Volumes/2 Set Music", name: "2 Set Music")

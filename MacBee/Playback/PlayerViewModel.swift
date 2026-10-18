@@ -24,6 +24,9 @@ final class PlayerViewModel {
     /// Called when a new list of songs starts playing; the album when a whole album was started.
     /// AppModel uses it to remember the page the music was started from ("Playing From" in the sidebar).
     @ObservationIgnored var onNewQueue: ((AlbumSummary?) -> Void)?
+    /// The song a running mix was started from. While set, more similar songs are added as the queue runs low.
+    private(set) var mixSeed: Track?
+    @ObservationIgnored private var isToppingUpMix = false
     /// Network drive or Plex, per song.
     let router: PlaybackRouter
     @ObservationIgnored private var recorder = PlayRecorder()
@@ -39,6 +42,7 @@ final class PlayerViewModel {
         self.router = router
         queue.router = router
         router.database = database
+        queue.onAdvance = { [weak self] in self?.topUpMixIfNeeded() }
         // A song finished downloading from Plex: line up the next one for gapless playback.
         router.onPrefetched = { [weak engine] in engine?.queueDidChange() }
         recorderTask = Task { [weak self] in
@@ -58,6 +62,7 @@ final class PlayerViewModel {
 
     func play(_ tracks: [Track], startAt index: Int = 0) {
         guard tracks.indices.contains(index) else { return }
+        mixSeed = nil
         queue.replace(with: tracks, startAt: index)
         if let track = queue.current { start(track) }
         onNewQueue?(nil)
@@ -89,6 +94,49 @@ final class PlayerViewModel {
     /// Plays all of an artist's albums, oldest first.
     func playArtist(_ artist: ArtistSummary) async {
         play(await tracks(of: artist))
+    }
+
+    /// Right-click > Start Mix: plays this song, then similar songs (same and similar artists, same genre).
+    /// The mix keeps going: more songs are added whenever only a few are left.
+    func startMix(from seed: Track) async {
+        guard let database else { return }
+        do {
+            let songs = try await database.songMix(from: seed)
+            play([seed] + songs)
+            mixSeed = seed
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Right-click > Play More from <artist>: this song, then the artist's other songs shuffled.
+    func playMore(fromArtistOf track: Track) async {
+        guard let database else { return }
+        do {
+            let others = try await database.tracks(byArtistKey: track.artistKey)
+                .filter { $0.id != track.id }.shuffled()
+            play([track] + others)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Adds more mix songs when three or fewer are left after the current one.
+    private func topUpMixIfNeeded() {
+        guard let seed = mixSeed, !isToppingUpMix, queue.upNext.count <= 3, let database else { return }
+        isToppingUpMix = true
+        let played = Set(queue.tracks.compactMap(\.id))
+        Task {
+            defer { isToppingUpMix = false }
+            guard let more = try? await database.songMix(from: seed, excluding: played), mixSeed == seed else { return }
+            // Ran out of new songs: start over with everything except what's still queued.
+            let songs = more.isEmpty
+                ? ((try? await database.songMix(from: seed, excluding: Set(queue.upNext.compactMap(\.track.id)))) ?? [])
+                : more
+            guard !songs.isEmpty, mixSeed == seed else { return }
+            queue.append(songs)
+            engine.queueDidChange()
+        }
     }
 
     /// Plays these tracks after the current one (or now, if nothing is playing).
@@ -146,6 +194,7 @@ final class PlayerViewModel {
         guard let i = queue.currentIndex, let j = queue.index(after: i, userSkipped: true),
               let track = queue.move(to: j) else { return }
         start(track)
+        topUpMixIfNeeded()
     }
 
     // MARK: - Queue drawer

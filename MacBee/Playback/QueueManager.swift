@@ -31,6 +31,9 @@ final class QueueManager: PlaybackQueueSource {
         didSet { UserDefaults.standard.set(repeatMode.rawValue, forKey: "repeatMode") }
     }
 
+    /// Called after the engine moves on to the next song by itself.
+    @ObservationIgnored var onAdvance: (() -> Void)?
+
     /// Picks the file for each song (network drive or Plex copy). Set by AppModel.
     @ObservationIgnored weak var router: PlaybackRouter?
 
@@ -162,6 +165,7 @@ final class QueueManager: PlaybackQueueSource {
     func engineDidAdvance(to url: URL) {
         if let i = index(of: url) { currentIndex = i }
         advanceCount += 1
+        onAdvance?()
     }
 
     // MARK: - Helpers
