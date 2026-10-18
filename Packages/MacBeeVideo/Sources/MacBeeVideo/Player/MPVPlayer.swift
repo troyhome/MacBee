@@ -270,6 +270,8 @@ final class MPVMetalLayer: CAMetalLayer {
     override init(layer: Any) { super.init(layer: layer) }
     required init?(coder: NSCoder) { super.init(coder: coder) }
 
+    private func setEDR(_ value: Bool) { super.wantsExtendedDynamicRangeContent = value }
+
     override var drawableSize: CGSize {
         get { super.drawableSize }
         set { if Int(newValue.width) > 1 && Int(newValue.height) > 1 { super.drawableSize = newValue } }
@@ -278,10 +280,13 @@ final class MPVMetalLayer: CAMetalLayer {
     override var wantsExtendedDynamicRangeContent: Bool {
         get { super.wantsExtendedDynamicRangeContent }
         set {
+            // mpv sets this from its video thread while holding its own lock. Waiting for the main thread here
+            // (main.sync) deadlocked whenever the main thread was itself waiting on mpv (beach ball, black
+            // picture), so the change is handed to the main thread without waiting.
             if Thread.isMainThread {
                 super.wantsExtendedDynamicRangeContent = newValue
             } else {
-                DispatchQueue.main.sync { super.wantsExtendedDynamicRangeContent = newValue }
+                DispatchQueue.main.async { [weak self] in self?.setEDR(newValue) }
             }
         }
     }

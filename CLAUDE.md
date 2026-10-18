@@ -409,6 +409,10 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
 - Video sorting (Troy): sort menu next to the search box on Movies / TV Shows / Music Videos (`VideoSort.swift`):
   Title, Year, Genre, Date Added (music videos: Title, Artist, Date Added), Ascending/Descending; saved per page in
   UserDefaults "videoSort.<category>".
+- Video hang fix (2026-10-18): playing a show gave a beach ball + black picture. Deadlock: mpv's vo thread (holding
+  mpv's dispatch lock during reconfig) set `MPVMetalLayer.wantsExtendedDynamicRangeContent`, whose override did
+  `DispatchQueue.main.sync`, while the main thread was in `mpv_set_property` (scheduleRefit) waiting for that lock.
+  The setter now uses main.async. Never block mpv's threads on the main thread.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
