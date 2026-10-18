@@ -396,6 +396,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   `LibraryDatabase.songMix`: ~1/3 same artist, rest similar artists then same genre, shuffled) keeps going: while
   `mixSeed` is set, `topUpMixIfNeeded` (on `QueueManager.onAdvance` and Next) appends more when <= 3 are left; any
   other play() ends the mix. "Play More from <artist>" = that song, then the artist's others shuffled.
+  If that song is the one playing, it keeps playing and the rest replaces Up Next (`continueOrPlay`), per Troy.
+  Playing From (and showCurrentAlbum) in Track Studio opens beside the studio instead of leaving it (Troy).
   Artist page album headers (Albums and songs layout): heart button + "…" menu (`AlbumMoreMenu`: Play Next,
   Add to Queue, Add to Playlist) next to Play.
 - All five roadmap phases built.

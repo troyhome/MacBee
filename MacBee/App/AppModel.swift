@@ -225,6 +225,11 @@ final class AppModel {
     func showCurrentAlbum() async {
         guard let track = player.currentTrack, let database = library?.database,
               let album = try? await database.album(key: track.albumKey) else { return }
+        if isInTrackStudio {
+            trackStudioBrowse = .albums
+            location.albums = [album]
+            return
+        }
         location = Location(page: .albums, albums: [album])
     }
 
@@ -312,11 +317,22 @@ final class AppModel {
     }
 
     /// "Playing From": back to the page the music was started from (or the playing song's album).
+    /// In Track Studio it opens beside the studio instead of leaving it (Troy).
     func showPlayingFrom() async {
         if var playingFrom, playingFrom.page != .search || !searchText.isEmpty {
             if let artistKey = playingFrom.artistKey {
                 UserDefaults.standard.set(artistKey, forKey: "selectedArtist")
                 playingFrom.artistKey = nil // the page's own location doesn't carry it
+            }
+            if isInTrackStudio {
+                if playingFrom.page == .tags { return } // started in Track Studio: already here
+                if Self.browsableBesideTrackStudio.contains(playingFrom.page) {
+                    trackStudioBrowse = playingFrom.page
+                    location.albums = playingFrom.albums
+                } else {
+                    await showCurrentAlbum()
+                }
+                return
             }
             location = playingFrom
         } else {

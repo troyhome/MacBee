@@ -102,7 +102,7 @@ final class PlayerViewModel {
         guard let database else { return }
         do {
             let songs = try await database.songMix(from: seed)
-            play([seed] + songs)
+            continueOrPlay(seed, then: songs)
             mixSeed = seed
         } catch {
             errorMessage = error.localizedDescription
@@ -115,9 +115,22 @@ final class PlayerViewModel {
         do {
             let others = try await database.tracks(byArtistKey: track.artistKey)
                 .filter { $0.id != track.id }.shuffled()
-            play([track] + others)
+            continueOrPlay(track, then: others)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// If `first` is the song playing now, it keeps playing and `rest` replaces Up Next; otherwise plays them all.
+    private func continueOrPlay(_ first: Track, then rest: [Track]) {
+        if let current = queue.current, current.id == first.id, engine.state != .stopped {
+            mixSeed = nil
+            queue.clearUpNext()
+            queue.append(rest)
+            engine.queueDidChange()
+            onNewQueue?(nil)
+        } else {
+            play([first] + rest)
         }
     }
 
