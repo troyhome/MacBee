@@ -111,3 +111,11 @@ extension Color {
 extension EnvironmentValues {
     @Entry var theme: Theme = .make(.dark)
 }
+
+extension Theme {
+    /// The "mode" color: a light wash of the accent for places that work differently from the rest
+    /// (Track Studio, Playlist Studio, the Library controls on the Music page).
+    var modeTint: Color { accent.opacity(0.13) }
+    /// The outline that goes with `modeTint`.
+    var modeBorder: Color { accent.opacity(0.45) }
+}

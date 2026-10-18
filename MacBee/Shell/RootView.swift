@@ -55,6 +55,23 @@ struct RootView: View {
             } message: {
                 Text(model.tagEditor?.problem ?? "")
             }
+            .alert("Deleted on \(model.networkSync?.pendingRemovalsFrom ?? "your other Mac")", isPresented: removalsShown) {
+                Button("Delete Here Too", role: .destructive) {
+                    let ids = model.networkSync?.pendingRemovals.map(\.playlistId) ?? []
+                    model.networkSync?.pendingRemovals = []
+                    Task {
+                        for id in ids {
+                            if let playlist = model.playlists?.playlist(id: id) { await model.playlists?.delete(playlist) }
+                        }
+                    }
+                }
+                Button("Keep Them", role: .cancel) { model.networkSync?.keepPendingRemovals() }
+            } message: {
+                Text("These were deleted on \(model.networkSync?.pendingRemovalsFrom ?? "your other Mac") but are still on this Mac:\n\n"
+                     + (model.networkSync?.pendingRemovals.map { ($0.removed.folders + [$0.removed.name]).joined(separator: " › ") } ?? [])
+                        .joined(separator: "\n")
+                     + "\n\nDelete them here too?")
+            }
             .alert("Playback problem", isPresented: errorShown) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -65,6 +82,11 @@ struct RootView: View {
                                    systemImage: "exclamationmark.triangle",
                                    description: Text(model.libraryError ?? "Unknown error"))
         }
+    }
+
+    private var removalsShown: Binding<Bool> {
+        Binding(get: { !(model.networkSync?.pendingRemovals.isEmpty ?? true) },
+                set: { _ in }) // the two buttons decide (and empty the list)
     }
 
     private var errorShown: Binding<Bool> {

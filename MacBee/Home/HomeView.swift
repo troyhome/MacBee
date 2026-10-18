@@ -8,6 +8,7 @@ struct HomeView: View {
     @Environment(PreferencesStore.self) private var preferences
     @Environment(\.theme) private var theme
     @State private var model = HomeViewModel()
+    @State private var confirmHistoryReset = false
 
     var body: some View {
         Group {
@@ -19,6 +20,13 @@ struct HomeView: View {
             }
         }
         .navigationTitle("Music")
+        .confirmationDialog("Reset Play History?", isPresented: $confirmHistoryReset) {
+            Button("Reset Play History", role: .destructive) {
+                Task { await model.resetPlayHistory(in: library.database) }
+            }
+        } message: {
+            Text("This deletes the list of what you played and when, on this Mac. Play counts and Most Played stay as they are. This can't be undone. (If you sync with another Mac, its history may come back with the next Combine.)")
+        }
         .task(id: "\(library.revision)-\(player.playsRecorded)") {
             await model.load(from: library.database)
         }
@@ -55,7 +63,8 @@ extension HomeView {
             StatCardsRow(stats: library.stats)
                 .padding(.horizontal, 32)
         case .recentlyPlayed:
-            HomeSection(title: "Recently Played") {
+            HomeSection(title: "Recently Played",
+                        action: ("Clear", "xmark.circle", { model.clearRecentlyPlayed() })) {
                 if model.recentlyPlayed.isEmpty {
                     EmptyRowMessage(model.isLoaded ? "Albums you play will show up here." : "")
                 } else {
@@ -71,8 +80,11 @@ extension HomeView {
                 }
             }
         case .recentlyAdded:
-            if !model.recentlyAdded.isEmpty {
-                HomeSection(title: "Recently Added") {
+            HomeSection(title: "Recently Added",
+                        action: ("Reset", "arrow.counterclockwise", { model.resetRecentlyAdded() })) {
+                if model.recentlyAdded.isEmpty {
+                    EmptyRowMessage(model.isLoaded ? "Music added from now on shows up here." : "")
+                } else {
                     AlbumCardRow(albums: model.recentlyAdded)
                 }
             }
@@ -83,7 +95,8 @@ extension HomeView {
                 }
             }
         case .playHistory:
-            HomeSection(title: "Play History") {
+            HomeSection(title: "Play History",
+                        action: ("Reset", "arrow.counterclockwise", { confirmHistoryReset = true })) {
                 if model.historyDays.isEmpty {
                     EmptyRowMessage(model.isLoaded ? "No plays yet. Songs count once you've heard half (or 4 minutes)." : "")
                 } else {

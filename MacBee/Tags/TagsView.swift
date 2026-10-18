@@ -48,7 +48,8 @@ struct TagsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(theme.accent.opacity(0.06)) // tinted like Playlist Studio, so the mode is easy to spot
+        .background(theme.modeTint) // the studio color, like Playlist Studio, so the mode is easy to spot
+        .overlay(Rectangle().stroke(theme.modeBorder, lineWidth: 2).allowsHitTesting(false))
         .navigationTitle("Track Studio")
         .onChange(of: app.trackStudioSourcePlaylistId) { _, id in if id != nil { section = .tagBee } }
     }

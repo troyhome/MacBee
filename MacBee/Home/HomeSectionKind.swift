@@ -6,7 +6,7 @@ enum HomeSectionKind: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .stats: "Library Numbers"
+        case .stats: "Library Stats"
         case .recentlyPlayed: "Recently Played"
         case .suggestedMixes: "Suggested Mixes"
         case .recentlyAdded: "Recently Added"

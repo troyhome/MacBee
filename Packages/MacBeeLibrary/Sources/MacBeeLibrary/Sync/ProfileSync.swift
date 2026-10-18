@@ -31,10 +31,28 @@ public struct ProfileSnapshot: Codable, Sendable {
         public var capacitySeconds: Int?
     }
 
+    /// A playlist (or folder) deleted on the sending Mac, so the other Mac can offer to delete it too.
+    public struct RemovedPlaylist: Codable, Hashable, Sendable {
+        public var folders: [String]
+        public var name: String
+        public var isFolder: Bool
+        public var removedAt: Date
+        public init(folders: [String], name: String, isFolder: Bool, removedAt: Date) {
+            self.folders = folders
+            self.name = name
+            self.isFolder = isFolder
+            self.removedAt = removedAt
+        }
+        /// "Mixes/Summer/Beach" style key for matching.
+        public var key: String { (folders + [name]).joined(separator: "/") }
+    }
+
     public var deviceName: String
     public var songs: [SongState] = []
     public var plays: [Play] = []
     public var playlists: [PlaylistCopy] = []
+    /// Missing from older versions.
+    public var removedPlaylists: [RemovedPlaylist]?
 }
 
 /// What a merge changed, for the message after syncing.
@@ -108,6 +126,30 @@ public extension LibraryDatabase {
         return try await mergeProfile(snapshot)
     }
 
+    /// Playlists and folders here that match ones deleted on another Mac: (what was deleted, its id here).
+    func matchingPlaylists(for removed: [ProfileSnapshot.RemovedPlaylist]) async throws -> [(ProfileSnapshot.RemovedPlaylist, Int64)] {
+        try await writer.read { db in
+            let playlists = try Playlist.fetchAll(db)
+            let byId = Dictionary(uniqueKeysWithValues: playlists.compactMap { p in p.id.map { ($0, p) } })
+            func key(_ playlist: Playlist) -> String {
+                var names = [playlist.name]
+                var parent = playlist.parentFolderId
+                while let id = parent, let folder = byId[id] {
+                    names.insert(folder.name, at: 0)
+                    parent = folder.parentFolderId
+                }
+                return names.joined(separator: "/")
+            }
+            var result: [(ProfileSnapshot.RemovedPlaylist, Int64)] = []
+            for gone in removed {
+                if let match = playlists.first(where: { $0.isFolder == gone.isFolder && key($0) == gone.key }), let id = match.id {
+                    result.append((gone, id))
+                }
+            }
+            return result
+        }
+    }
+
     /// Copies the whole library database to `url` (a safety copy before a sync replaces things).
     func backup(to url: URL) async throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -119,7 +161,8 @@ public extension LibraryDatabase {
     /// Brings another Mac's plays, favorites, ratings and playlists into this library. Nothing is deleted:
     /// plays are added if this Mac doesn't have them (same song, same minute), favorites and ratings are added,
     /// new playlists are created and songs missing from a shared playlist are added at the end.
-    func mergeProfile(_ snapshot: ProfileSnapshot) async throws -> ProfileMergeReport {
+    /// `skipping`: playlist keys ("Folder/Name") deleted on this Mac, so a sync doesn't bring them back.
+    func mergeProfile(_ snapshot: ProfileSnapshot, skipping: Set<String> = []) async throws -> ProfileMergeReport {
         try await writer.write { db in
             var report = ProfileMergeReport()
             let keys = try Self.songKeys(db)
@@ -185,7 +228,7 @@ public extension LibraryDatabase {
                 }
                 return parent
             }
-            for copy in snapshot.playlists {
+            for copy in snapshot.playlists where !skipping.contains((copy.folders + [copy.name]).joined(separator: "/")) {
                 let parent = try folderId(for: copy.folders)
                 var target = playlists.first { !$0.isFolder && $0.name == copy.name && $0.parentFolderId == parent }
                 if target == nil {

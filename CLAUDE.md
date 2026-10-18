@@ -343,6 +343,17 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   `Tools/macbee.sh updater` makes /Applications/Update MacBee.app on a Mac (DDMBA didn't have it).
   - Music page: Play History is a 500-pt scroll box (~10 songs). Section order and visibility in Settings >
     General > Music page (drag rows, tick boxes, Reset): `HomeSectionKind`, `PreferencesStore.homeOrder/homeHidden`.
+  - Music page buttons (Troy): Recently Played "Clear" and Recently Added "Reset" hide what came before
+    (UserDefaults "homeRecentlyPlayedClearedAt" / "homeRecentlyAddedResetAt"; nothing deleted); Play History
+    "Reset" (with a warning) deletes the `play` rows only (`deletePlayHistory`; counts and Most Played stay).
+    "Library Numbers" is called "Library Stats".
+  - Sync and deleted playlists: deleting a playlist/folder logs it (`RemovedPlaylistsLog`, UserDefaults, 90 days);
+    snapshots carry `removedPlaylists`; the receiving Mac shows "Deleted on <Mac> … Delete them here too?"
+    (RootView alert; "Keep Them" isn't asked again), and a combine never re-creates playlists deleted here.
+  - Music page Library block = tinted panel with Settings-level controls: scan, Force Rescan, add folder, drag to
+    reorder, pause switches, Plex (account, Automatic/Drive/Plex, Sign In, More… = Settings).
+  - Mode color: `Theme.modeTint` / `modeBorder` (accent washes) for the Library panel, Track Studio and Playlist
+    Studio (outlined), so modes stand out.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

@@ -23,15 +23,16 @@ struct PlaylistStudioView: View {
             libraryBrowser
                 .padding(20)
                 .frame(maxWidth: .infinity)
-                .background(theme.accent.opacity(0.06))
+                .background(theme.modeTint)
             ColumnResizer(width: $panelWidth, range: 300...700, resizesLeftColumn: false, defaultWidth: 380)
             StudioPlaylistPanel(playlistId: targetBinding,
                                 selectedTracks: model.results.filter { selection.contains($0.path) },
                                 candidates: model.results)
                 .padding(20)
                 .frame(width: panelWidth)
-                .background(theme.accent.opacity(0.11))
+                .background(theme.accent.opacity(0.2))
         }
+        .overlay(RoundedRectangle(cornerRadius: 0).stroke(theme.modeBorder, lineWidth: 2).allowsHitTesting(false))
         .navigationTitle("Playlist Studio")
         .onAppear { model.filter.playlistId = sourceId }
         .onChange(of: app.studioSourcePlaylistId) { model.filter.playlistId = sourceId }

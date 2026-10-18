@@ -177,6 +177,20 @@ public extension LibraryDatabase {
         }
     }
 
+    /// Deletes the list of plays (Music page > Play History > Reset). Play counts and "last played" stay,
+    /// so Most Played and the play counts don't change. Returns how many plays were removed.
+    @discardableResult
+    func deletePlayHistory() async throws -> Int {
+        try await writer.write { db in
+            try db.execute(sql: "DELETE FROM play")
+            return db.changesCount
+        }
+    }
+
+    func playHistoryCount() async throws -> Int {
+        try await writer.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM play") ?? 0 }
+    }
+
     func setFavorite(trackId: Int64, _ isFavorite: Bool) async throws {
         try await writer.write { db in
             try db.execute(sql: "UPDATE track SET isFavorite = ? WHERE id = ?", arguments: [isFavorite, trackId])

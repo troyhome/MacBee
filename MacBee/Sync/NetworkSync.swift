@@ -33,6 +33,10 @@ final class NetworkSync {
     private(set) var syncingWith: String?
     /// The result of the last sync (either direction).
     private(set) var lastMessage: String?
+    /// Playlists deleted on the other Mac that still exist here: asked about in the main window.
+    var pendingRemovals: [(removed: ProfileSnapshot.RemovedPlaylist, playlistId: Int64)] = []
+    /// The Mac those deletions came from.
+    private(set) var pendingRemovalsFrom = ""
 
     var isEnabled: Bool = UserDefaults.standard.bool(forKey: "networkSyncEnabled") {
         didSet {
@@ -113,6 +117,36 @@ final class NetworkSync {
 
     // MARK: - Syncing
 
+    /// This Mac's data plus the playlists deleted here, ready to send.
+    private func mySnapshot() async throws -> ProfileSnapshot {
+        var snapshot = try await library.database.profileSnapshot(deviceName: deviceName)
+        snapshot.removedPlaylists = RemovedPlaylistsLog.recent
+        return snapshot
+    }
+
+    /// Adds another Mac's data here (never bringing back playlists deleted here), then notes its deletions.
+    private func combine(_ snapshot: ProfileSnapshot) async throws -> ProfileMergeReport {
+        let skipping = Set(RemovedPlaylistsLog.recent.map(\.key))
+        let report = try await library.database.mergeProfile(snapshot, skipping: skipping)
+        await noteRemovals(in: snapshot)
+        return report
+    }
+
+    /// Deletions on the other Mac that match playlists here (and weren't answered "Keep" before).
+    private func noteRemovals(in snapshot: ProfileSnapshot) async {
+        let removed = (snapshot.removedPlaylists ?? []).filter { !RemovedPlaylistsLog.isIgnored($0) }
+        guard !removed.isEmpty, let matches = try? await library.database.matchingPlaylists(for: removed), !matches.isEmpty
+        else { return }
+        pendingRemovalsFrom = snapshot.deviceName
+        pendingRemovals = matches.map { (removed: $0.0, playlistId: $0.1) }
+    }
+
+    /// "Keep Them": don't ask about these deletions again.
+    func keepPendingRemovals() {
+        RemovedPlaylistsLog.ignore(pendingRemovals.map(\.removed))
+        pendingRemovals = []
+    }
+
     /// Sends this Mac's data to `peer`, gets theirs back, and adds it here (or replaces, per `mode`).
     func sync(with peer: Peer, code: String, mode: Mode = .combine) async {
         syncingWith = peer.name
@@ -121,7 +155,7 @@ final class NetworkSync {
         defer { connection.cancel() }
         do {
             try await Wire.open(connection)
-            let mine = try await library.database.profileSnapshot(deviceName: deviceName)
+            let mine = try await mySnapshot()
             try await Wire.send(Request(code: code, snapshot: mine, mode: mode), on: connection)
             let response: Response = try await Wire.receive(on: connection)
             guard response.ok, let theirs = response.snapshot else {
@@ -131,7 +165,7 @@ final class NetworkSync {
             saveCode(code, for: peer)
             switch mode {
             case .combine:
-                let report = try await library.database.mergeProfile(theirs)
+                let report = try await combine(theirs)
                 lastMessage = "Combined with \(peer.name). Here: \(report.summary) There: \(response.report ?? "")"
             case .sendMine:
                 lastMessage = "\(peer.name) now matches this Mac. \(response.report ?? "")"
@@ -160,21 +194,21 @@ final class NetworkSync {
             let from = request.snapshot.deviceName
             switch request.mode ?? .combine {
             case .combine:
-                let report = try await library.database.mergeProfile(request.snapshot)
-                let mine = try await library.database.profileSnapshot(deviceName: deviceName)
+                let report = try await combine(request.snapshot)
+                let mine = try await mySnapshot()
                 try await Wire.send(Response(ok: true, snapshot: mine, report: report.summary), on: connection)
                 lastMessage = "\(from) combined with this Mac. \(report.summary)"
             case .sendMine:
                 // The other Mac asked for this one to match it.
                 let backup = try await backUpLibrary()
                 _ = try await library.database.mirrorProfile(request.snapshot)
-                let mine = try await library.database.profileSnapshot(deviceName: deviceName)
+                let mine = try await mySnapshot()
                 try await Wire.send(Response(ok: true, snapshot: mine, report: "Its playlists and favorites were replaced; a backup was saved there."),
                                     on: connection)
                 lastMessage = "\(from) made this Mac match it. A copy of this Mac's library from before is in \(backup.lastPathComponent)."
             case .takeTheirs:
                 // The other Mac will make itself match this one: just send ours.
-                let mine = try await library.database.profileSnapshot(deviceName: deviceName)
+                let mine = try await mySnapshot()
                 try await Wire.send(Response(ok: true, snapshot: mine, report: nil), on: connection)
                 lastMessage = "\(from) copied this Mac's playlists and favorites."
             }

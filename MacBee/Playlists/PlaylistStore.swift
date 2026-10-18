@@ -105,8 +105,32 @@ final class PlaylistStore {
 
     func delete(_ playlist: Playlist) async {
         guard let id = playlist.id else { return }
+        RemovedPlaylistsLog.record(removedEntries(for: playlist))
         await run { try await self.database.deletePlaylist(id: id) }
         contentRevision += 1
+    }
+
+    /// The playlist (and, for a folder, everything inside it) as deletions to tell other Macs about.
+    private func removedEntries(for playlist: Playlist) -> [ProfileSnapshot.RemovedPlaylist] {
+        let folders = folderPath(of: playlist).split(separator: "›").map { $0.trimmingCharacters(in: .whitespaces) }
+        var entries = [ProfileSnapshot.RemovedPlaylist(folders: folders, name: playlist.name, isFolder: playlist.isFolder,
+                                                       removedAt: Date())]
+        func walk(_ nodes: [PlaylistNode], path: [String]) {
+            for node in nodes {
+                entries.append(.init(folders: path, name: node.playlist.name, isFolder: node.playlist.isFolder, removedAt: Date()))
+                walk(node.children, path: path + [node.playlist.name])
+            }
+        }
+        if playlist.isFolder, let node = findNode(playlist.id, in: tree) { walk(node.children, path: folders + [playlist.name]) }
+        return entries
+    }
+
+    private func findNode(_ id: Int64?, in nodes: [PlaylistNode]) -> PlaylistNode? {
+        for node in nodes {
+            if node.id == id { return node }
+            if let found = findNode(id, in: node.children) { return found }
+        }
+        return nil
     }
 
     func move(_ playlistId: Int64, toFolder folderId: Int64?, at index: Int) async {

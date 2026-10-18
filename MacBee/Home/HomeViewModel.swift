@@ -26,12 +26,33 @@ final class HomeViewModel {
         async let gems = database.forgottenGems()
         async let history = database.playHistory(limit: Self.historyPageSize)
 
-        recentlyPlayed = (try? await played) ?? []
-        recentlyAdded = (try? await added) ?? []
+        // "Clear" and "Reset" on the Music page hide what came before that moment (nothing is deleted).
+        let playedCutoff = UserDefaults.standard.object(forKey: "homeRecentlyPlayedClearedAt") as? Date ?? .distantPast
+        let addedCutoff = UserDefaults.standard.object(forKey: "homeRecentlyAddedResetAt") as? Date ?? .distantPast
+        recentlyPlayed = ((try? await played) ?? []).filter { ($0.lastPlayedAt ?? .distantPast) > playedCutoff }
+        recentlyAdded = ((try? await added) ?? []).filter { $0.dateAdded > addedCutoff }
         self.mixes = (try? await mixes) ?? []
         forgottenGems = (try? await gems) ?? []
         setHistory((try? await history) ?? [])
         isLoaded = true
+    }
+
+    /// Empties Recently Played (albums played from now on show up again).
+    func clearRecentlyPlayed() {
+        UserDefaults.standard.set(Date(), forKey: "homeRecentlyPlayedClearedAt")
+        recentlyPlayed = []
+    }
+
+    /// Empties Recently Added (music added from now on shows up).
+    func resetRecentlyAdded() {
+        UserDefaults.standard.set(Date(), forKey: "homeRecentlyAddedResetAt")
+        recentlyAdded = []
+    }
+
+    /// Deletes the play history list (play counts stay).
+    func resetPlayHistory(in database: LibraryDatabase) async {
+        try? await database.deletePlayHistory()
+        setHistory([])
     }
 
     /// Rebuilds the suggested mixes with new songs.
