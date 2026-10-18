@@ -100,6 +100,7 @@ struct SidebarView: View {
 
     /// "Playlists" is highlighted only on the all-playlists page; a single playlist highlights its own row.
     private func isSelected(_ item: SidebarItem) -> Bool {
-        item == .playlists ? selection == .playlists && app.selectedPlaylistId == nil : selection == item
+        if app.isInTrackStudio, let browse = app.trackStudioBrowse { return item == browse }
+        return item == .playlists ? selection == .playlists && app.selectedPlaylistId == nil : selection == item
     }
 }

@@ -9,6 +9,7 @@
 #   Tools/macbee.sh install   build an optimized copy and put it in /Applications (then open it)
 #   Tools/macbee.sh update    get the newest version from GitHub and install it (skips if already installed)
 #   Tools/macbee.sh dmg       build an optimized copy and pack it as MacBee-<version>.dmg (drag to Applications)
+#   Tools/macbee.sh updater   (re)make the "Update MacBee" app in /Applications (one click = update)
 #   Tools/macbee.sh icon      redraw the app icon
 set -euo pipefail
 
@@ -51,6 +52,28 @@ case "${1:-build}" in
         "$0" install
         mkdir -p "$OUT"
         echo "$COMMIT" > "$STAMP"
+        ;;
+    updater)
+        # The "Update MacBee" app: runs `macbee.sh update` and says how it went. Made per Mac (not in Git).
+        SCRIPT="$(mktemp -t update-macbee).applescript"
+        cat > "$SCRIPT" <<'APPLESCRIPT'
+-- Update MacBee: gets the newest version from GitHub and installs it.
+display notification "Checking GitHub for a new version. This can take a few minutes." with title "Updating MacBee"
+try
+	set result to do shell script "L=$HOME/Library/Logs/MacBee-update.log; $HOME/Projects/MacBee/Tools/macbee.sh update > \"$L\" 2>&1 || { tail -5 \"$L\" >&2; exit 1; }; tail -1 \"$L\""
+	if result contains "already up to date" then
+		display dialog "MacBee is already up to date." buttons {"OK"} default button 1 with title "Update MacBee"
+	else
+		display dialog "MacBee has been updated and reopened." buttons {"OK"} default button 1 with title "Update MacBee"
+	end if
+on error errorText
+	display dialog "The update didn't work:" & return & return & errorText buttons {"OK"} default button 1 with title "Update MacBee" with icon caution
+end try
+APPLESCRIPT
+        rm -rf "/Applications/Update MacBee.app"
+        osacompile -o "/Applications/Update MacBee.app" "$SCRIPT"
+        rm -f "$SCRIPT"
+        echo "Made /Applications/Update MacBee.app"
         ;;
     dmg)
         # A disk image with MacBee and an Applications shortcut, for copying MacBee to another Mac.

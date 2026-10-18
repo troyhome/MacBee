@@ -42,7 +42,7 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
   `Tools/macbee.sh install` (optimized build copied to /Applications/MacBee.app, the copy Troy uses day to day;
   re-run it after changes he should get). `Tools/macbee.sh update` = `git pull` + install, skipped when the
   installed copy already matches (commit stored in `~/Library/Developer/MacBee/installed-commit`).
-  On the second MacBook Air, an "Update MacBee" app in /Applications (AppleScript, not in the repo) runs `update`
+  An "Update MacBee" app in /Applications (AppleScript, made by `Tools/macbee.sh updater`) runs `update`
   and shows the result; log in `~/Library/Logs/MacBee-update.log`. Its GitHub sign-in is the GitHub CLI at
   `~/.local/bin/gh` (git uses it for credentials).
   It puts everything in `~/Library/Developer/MacBee`. For `swift run`/`swift test` by hand, add
@@ -328,6 +328,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     playlist) clicked in the sidebar becomes the TagBee tab's song source (`trackStudioSourcePlaylistId`,
     "Back to Library"); TagBee actions are buttons under the search box. Sidebar: Track Studio and Playlist Studio
     sit apart under a STUDIOS heading. `AppModel.isPlaylistHighlighted` decides sidebar playlist highlighting.
+  - In Track Studio, Music / Collections / Artists / Albums / Search open beside it on the left
+    (`AppModel.trackStudioBrowse`, `browsableBesideTrackStudio`; ContentRouter splits with a ColumnResizer,
+    @AppStorage "trackStudioWidth"); "Close <page>" gives Track Studio the whole window. Songs, albums, artists or
+    playlists dragged onto the TagBee list load there ("Songs dragged here").
+- Macs: "CMBA" = Troy's Coding MacBook Air (this one, Claude works here); "DDMBA" = Daily Driver MacBook Air.
+  `Tools/macbee.sh updater` makes /Applications/Update MacBee.app on a Mac (DDMBA didn't have it).
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

@@ -65,6 +65,8 @@ final class AppModel {
     @ObservationIgnored private var locationBeforeStudio: Location?
     /// Track Studio is open: a mode like Playlist Studio. A playlist clicked in the sidebar feeds its song list.
     var isInTrackStudio: Bool { location.page == .tags }
+    /// A library page shown beside Track Studio (Albums, Artists, Collections, Music, Search) while in the mode.
+    var trackStudioBrowse: SidebarItem?
     /// The playlist (or smart playlist) whose songs Track Studio lists (nil = search the library).
     var trackStudioSourcePlaylistId: Int64?
     /// Where you were before entering Track Studio; clicking it again returns there.
@@ -152,12 +154,22 @@ final class AppModel {
     func go(to page: SidebarItem) {
         if page == .playlistStudio && !isInStudio { locationBeforeStudio = location }
         if page == .tags && !isInTrackStudio { locationBeforeTrackStudio = location }
+        // In Track Studio, library pages open beside it instead of leaving the mode.
+        if isInTrackStudio && Self.browsableBesideTrackStudio.contains(page) {
+            trackStudioBrowse = page
+            location.albums = []
+            return
+        }
+        if page != .tags { trackStudioBrowse = nil }
         location = Location(page: page)
     }
+
+    static let browsableBesideTrackStudio: Set<SidebarItem> = [.home, .collection, .artists, .albums, .search]
 
     /// The Track Studio button: enters the mode, or leaves it back to where you were.
     func toggleTrackStudio() {
         if isInTrackStudio {
+            trackStudioBrowse = nil
             location = locationBeforeTrackStudio ?? Location(page: .home)
             locationBeforeTrackStudio = nil
         } else {

@@ -28,6 +28,14 @@ struct TagsView: View {
                     .help("Click Track Studio in the sidebar to leave. Click a playlist in the sidebar to work on its songs.")
                 PillTabs(items: TagsSection.allCases, selection: $section, title: \.title, systemImage: \.systemImage)
                 Spacer()
+                if let browse = app.trackStudioBrowse {
+                    Button {
+                        app.trackStudioBrowse = nil
+                    } label: {
+                        Label("Close \(browse.title)", systemImage: "sidebar.left")
+                    }
+                    .help("Hide \(browse.title) and give Track Studio the whole window")
+                }
             }
             .padding(.horizontal, 28)
             .padding(.top, 24)
@@ -75,6 +83,9 @@ private struct TagBeePanel: View {
     @Environment(\.theme) private var theme
     @State private var query = ""
     @State private var results: [Track] = []
+    /// Songs dragged in (from Albums, Artists… beside Track Studio); shown instead of the search.
+    @State private var dropped: [Track]?
+    @State private var dropTargeted = false
     @State private var selection = Set<String>()
 
     var body: some View {
@@ -82,6 +93,7 @@ private struct TagBeePanel: View {
             if let name = sourceName {
                 HStack(spacing: 10) {
                     Button {
+                        dropped = nil
                         app.trackStudioSourcePlaylistId = nil
                     } label: {
                         Label("Back to Library", systemImage: "chevron.left")
@@ -137,21 +149,44 @@ private struct TagBeePanel: View {
             }
             .scrollContentBackground(.hidden)
             .overlay {
+                if dropTargeted {
+                    RoundedRectangle(cornerRadius: 8).stroke(theme.accent, lineWidth: 2).allowsHitTesting(false)
+                }
+            }
+            .dropDestination(for: String.self) { strings, _ in
+                // Songs, albums, artists or playlists dragged from the page beside Track Studio.
+                let payloads = strings.compactMap(DragPayload.init(string:))
+                guard !payloads.isEmpty, let store = app.playlists else { return false }
+                Task {
+                    var tracks: [Track] = []
+                    for payload in payloads { tracks += await store.tracks(for: payload) }
+                    dropped = tracks
+                    results = tracks
+                    selection = Set(tracks.map(\.path))
+                }
+                return true
+            } isTargeted: { dropTargeted = $0 }
+            .overlay {
                 if results.isEmpty {
                     ContentUnavailableView(sourceName == nil ? "Find songs to tag" : "No songs", systemImage: "tag",
                                            description: Text(hasEditor
-                                               ? "Search above, or click a playlist in the sidebar. Tick songs (⌘-click or ⇧-click for several) and open them in TagBee; double-click opens one. Changes saved in TagBee show up here by themselves."
+                                               ? "Search above, click a playlist in the sidebar, or drag songs, albums or artists here. Tick songs (⌘-click or ⇧-click for several) and open them in TagBee; double-click opens one. Changes saved in TagBee show up here by themselves."
                                                : "TagBee isn't installed. Choose a tag editor in Settings > Tag Editor."))
                 }
             }
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 10)
-        .task(id: "\(query)-\(app.trackStudioSourcePlaylistId ?? 0)-\(library.revision)") {
+        .onChange(of: app.trackStudioSourcePlaylistId) { dropped = nil }
+        .task(id: "\(query)-\(app.trackStudioSourcePlaylistId ?? 0)-\(library.revision)-\(dropped?.count ?? -1)") {
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
             let text = query.trimmingCharacters(in: .whitespaces)
-            if let id = app.trackStudioSourcePlaylistId {
+            if let dropped {
+                results = text.isEmpty ? dropped : dropped.filter {
+                    [$0.displayTitle, $0.displayArtist, $0.displayAlbum].contains { $0.localizedCaseInsensitiveContains(text) }
+                }
+            } else if let id = app.trackStudioSourcePlaylistId {
                 // A playlist from the sidebar: its songs, narrowed by the search box.
                 var filter = TrackFilter()
                 filter.playlistId = id
@@ -166,6 +201,7 @@ private struct TagBeePanel: View {
 
     /// The name of the playlist (or smart playlist) clicked in the sidebar, if any.
     private var sourceName: String? {
+        if dropped != nil { return "Songs dragged here" }
         guard let id = app.trackStudioSourcePlaylistId else { return nil }
         if let smart = SmartPlaylist(playlistId: id) { return smart.title }
         return app.playlists?.playlist(id: id)?.name
