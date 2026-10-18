@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The "Controls" menu, with keyboard shortcuts.
@@ -23,6 +24,35 @@ struct PlaybackCommands: Commands {
                 Text("Always the Network Drive").tag(PlaybackSourcePreference.drive)
                 Text("Always Plex").tag(PlaybackSourcePreference.plex)
             }
+        }
+    }
+}
+
+/// The "Sync" menu: Copy To (playlists onto a player, card or folder: Track Studio > Copy To) and
+/// Device Sync (MacBee on your other Mac: Settings > Sync).
+struct SyncCommands: Commands {
+    let app: AppModel
+
+    var body: some Commands {
+        CommandMenu("Sync") {
+            Button("Copy To…") {
+                UserDefaults.standard.set(TagsSection.sync.rawValue, forKey: "tagsSection")
+                if !app.isInTrackStudio { app.go(to: .tags) }
+                NSApp.activate()
+            }
+            DeviceSyncMenuItem()
+        }
+    }
+}
+
+/// Opens Settings on the Sync tab.
+private struct DeviceSyncMenuItem: View {
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Button("Device Sync…") {
+            UserDefaults.standard.set("sync", forKey: "preferencesTab")
+            openSettings()
         }
     }
 }

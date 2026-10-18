@@ -19,6 +19,7 @@ struct MacBeeApp: App {
         .commands {
             AboutCommand()
             PlaybackCommands(player: model.player, preferences: model.preferences)
+            SyncCommands(app: model)
             CommandGroup(after: .textEditing) {
                 Button("Search") { model.focusSearch() }
                     .keyboardShortcut("f")

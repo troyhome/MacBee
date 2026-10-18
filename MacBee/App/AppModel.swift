@@ -254,6 +254,7 @@ final class AppModel {
     /// Puts the video back over the main window.
     func hideVideoMiniPlayer() {
         guard videoIsMini else { return }
+        videoSession?.player.activeHost = "main"
         videoMiniWindow.hide()
         videoIsMini = false
         NSApp.activate()

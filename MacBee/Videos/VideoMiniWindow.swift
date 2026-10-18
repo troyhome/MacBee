@@ -14,6 +14,7 @@ final class VideoMiniWindow: NSObject, NSWindowDelegate {
 
     func show(_ session: VideoSession, app: AppModel) {
         self.app = app
+        session.player.activeHost = "mini"
         if panel == nil { panel = makePanel() }
         guard let panel else { return }
         panel.contentView = NSHostingView(rootView: MiniVideoView(session: session, app: app))
@@ -71,7 +72,7 @@ private struct MiniVideoView: View {
     var body: some View {
         ZStack {
             Color.black
-            MPVVideoView(player: session.player)
+            MPVVideoView(player: session.player, host: "mini")
             if hovering { controls }
             VStack {
                 Spacer()

@@ -2,7 +2,7 @@ import AppKit
 import MacBeeLibrary
 import SwiftUI
 
-/// Device Sync (roadmap Phase 4): copies chosen playlists, smart playlists and saved mixes to a music player,
+/// Copy To (roadmap Phase 4's "device sync", renamed by Troy; Device Sync is now the Mac-to-Mac sync): copies chosen playlists, smart playlists and saved mixes to a music player,
 /// SD card, USB drive or network folder. Songs go into Artist/Album/## - Title, each playlist gets an .m3u8 in
 /// a Playlists folder, only new or changed songs are copied, and songs MacBee put there earlier that no chosen
 /// playlist needs are removed. Files MacBee didn't put there are left alone.

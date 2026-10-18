@@ -36,6 +36,9 @@ public final class MPVPlayer {
         return view
     }()
 
+    /// Which `MPVVideoView` shows the picture ("main" or "mini"); set it before showing the other one.
+    public var activeHost = "main"
+
     public init() {}
 
     /// Starts mpv and draws into the view's layer. Call once the view is on screen.

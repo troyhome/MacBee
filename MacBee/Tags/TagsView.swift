@@ -62,14 +62,14 @@ enum TagsSection: String, CaseIterable, Identifiable {
         switch self {
         case .duplicates: "Duplicates"
         case .tagBee: "TagBee"
-        case .sync: "Device Sync"
+        case .sync: "Copy To"
         }
     }
     var systemImage: String {
         switch self {
         case .duplicates: "square.on.square"
         case .tagBee: "tag"
-        case .sync: "externaldrive.badge.checkmark"
+        case .sync: "externaldrive.badge.plus"
         }
     }
 }

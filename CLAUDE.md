@@ -354,6 +354,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     reorder, pause switches, Plex (account, Automatic/Drive/Plex, Sign In, More… = Settings).
   - Mode color: `Theme.modeTint` / `modeBorder` (accent washes) for the Library panel, Track Studio and Playlist
     Studio (outlined), so modes stand out.
+  - "Device Sync" naming (Troy): the Track Studio tab that copies playlists to a player/folder is now **Copy To**;
+    **Device Sync** means the Mac-to-Mac sync (Settings > Sync). Menu bar **Sync** menu: Copy To… (Track Studio >
+    Copy To, via UserDefaults "tagsSection") and Device Sync… (Settings opened on the Sync tab via "preferencesTab").
+  - Mini player went black again: several `MPVVideoView`s can exist during the switch, so each now has a `host`
+    ("main"/"mini") and only the one matching `MPVPlayer.activeHost` takes the surface (set to "mini" before the
+    mini window shows, back to "main" when it closes). Probe checked: picture shows in the small window.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

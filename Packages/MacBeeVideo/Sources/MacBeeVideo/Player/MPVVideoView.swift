@@ -36,25 +36,26 @@ public final class MPVSurfaceView: NSView {
     }
 }
 
-/// Shows an `MPVPlayer`'s picture. When this view appears, it takes the player's surface.
+/// Shows an `MPVPlayer`'s picture. Several of these can exist at once (the full-size player going away while
+/// the mini player window opens), so each has a `host` name and only the one matching `player.activeHost`
+/// takes the player's surface. That way a view that's on its way out can never pull the picture back.
 public struct MPVVideoView: NSViewRepresentable {
     let player: MPVPlayer
+    let host: String
 
-    public init(player: MPVPlayer) {
+    public init(player: MPVPlayer, host: String = "main") {
         self.player = player
+        self.host = host
     }
 
     public func makeNSView(context: Context) -> NSView {
         let container = NSView()
-        adopt(into: container)
+        if player.activeHost == host { adopt(into: container) }
         return container
     }
 
-    /// Takes the surface back only if nothing else is showing it. (Taking it whenever SwiftUI refreshes this view
-    /// would pull it out of the mini player window while the old full-size view is still going away.)
     public func updateNSView(_ container: NSView, context: Context) {
-        let surface = player.surface
-        if surface.superview !== container && surface.window == nil { adopt(into: container) }
+        if player.activeHost == host && player.surface.superview !== container { adopt(into: container) }
     }
 
     private func adopt(into container: NSView) {
