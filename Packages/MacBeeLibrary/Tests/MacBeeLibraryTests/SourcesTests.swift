@@ -132,5 +132,11 @@ final class SourcesTests: XCTestCase {
         let hidden = try await db.artists(hidingCompilationOnly: true).map(\.name)
         XCTAssertEqual(all.count, 5)
         XCTAssertEqual(hidden, ["Solo"])
+        // Compilations under Various Artists: the tagged "Hits" and the untagged "Tribute" (three artists, one album).
+        let compilations = try await db.compilationAlbums()
+        XCTAssertEqual(compilations.map(\.title), ["Hits", "Tribute"])
+        XCTAssertEqual(compilations.map(\.artist), ["Various Artists", "Various Artists"])
+        let tribute = try await db.tracks(inAlbum: compilations[1].albumKey)
+        XCTAssertEqual(tribute.map(\.artist), ["Band One", "Band Two", "Band Three"])
     }
 }

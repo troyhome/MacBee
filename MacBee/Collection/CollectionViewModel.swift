@@ -7,6 +7,8 @@ import Observation
 final class CollectionViewModel {
     private(set) var albums: [AlbumSummary] = []
     private(set) var tracks: [Track] = []
+    /// Compilation albums (Various Artists).
+    private(set) var compilations: [AlbumSummary] = []
     private(set) var isLoaded = false
     private(set) var errorMessage: String?
 
@@ -14,7 +16,8 @@ final class CollectionViewModel {
         do {
             async let albums = database.favoriteAlbums()
             async let tracks = database.favoriteTracks()
-            (self.albums, self.tracks) = try await (albums, tracks)
+            async let compilations = database.compilationAlbums()
+            (self.albums, self.tracks, self.compilations) = try await (albums, tracks, compilations)
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription

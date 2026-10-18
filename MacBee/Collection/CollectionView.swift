@@ -1,7 +1,8 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// The Collection page: your playlists plus the albums and songs you've hearted, with tabs along the top.
+/// The Collections page: your playlists, compilation albums (Various Artists), saved mixes, and the albums,
+/// songs and videos you've liked, with tabs along the top.
 struct CollectionView: View {
     @Environment(AppModel.self) private var app
     @Environment(MusicLibrary.self) private var library
@@ -32,12 +33,7 @@ struct CollectionView: View {
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(theme.textPrimary)
             }
-            Picker("Show", selection: $section) {
-                ForEach(CollectionSection.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(maxWidth: 520)
+            CollectionTabs(section: $section)
         }
         .padding(.horizontal, 28)
         .padding(.top, 24)
@@ -49,6 +45,14 @@ struct CollectionView: View {
         switch section {
         case .playlists:
             AllPlaylistsView(embedded: true)
+        case .variousArtists:
+            AlbumGrid(albums: model.compilations, indexName: { $0.title })
+                .overlay {
+                    if model.isLoaded && model.compilations.isEmpty {
+                        ContentUnavailableView("No compilations", systemImage: "person.3",
+                                               description: Text("Albums by various artists show up here."))
+                    }
+                }
         case .albums:
             AlbumGrid(albums: model.albums)
                 .overlay {

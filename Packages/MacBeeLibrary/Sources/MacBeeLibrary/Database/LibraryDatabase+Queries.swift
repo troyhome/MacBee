@@ -104,7 +104,8 @@ public extension LibraryDatabase {
     }
 
     func tracks(inAlbum albumKey: String) async throws -> [Track] {
-        try await writer.read { db in
+        if albumKey.hasPrefix(Self.compilationPrefix) { return try await compilationTracks(albumKey: albumKey) }
+        return try await writer.read { db in
             try Track
                 .filter(Column("albumKey") == albumKey && Self.isVisible)
                 .order(Column("discNumber"), Column("trackNumber"), Column("path"))

@@ -53,29 +53,46 @@ public extension LibraryDatabase {
         }
     }
 
-    /// A song is on a compilation when it's tagged as one, filed under "Various Artists", or its folder holds
-    /// songs by three or more different artists (many compilations aren't tagged as such).
+    /// A song is on a compilation when it's tagged as one, filed under "Various Artists", or (with no album
+    /// artist tag) its folder holds songs by three or more different artists, none of whom has half the songs.
+    /// Many compilations aren't tagged; "feat." guests on an artist's own album don't count.
     private func markCompilations(_ db: Database) throws {
-        let rows = try Row.fetchAll(db, sql: "SELECT id, path, artist, isCompilation, displayAlbumArtist FROM track")
-        var artistsByFolder: [String: Set<String>] = [:]
+        let rows = try Row.fetchAll(db, sql: "SELECT id, path, artist, albumArtist, isCompilation, displayAlbumArtist FROM track")
+        var artistCounts: [String: [String: Int]] = [:]
         for row in rows {
             let path: String = row["path"]
             let folder = (path as NSString).deletingLastPathComponent
-            artistsByFolder[folder, default: []].insert(DuplicateFinder.fingerprint(row["artist"] ?? ""))
+            artistCounts[folder, default: [:]][Self.mainArtist(row["artist"]), default: 0] += 1
+        }
+        func looksLikeCompilation(_ folder: String) -> Bool {
+            guard let counts = artistCounts[folder], counts.count >= 3 else { return false }
+            let total = counts.values.reduce(0, +)
+            return Double(counts.values.max() ?? 0) < Double(total) * 0.5
         }
         var compilationIds: [Int64] = []
         for row in rows {
             let path: String = row["path"]
-            let folder = (path as NSString).deletingLastPathComponent
             let tagged: Bool = row["isCompilation"] ?? false
             let various = (row["displayAlbumArtist"] as String?) == LibraryKeys.variousArtists
-            if tagged || various || (artistsByFolder[folder]?.count ?? 0) >= 3 { compilationIds.append(row["id"]) }
+            let hasAlbumArtist = !((row["albumArtist"] as String?) ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+            if tagged || various || (!hasAlbumArtist && looksLikeCompilation((path as NSString).deletingLastPathComponent)) {
+                compilationIds.append(row["id"])
+            }
         }
         try db.execute(sql: "UPDATE track SET onCompilation = 0")
         for chunk in stride(from: 0, to: compilationIds.count, by: 500) {
             let ids = compilationIds[chunk..<min(chunk + 500, compilationIds.count)]
             try db.execute(sql: "UPDATE track SET onCompilation = 1 WHERE id IN (\(ids.map(String.init).joined(separator: ",")))")
         }
+    }
+
+    /// "Slayyyter feat. Ayesha Erotica" -> "slayyyter"
+    static func mainArtist(_ artist: String?) -> String {
+        var name = (artist ?? "").lowercased()
+        for separator in [" feat. ", " feat ", " ft. ", " featuring ", " with ", " & ", " x ", ", "] {
+            if let range = name.range(of: separator) { name = String(name[..<range.lowerBound]) }
+        }
+        return DuplicateFinder.fingerprint(name)
     }
 
     // MARK: - Duplicates page

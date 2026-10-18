@@ -229,6 +229,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
       Delete from Disk… at the top, Show in Finder button per copy, full path shown while hovering a row.
       Delete = Trash first; on drives without a Trash (Troy's "music" SMB share has none, "2 Set Music" has
       one) a second confirmation, then a permanent delete. Troy asked for deleting from disk.
+    - Collections (2026-10-18, Troy): tabs Playlists / Various Artists / Saved Mixes, then a heart group with the
+      liked Albums / Tracks / Videos (`CollectionTabs`). Various Artists = `compilationAlbums()`: visible songs with
+      onCompilation, grouped by album title, albumKey "compilation:<lowercased title>" (handled by
+      `tracks(inAlbum:)`). Compilation folder rule tightened: only songs with no Album Artist tag, 3+ different
+      main artists ("feat." stripped) and no artist with half the folder's songs (Slayyyter etc. were wrongly
+      caught). Troy retagged "If I Were A Carpenter" in TagBee (Album Artist = Various Artists).
     - Troy added a second music folder (/Volumes/music, mostly the same songs): ~9,000 duplicate groups; the
       library shows each once.
 - Roadmap Phases 3-5: not started.
