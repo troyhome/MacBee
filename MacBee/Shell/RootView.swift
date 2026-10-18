@@ -38,7 +38,8 @@ struct RootView: View {
             .animation(.easeOut(duration: 0.2), value: model.showNowPlaying)
             .overlay {
                 if let video = model.playingVideo {
-                    VideoPlayerOverlay(video: video)
+                    VideoPlayerOverlay(playback: video)
+                        .id(video.id)
                         .transition(.opacity)
                 }
             }

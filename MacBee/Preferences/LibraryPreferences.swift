@@ -51,6 +51,8 @@ private struct LibraryPreferencesForm: View {
                 }
             }
 
+            VideoFoldersSection(preferences: preferences)
+
             Section("Routine check") {
                 Picker("Check network folders for changes", selection: $preferences.routineCheck) {
                     ForEach(RoutineCheck.allCases) { Text($0.title).tag($0) }
@@ -173,5 +175,63 @@ private struct FolderPreferenceRow: View {
         let kind = state.isNetwork ? "Network drive" : "On this Mac"
         guard let last = state.folder.lastScanAt else { return "\(kind) · not scanned yet" }
         return "\(kind) · last scan \(Format.relativeDateTime(last))"
+    }
+}
+
+/// Folders with movies and TV shows for the Videos page (music videos are found in the music folders).
+private struct VideoFoldersSection: View {
+    @Bindable var preferences: PreferencesStore
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        Section("Video folders") {
+            ForEach(preferences.videoFolders, id: \.self) { path in
+                HStack(spacing: 10) {
+                    Image(systemName: "film.stack")
+                        .foregroundStyle(.secondary)
+                    Text(path)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Text(FileManager.default.fileExists(atPath: path) ? "Connected" : "Not connected")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(FileManager.default.fileExists(atPath: path) ? .green : .orange)
+                    Button("Remove") {
+                        preferences.videoFolders.removeAll { $0 == path }
+                        Task { await app.refreshVideos() }
+                    }
+                }
+            }
+            if preferences.videoFolders.isEmpty {
+                PreferenceNote("No video folders yet. Add the folder or drive with your movies and TV shows.")
+            }
+            HStack {
+                Button("Add Video Folder…", action: add)
+                Spacer()
+                Text(status)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                Button("Scan Videos Now") { Task { await app.refreshVideos() } }
+                    .disabled(app.videos.isScanning)
+            }
+            PreferenceNote("MacBee plays MKV, MP4, MOV, AVI and more, including 4K and HDR. Posters and genres come from picture and .nfo files next to the videos.")
+        }
+    }
+
+    private var status: String {
+        if app.videos.isScanning { return "Looking for videos…" }
+        let catalog = app.videos.catalog
+        guard catalog.scannedAt != nil else { return "" }
+        return "\(catalog.movies.count) movies, \(catalog.shows.count) shows"
+    }
+
+    private func add() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.prompt = "Add"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        preferences.addVideoFolder(url.path)
+        Task { await app.refreshVideos() }
     }
 }

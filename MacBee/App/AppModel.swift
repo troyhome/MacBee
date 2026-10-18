@@ -1,6 +1,7 @@
 import AppKit
 import MacBeeAudio
 import MacBeeLibrary
+import MacBeeVideo
 import Observation
 
 /// Creates and owns the app's long-lived objects: library, playback engine, queue, theme.
@@ -18,10 +19,10 @@ final class AppModel {
     /// Plex sign-in and the away-from-home route to the same songs.
     let plex: PlexConnection?
     let themeStore = ThemeStore()
-    /// Music videos found in the music folders.
+    /// Movies, shows and music videos.
     let videos = VideoLibrary()
     /// The video playing over the window, if any.
-    var playingVideo: VideoItem?
+    var playingVideo: VideoPlayback?
     let preferences: PreferencesStore
 
     /// Where you are now. Every change remembers the previous place for the back arrow.
@@ -162,15 +163,59 @@ final class AppModel {
         location = Location(page: .albums, albums: [album])
     }
 
-    /// Plays a music video over the window, pausing the music first.
-    func playVideo(_ video: VideoItem) {
+    // MARK: - Videos
+
+    /// Plays a video over the window, pausing the music first.
+    func playVideo(_ playback: VideoPlayback) {
         if player.isPlaying { player.togglePlayPause() }
         showNowPlaying = false
-        playingVideo = video
+        playingVideo = playback
     }
 
     func closeVideo() {
         playingVideo = nil
+    }
+
+    func playMovie(_ movie: Movie, resume: Bool) {
+        guard let file = movie.file else { return }
+        if !resume { videos.savePosition(0, duration: 0, for: file.path) }
+        playVideoFile(file, title: movie.title, subtitle: movie.year.map(String.init) ?? "", likeId: movie.id)
+    }
+
+    func playVideoFile(_ file: VideoFile, title: String, subtitle: String, likeId: String) {
+        playVideo(VideoPlayback(title: title, subtitle: subtitle, file: file, likeId: likeId))
+    }
+
+    /// Plays an episode, then carries on through the rest of the show.
+    func playEpisode(_ episode: Episode, in show: Show, resume: Bool) {
+        if !resume { videos.savePosition(0, duration: 0, for: episode.file.path) }
+        let all = show.seasons.flatMap(\.episodes)
+        let rest = all.drop { $0.id != episode.id }.dropFirst()
+        var playback = VideoPlayback(title: episodeTitle(episode), subtitle: "\(show.title) · \(episode.code)",
+                                     file: episode.file, likeId: show.id)
+        playback.upNext = rest.map { (episodeTitle($0), "\(show.title) · \($0.code)", $0.file) }
+        playVideo(playback)
+    }
+
+    func playMusicVideo(_ video: MusicVideo) {
+        playVideoFile(video.file, title: video.title, subtitle: video.folderName, likeId: video.id)
+    }
+
+    private func episodeTitle(_ episode: Episode) -> String {
+        episode.title ?? "Episode \(episode.number)"
+    }
+
+    /// Looks for videos again in the video folders and (for music videos) the music folders.
+    func refreshVideos() async {
+        await videos.refresh(videoFolders: preferences.videoFolders.map { URL(fileURLWithPath: $0) },
+                             musicFolders: library?.folders.filter(\.isOnline).map(\.folder.url) ?? [],
+                             plex: plex)
+    }
+
+    /// Re-scans when the saved list is more than 10 minutes old (opening Videos stays instant).
+    func refreshVideosIfStale() async {
+        if let scanned = videos.catalog.scannedAt, Date().timeIntervalSince(scanned) < 600 { return }
+        await refreshVideos()
     }
 
     /// "Playing From": back to the page the music was started from (or the playing song's album).

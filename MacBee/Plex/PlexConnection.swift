@@ -221,6 +221,12 @@ final class PlexConnection: PlexService {
         }
     }
 
+    /// The server address and token, for the Videos page's Plex lookups.
+    func serverAccess() async -> (URL, String)? {
+        guard let server = selectedServer, let base = await currentBase() else { return nil }
+        return (base, serverToken(server))
+    }
+
     /// The working server address, finding one if needed.
     private func currentBase() async -> URL? {
         if let baseURL { return baseURL }

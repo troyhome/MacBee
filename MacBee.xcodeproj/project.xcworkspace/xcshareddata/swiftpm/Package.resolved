@@ -1,5 +1,5 @@
 {
-  "originHash" : "7d36abbc15fd40b84b7d94f92e0a9c71a9dab011a044fe61bdc682590e241fb4",
+  "originHash" : "a4a478b18d7c654b9c17acc2436b79c77483a3b1a512138f49a58931511db0c0",
   "pins" : [
     {
       "identity" : "avfaudioextensions",
@@ -134,6 +134,15 @@
       "state" : {
         "revision" : "acc2c651cbd8fff8bc8cdeb4faf14b35ba81adee",
         "version" : "0.3.1"
+      }
+    },
+    {
+      "identity" : "mpvkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mpvkit/MPVKit.git",
+      "state" : {
+        "revision" : "98c3453e252922e3136422da3fbb2e341ed9edc8",
+        "version" : "1.1.0-n9.0.2"
       }
     },
     {

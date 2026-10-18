@@ -161,6 +161,23 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     - Albums toolbar Grid / List switch (`AlbumLayout`, @AppStorage "albumLayout"); list rows have round covers.
     - `ColumnResizer`: 12-pt grab area above both neighbouring columns (zIndex), accent line while hovered or
       dragged, double-click restores `defaultWidth`. Troy found the old 7-pt one hard to grab.
+  - Videos section rebuilt (2026-10-17, Troy's request, outside the roadmap): Apple TV style.
+    - New local package `Packages/MacBeeVideo` (in the Xcode project as a third local package; `macbee.sh test`
+      runs its tests): `VideoNameParser` (titles/years/SxxEyy/4K/HDR from messy names), `VideoScanner` (movies,
+      shows grouped by top folder + season, posters next to files, .nfo genres; skips samples, extras and files
+      < 20 MB), `VideoCatalogStore` (cache in ~/Library/Application Support/MacBee/videos.json), `MPVPlayer` +
+      `MPVVideoView` (libmpv via MPVKit, LGPL product "MPVKit", pinned exact 1.1.0-n9.0.2; vo=gpu-next, MoltenVK,
+      videotoolbox). Troy OK'd downloading MPVKit. Checked: MKV and a 4K HDR HEVC MKV play.
+    - App side `MacBee/Videos/`: VideosView (sidebar Recently Added / Movies / TV Shows / 4K HDR / Music Videos /
+      Genres, Continue Watching row, search), Movie/Show detail pages, VideoPlayerOverlay + VideoControls (auto-hide,
+      Space/←/→/Esc, audio + subtitle menus, volume, resume positions, next episode autoplay). Likes, positions and
+      watched are per Mac in UserDefaults ("likedVideos", "videoPositions", "watchedVideos").
+    - Preferences > Library > Video folders (`PreferencesStore.videoFolders`). Troy's: "/Volumes/2 Set 6TB/MOVIES SHOWS"
+      (set on the second MacBook Air; the first Mac needs it added in Preferences). Music folders are scanned for
+      music videos only.
+    - Plex enrichment (`Plex/PlexVideoIndex.swift`, `PlexAPI+Video.swift`): matches by file name against Plex movie
+      and TV libraries for titles, years, genres, summaries and posters (cached in ~/Library/Caches/MacBee/Posters).
+    - The old AVKit/AVPlayerView video player is gone; everything plays through mpv now.
 - Roadmap Phases 2-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

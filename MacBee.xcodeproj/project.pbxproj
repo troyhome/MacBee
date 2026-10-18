@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000101 /* MacBeeAudio in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000201 /* MacBeeAudio */; };
 		A10000000000000000000102 /* MacBeeLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000202 /* MacBeeLibrary */; };
+		A10000000000000000000103 /* MacBeeVideo in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000203 /* MacBeeVideo */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 			files = (
 				A10000000000000000000101 /* MacBeeAudio in Frameworks */,
 				A10000000000000000000102 /* MacBeeLibrary in Frameworks */,
+				A10000000000000000000103 /* MacBeeVideo in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,6 +76,7 @@
 			packageProductDependencies = (
 				A10000000000000000000201 /* MacBeeAudio */,
 				A10000000000000000000202 /* MacBeeLibrary */,
+				A10000000000000000000203 /* MacBeeVideo */,
 			);
 			productName = MacBee;
 			productReference = A10000000000000000000301 /* MacBee.app */;
@@ -106,6 +109,7 @@
 			packageReferences = (
 				A10000000000000000000A01 /* XCLocalSwiftPackageReference "Packages/MacBeeAudio" */,
 				A10000000000000000000A02 /* XCLocalSwiftPackageReference "Packages/MacBeeLibrary" */,
+				A10000000000000000000A03 /* XCLocalSwiftPackageReference "Packages/MacBeeVideo" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A10000000000000000000602 /* Products */;
@@ -263,6 +267,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/MacBeeLibrary;
 		};
+		A10000000000000000000A03 /* XCLocalSwiftPackageReference "Packages/MacBeeVideo" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MacBeeVideo;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -273,6 +281,10 @@
 		A10000000000000000000202 /* MacBeeLibrary */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MacBeeLibrary;
+		};
+		A10000000000000000000203 /* MacBeeVideo */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MacBeeVideo;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

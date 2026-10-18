@@ -21,7 +21,7 @@ case "${1:-build}" in
             -derivedDataPath "$OUT/DerivedData" build
         ;;
     test)
-        for package in MacBeeAudio MacBeeLibrary; do
+        for package in MacBeeAudio MacBeeLibrary MacBeeVideo; do
             (cd "$ROOT/Packages/$package" && swift test --scratch-path "$OUT/$package")
         done
         ;;

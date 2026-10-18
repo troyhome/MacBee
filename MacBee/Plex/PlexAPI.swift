@@ -114,7 +114,7 @@ struct PlexAPI {
 
     // MARK: - Helpers
 
-    private func request(_ url: String, method: String = "GET", token: String? = nil,
+    func request(_ url: String, method: String = "GET", token: String? = nil,
                          query: [String: String] = [:]) -> URLRequest {
         var components = URLComponents(string: url)!
         if !query.isEmpty {
@@ -133,7 +133,7 @@ struct PlexAPI {
         return req
     }
 
-    private func decode<T: Decodable>(_ type: T.Type, from request: URLRequest) async throws -> T {
+    func decode<T: Decodable>(_ type: T.Type, from request: URLRequest) async throws -> T {
         let (data, response) = try await session.data(for: request)
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw Failure.http(http.statusCode)

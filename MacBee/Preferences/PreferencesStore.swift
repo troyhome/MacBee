@@ -19,6 +19,8 @@ final class PreferencesStore {
     var playbackSource: PlaybackSourcePreference { didSet { save(playbackSource.rawValue, "playbackSource") } }
     /// The external tag editor app chosen in Preferences (Phase 8 opens songs in it).
     var tagEditorPath: String? { didSet { save(tagEditorPath, "tagEditorPath") } }
+    /// Folders (or whole drives) with movies and TV shows, for the Videos page.
+    var videoFolders: [String] { didSet { save(videoFolders, "videoFolders") } }
     /// The keyboard's media keys control MacBee whenever it has music loaded, even with other players open.
     var mediaKeysAlwaysMacBee: Bool { didSet { save(mediaKeysAlwaysMacBee, "mediaKeysAlwaysMacBee") } }
 
@@ -35,6 +37,7 @@ final class PreferencesStore {
         routineCheck = (d.object(forKey: "routineCheck") as? Int).flatMap(RoutineCheck.init) ?? .every30
         playbackSource = d.string(forKey: "playbackSource").flatMap(PlaybackSourcePreference.init) ?? .automatic
         tagEditorPath = d.string(forKey: "tagEditorPath")
+        videoFolders = d.stringArray(forKey: "videoFolders") ?? []
         mediaKeysAlwaysMacBee = d.object(forKey: "mediaKeysAlwaysMacBee") as? Bool ?? true
         useDefaultTagEditorIfNeeded()
     }
@@ -46,6 +49,10 @@ final class PreferencesStore {
         let tagBee = "/Applications/TagBee.app"
         let found = FileManager.default.fileExists(atPath: tagBee) ? tagBee : nil
         if found != tagEditorPath { tagEditorPath = found }
+    }
+
+    func addVideoFolder(_ path: String) {
+        if !videoFolders.contains(path) { videoFolders.append(path) }
     }
 
     /// The page to show at launch.

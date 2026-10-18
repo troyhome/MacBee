@@ -1,155 +1,247 @@
+import AppKit
 import MacBeeLibrary
+import MacBeeVideo
 import SwiftUI
 
-/// The Videos page: music videos found in the music folders, with a search box. Click one to play it.
-/// Inside Collection it shows only the videos you've liked.
+/// The Videos page, laid out like the Apple TV app: sections on the left (Recently Added, Movies, TV Shows,
+/// 4K HDR, Genres…), posters on the right, and a page for each movie or show.
+/// Inside Collection (`embedded`) it shows only liked videos, without the sections.
 struct VideosView: View {
-    /// Shown inside the Collection page (liked videos only), which has its own title.
     var embedded = false
+
     @Environment(AppModel.self) private var app
     @Environment(MusicLibrary.self) private var library
+    @Environment(PreferencesStore.self) private var preferences
     @Environment(\.theme) private var theme
+    @AppStorage("videoCategory") private var category: VideoCategory = .recentlyAdded
+    @State private var genre: String?
     @State private var searchText = ""
+    @State private var open: VideoTitle?
 
     var body: some View {
-        VideosGrid(videos: shown)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if embedded { searchRow.padding(.horizontal, 28).padding(.vertical, 6) } else { header }
+        HStack(spacing: 0) {
+            if !embedded && open == nil {
+                VideoSidebar(category: $category, catalog: app.videos.catalog)
+                Rectangle().fill(theme.separator).frame(width: 1)
             }
-            .overlay { emptyState }
-            .navigationTitle(embedded ? "Collection" : "Videos")
-            .task(id: library.revision) {
-                await app.videos.refresh(folders: library.folders.filter(\.isOnline).map(\.folder.url))
+            Group {
+                if let open {
+                    detail(for: open)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if !embedded { header }
+                        browse
+                    }
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .navigationTitle(embedded ? "Collection" : "Videos")
+        .task(id: "\(library.revision)-\(preferences.videoFolders.count)") { await app.refreshVideosIfStale() }
     }
+
+    // MARK: - Header and lists
 
     private var header: some View {
         HStack(spacing: 14) {
             if app.canGoBack {
                 CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
             }
-            Text("Videos")
+            Text(shownCategory.title)
                 .font(.system(size: 30, weight: .bold))
                 .foregroundStyle(theme.textPrimary)
             Spacer()
-            if app.videos.isSearching {
+            if app.videos.isScanning {
                 Text("Looking for videos…")
                     .font(.system(size: 12))
                     .foregroundStyle(theme.textTertiary)
             }
-            searchRow
+            Button {
+                Task { await app.refreshVideos() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .buttonStyle(.borderless)
+            .disabled(app.videos.isScanning)
+            .help("Look for new videos")
+            FilterField(prompt: "Search videos", text: $searchText)
+                .frame(width: 220)
         }
         .padding(.horizontal, 28)
         .padding(.top, 24)
-        .padding(.bottom, 8)
-        .background(theme.background)
+        .padding(.bottom, 10)
     }
 
-    private var shown: [VideoItem] {
-        app.videos.videos(matching: searchText, likedOnly: embedded)
+    private var shownCategory: VideoCategory { embedded ? .liked : category }
+
+    private var titles: [VideoTitle] {
+        app.videos.titles(in: shownCategory, genre: genre ?? app.videos.catalog.genres.first, matching: searchText)
     }
 
-    private var searchRow: some View {
-        FilterField(prompt: "Search videos", text: $searchText)
-            .frame(width: 240)
+    @ViewBuilder
+    private var browse: some View {
+        if preferences.videoFolders.isEmpty && app.videos.catalog.isEmpty && !embedded {
+            ContentUnavailableView {
+                Label("No video folders yet", systemImage: "film.stack")
+            } description: {
+                Text("Choose the folder or drive with your movies and TV shows. MacBee plays MKV, MP4, 4K and HDR.")
+            } actions: {
+                Button("Add Video Folder…") { addVideoFolder() }
+            }
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    if embedded {
+                        FilterField(prompt: "Search liked videos", text: $searchText)
+                            .frame(width: 240)
+                    }
+                    if shownCategory == .recentlyAdded && searchText.isEmpty && !app.videos.continueWatching.isEmpty {
+                        rowTitle("Continue Watching")
+                        HorizontalCarousel {
+                            HStack(alignment: .top, spacing: 18) {
+                                ForEach(app.videos.continueWatching) { title in
+                                    VideoPosterCard(title: title) { openOrPlay(title) }
+                                        .frame(width: 150)
+                                }
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        rowTitle("Recently Added")
+                    }
+                    if shownCategory == .genres { genrePicker }
+                    VideoPosterGrid(titles: titles) { openOrPlay($0) }
+                }
+                .padding(.horizontal, 28)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .overlay { emptyState }
+        }
+    }
+
+    private func rowTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 20, weight: .bold))
+            .foregroundStyle(theme.textPrimary)
+    }
+
+    private var genrePicker: some View {
+        let genres = app.videos.catalog.genres
+        let selected = genre ?? genres.first
+        return HorizontalCarousel {
+            HStack(spacing: 8) {
+                ForEach(genres, id: \.self) { name in
+                    Button(name) { genre = name }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(name == selected ? theme.onAccent : theme.textPrimary)
+                        .padding(.horizontal, 12)
+                        .frame(height: 28)
+                        .background(Capsule().fill(name == selected ? theme.accent : theme.surface))
+                }
+            }
+        }
     }
 
     @ViewBuilder
     private var emptyState: some View {
-        if app.videos.hasSearched && shown.isEmpty {
+        if titles.isEmpty && !app.videos.isScanning {
             if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
                 ContentUnavailableView.search(text: searchText)
             } else if embedded {
                 ContentUnavailableView("No liked videos yet", systemImage: "heart",
-                                       description: Text("Click the heart on a video in Videos to add it here."))
+                                       description: Text("Click the heart on a movie, show or music video to add it here."))
+            } else if shownCategory == .genres {
+                ContentUnavailableView("No genres found", systemImage: "theatermasks",
+                                       description: Text("Genres come from .nfo files next to your videos, or from Plex."))
             } else {
-                ContentUnavailableView("No music videos found", systemImage: "play.rectangle",
-                                       description: Text("MacBee looks for MP4, M4V and MOV files inside your music folders."))
+                ContentUnavailableView("Nothing here yet", systemImage: shownCategory.systemImage)
             }
         }
     }
-}
 
-/// Video thumbnails in a grid.
-struct VideosGrid: View {
-    let videos: [VideoItem]
+    // MARK: - Opening
 
-    private let columns = [GridItem(.adaptive(minimum: 220, maximum: 300), spacing: 20, alignment: .top)]
-
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, alignment: .leading, spacing: 24) {
-                ForEach(videos) { VideoTile(video: $0) }
-            }
-            .padding(24)
+    private func openOrPlay(_ title: VideoTitle) {
+        if case let .musicVideo(video) = title {
+            app.playMusicVideo(video)
+        } else {
+            open = title
         }
+    }
+
+    @ViewBuilder
+    private func detail(for title: VideoTitle) -> some View {
+        switch title {
+        case let .movie(movie): MovieDetailView(movie: movie) { open = nil }
+        case let .show(show): ShowDetailView(show: show) { open = nil }
+        case .musicVideo: EmptyView()
+        }
+    }
+
+    private func addVideoFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.prompt = "Add"
+        panel.message = "Choose a folder with movies and TV shows"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        preferences.addVideoFolder(url.path)
+        Task { await app.refreshVideos() }
     }
 }
 
-private struct VideoTile: View {
-    let video: VideoItem
-    @Environment(AppModel.self) private var app
+/// The section list on the left of the Videos page.
+private struct VideoSidebar: View {
+    @Binding var category: VideoCategory
+    let catalog: VideoCatalog
     @Environment(\.theme) private var theme
-    @State private var thumbnail: NSImage?
-    @State private var hovering = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ZStack {
-                Rectangle().fill(theme.surface)
-                if let thumbnail {
-                    Image(nsImage: thumbnail)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Image(systemName: "film")
-                        .font(.system(size: 28, weight: .light))
-                        .foregroundStyle(theme.textTertiary)
+        VStack(alignment: .leading, spacing: 2) {
+            Text("LIBRARY")
+                .font(.system(size: 10, weight: .semibold))
+                .tracking(0.8)
+                .foregroundStyle(theme.textTertiary)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 6)
+            ForEach(shown) { item in
+                Button {
+                    category = item
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: item.systemImage)
+                            .frame(width: 18)
+                            .foregroundStyle(item == category ? theme.accent : theme.textSecondary)
+                        Text(item.title)
+                            .foregroundStyle(item == category ? theme.textPrimary : theme.textSecondary)
+                            .fontWeight(item == category ? .semibold : .regular)
+                        Spacer()
+                    }
+                    .font(.system(size: 13))
+                    .padding(.horizontal, 10)
+                    .frame(height: 30)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(item == category ? theme.elevated : .clear))
+                    .contentShape(Rectangle())
                 }
-                if hovering {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(theme.onAccent)
-                        .frame(width: 44, height: 44)
-                        .background(Circle().fill(theme.accent))
-                        .shadow(radius: 4)
-                }
+                .buttonStyle(.plain)
             }
-            .aspectRatio(16 / 9, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(alignment: .topTrailing) {
-                if hovering || app.videos.isLiked(video) {
-                    VideoLikeButton(video: video, diameter: 28)
-                        .padding(6)
-                }
-            }
-            Text(video.title)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(theme.textPrimary)
-                .lineLimit(2)
-            Text(video.folderName)
-                .font(.system(size: 11))
-                .foregroundStyle(theme.textSecondary)
-                .lineLimit(1)
+            Spacer()
         }
-        .contentShape(Rectangle())
-        .onHover { hovering = $0 }
-        .onTapGesture { app.playVideo(video) }
-        .help("Play \(video.title)")
-        .task(id: video.url) { thumbnail = await app.videos.thumbnail(for: video) }
+        .padding(.top, 28)
+        .padding(.horizontal, 8)
+        .frame(width: 180)
     }
-}
 
-/// Heart that likes or unlikes a video. Liked videos show in Collection > Videos.
-struct VideoLikeButton: View {
-    let video: VideoItem
-    var diameter: CGFloat = 28
-    @Environment(AppModel.self) private var app
-
-    var body: some View {
-        let liked = app.videos.isLiked(video)
-        CircleButton(systemImage: liked ? "heart.fill" : "heart",
-                     help: liked ? "Unlike (removes it from Collection)" : "Like (adds it to Collection)",
-                     diameter: diameter) { app.videos.toggleLike(video) }
+    /// Music Videos and Genres appear only when there's something in them.
+    private var shown: [VideoCategory] {
+        VideoCategory.allCases.filter { item in
+            switch item {
+            case .musicVideos: !catalog.musicVideos.isEmpty
+            case .genres: !catalog.genres.isEmpty
+            case .liked: false // liked videos live in Collection
+            default: true
+            }
+        }
     }
 }

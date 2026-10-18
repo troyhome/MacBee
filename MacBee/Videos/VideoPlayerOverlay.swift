@@ -1,63 +1,95 @@
-import AVKit
+import AppKit
+import MacBeeVideo
 import SwiftUI
 
-/// Plays a music video over the window, with the standard macOS video controls.
-/// Esc or the close button returns to MacBee. Music pauses while a video plays.
+/// Plays a video over the whole window with mpv (MKV, MP4, 4K, HDR). Controls appear when the mouse moves
+/// and hide after a few seconds. Space pauses, ← / → skip 10 seconds, Esc closes. Music pauses while it plays.
+/// Where you stopped is remembered; when an episode ends, the next one starts.
 struct VideoPlayerOverlay: View {
-    let video: VideoItem
+    let playback: VideoPlayback
+
     @Environment(AppModel.self) private var app
-    @State private var player: AVPlayer?
+    @State private var player = MPVPlayer()
+    @State private var current: VideoPlayback?
+    @State private var controlsVisible = true
+    @State private var hideTask: Task<Void, Never>?
+    @State private var lastSaved = Date.distantPast
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        let shown = current ?? playback
+        ZStack {
             Color.black
-            if let player {
-                PlayerView(player: player)
-            }
-            HStack {
-                CircleButton(systemImage: "chevron.down", help: "Close (Esc)", tinted: false) { app.closeVideo() }
-                Text(video.title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.8), radius: 4)
-                    .lineLimit(1)
-                Spacer()
-                VideoLikeButton(video: video, diameter: 34)
-                CircleButton(systemImage: "arrow.up.left.and.arrow.down.right", help: "Full screen", tinted: false) {
-                    NSApp.keyWindow?.toggleFullScreen(nil)
-                }
-            }
-            .padding(20)
+            MPVVideoView(player: player)
+            VideoControls(player: player, playback: shown, visible: controlsVisible, onClose: close)
         }
         .environment(\.colorScheme, .dark)
-        .background(
-            Button("Close Video") { app.closeVideo() }
-                .keyboardShortcut(.cancelAction)
-                .opacity(0)
-                .frame(width: 0, height: 0)
-        )
-        .task(id: video.url) {
-            let player = AVPlayer(url: video.url)
-            self.player = player
-            player.play()
+        .onContinuousHover { _ in showControls() }
+        .onTapGesture(count: 2) { NSApp.keyWindow?.toggleFullScreen(nil) }
+        .onTapGesture { player.togglePause() }
+        .background(shortcuts)
+        .onAppear {
+            current = playback
+            start(playback, resume: true)
+            showControls()
         }
-        .onDisappear { player?.pause() }
+        .onChange(of: player.position) { _, position in
+            // Save every 10 seconds, so a crash or quit loses little.
+            if Date().timeIntervalSince(lastSaved) > 10 {
+                lastSaved = Date()
+                app.videos.savePosition(position, duration: player.duration, for: shown.file.path)
+            }
+        }
+        .onChange(of: player.reachedEnd) { _, ended in
+            if ended { playNext() }
+        }
+        .onDisappear {
+            app.videos.savePosition(player.position, duration: player.duration, for: shown.file.path)
+            player.shutdown()
+        }
     }
-}
 
-/// AppKit's video player view with the standard controls. (SwiftUI's own VideoPlayer crashed MacBee on macOS 26.)
-private struct PlayerView: NSViewRepresentable {
-    let player: AVPlayer
-
-    func makeNSView(context: Context) -> AVPlayerView {
-        let view = AVPlayerView()
-        view.player = player
-        view.controlsStyle = .floating
-        view.allowsPictureInPicturePlayback = false
-        return view
+    private func start(_ item: VideoPlayback, resume: Bool) {
+        let startAt = resume ? app.videos.position(of: item.file.path) : 0
+        // The player needs its view on screen first; loading right after appearing is fine,
+        // because mpv queues the file until the view is ready.
+        DispatchQueue.main.async { player.load(item.file.url, startAt: startAt) }
     }
 
-    func updateNSView(_ view: AVPlayerView, context: Context) {
-        if view.player !== player { view.player = player }
+    private func playNext() {
+        guard let shown = current else { return }
+        app.videos.savePosition(player.duration, duration: player.duration, for: shown.file.path)
+        guard let next = shown.upNext.first else { return }
+        var item = VideoPlayback(title: next.title, subtitle: next.subtitle, file: next.file, likeId: shown.likeId)
+        item.upNext = Array(shown.upNext.dropFirst())
+        current = item
+        start(item, resume: false)
+    }
+
+    private func close() {
+        app.closeVideo()
+    }
+
+    private func showControls() {
+        if !controlsVisible { withAnimation(.easeOut(duration: 0.15)) { controlsVisible = true } }
+        NSCursor.setHiddenUntilMouseMoves(false)
+        hideTask?.cancel()
+        hideTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, !player.isPaused else { return }
+            withAnimation(.easeOut(duration: 0.3)) { controlsVisible = false }
+            NSCursor.setHiddenUntilMouseMoves(true)
+        }
+    }
+
+    /// Invisible buttons for the keyboard shortcuts.
+    private var shortcuts: some View {
+        ZStack {
+            Button("Close Video") { close() }.keyboardShortcut(.cancelAction)
+            Button("Play/Pause") { player.togglePause(); showControls() }.keyboardShortcut(.space, modifiers: [])
+            Button("Back 10 Seconds") { player.seek(by: -10); showControls() }.keyboardShortcut(.leftArrow, modifiers: [])
+            Button("Forward 10 Seconds") { player.seek(by: 10); showControls() }.keyboardShortcut(.rightArrow, modifiers: [])
+        }
+        .opacity(0)
+        .frame(width: 0, height: 0)
     }
 }

@@ -70,3 +70,33 @@ struct PlexTracksReply: Decodable {
     let container: Container
     enum CodingKeys: String, CodingKey { case container = "MediaContainer" }
 }
+
+/// Movies, shows or episodes from a Plex movie or TV library.
+struct PlexVideoReply: Decodable {
+    struct Container: Decodable {
+        let totalSize: Int?
+        let items: [Item]?
+        enum CodingKeys: String, CodingKey { case totalSize, items = "Metadata" }
+    }
+    struct Item: Decodable {
+        let ratingKey: String?
+        let title: String?
+        let year: Int?
+        let thumb: String?
+        let summary: String?
+        let genres: [Tag]?
+        let media: [PlexTracksReply.Media]?
+        // Episodes: the show they belong to.
+        let grandparentTitle: String?
+        let grandparentThumb: String?
+        let grandparentRatingKey: String?
+        enum CodingKeys: String, CodingKey {
+            case ratingKey, title, year, thumb, summary, grandparentTitle, grandparentThumb, grandparentRatingKey
+            case genres = "Genre", media = "Media"
+        }
+        var files: [String] { media?.flatMap { $0.parts ?? [] }.compactMap(\.file) ?? [] }
+    }
+    struct Tag: Decodable { let tag: String }
+    let container: Container
+    enum CodingKeys: String, CodingKey { case container = "MediaContainer" }
+}
