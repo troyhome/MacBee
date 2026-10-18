@@ -3,8 +3,8 @@ import MacBeeLibrary
 import MacBeeVideo
 import SwiftUI
 
-/// The Videos page, laid out like the Apple TV app: sections on the left (Movies, TV Shows, Music Videos,
-/// Genres), posters on the right, and a page for each movie or show.
+/// The Videos page, laid out like the Apple TV app: sections on the left (Recently Played, Movies, TV Shows,
+/// Music Videos, Genres), posters on the right, and a page for each movie or show.
 /// Inside Collection (`embedded`) it shows only liked videos, without the sections.
 struct VideosView: View {
     var embedded = false
@@ -166,6 +166,9 @@ struct VideosView: View {
             } else if shownCategory == .genres {
                 ContentUnavailableView("No genres found", systemImage: "theatermasks",
                                        description: Text("Genres come from .nfo files next to your videos, or from Plex."))
+            } else if shownCategory == .recentlyPlayed {
+                ContentUnavailableView("Nothing played yet", systemImage: "clock.arrow.circlepath",
+                                       description: Text("Movies, shows and music videos you play show up here."))
             } else if shownCategory == .musicVideos {
                 ContentUnavailableView("No music videos found", systemImage: "music.note.tv",
                                        description: Text("MacBee looks for videos in your music folders."))

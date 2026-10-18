@@ -172,6 +172,7 @@ final class AppModel {
         if player.isPlaying { player.togglePlayPause() }
         showNowPlaying = false
         videoIsMini = false
+        videos.markPlayed(playback.likeId)
         playingVideo = playback
     }
 

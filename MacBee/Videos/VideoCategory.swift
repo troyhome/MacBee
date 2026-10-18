@@ -1,14 +1,15 @@
 /// The sections in the Videos sidebar, like the Apple TV app's library. `liked` is Collection > Videos.
 enum VideoCategory: String, CaseIterable, Identifiable {
-    case movies, shows, musicVideos, genres, liked
+    case recentlyPlayed, movies, shows, musicVideos, genres, liked
 
     /// What the Videos sidebar lists.
-    static let sidebar: [VideoCategory] = [.movies, .shows, .musicVideos, .genres]
+    static let sidebar: [VideoCategory] = [.recentlyPlayed, .movies, .shows, .musicVideos, .genres]
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .recentlyPlayed: "Recently Played"
         case .movies: "Movies"
         case .shows: "TV Shows"
         case .musicVideos: "Music Videos"
@@ -19,6 +20,7 @@ enum VideoCategory: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
+        case .recentlyPlayed: "clock.arrow.circlepath"
         case .movies: "film"
         case .shows: "tv"
         case .musicVideos: "music.note.tv"

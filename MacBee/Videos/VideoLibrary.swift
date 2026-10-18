@@ -13,6 +13,8 @@ final class VideoLibrary {
     private(set) var liked: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "likedVideos") ?? [])
     /// Seconds watched, per file path, for "Continue Watching" and Resume.
     private(set) var positions: [String: Double] = UserDefaults.standard.dictionary(forKey: "videoPositions") as? [String: Double] ?? [:]
+    /// When each movie, show or music video (by its id) was last started, for Recently Played.
+    private(set) var lastPlayed: [String: Date] = UserDefaults.standard.dictionary(forKey: "videoLastPlayed") as? [String: Date] ?? [:]
     /// Files watched to the end.
     private(set) var watched: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "watchedVideos") ?? [])
 
@@ -77,6 +79,11 @@ final class VideoLibrary {
 
     // MARK: - Watching
 
+    func markPlayed(_ id: String) {
+        lastPlayed[id] = Date()
+        UserDefaults.standard.set(lastPlayed, forKey: "videoLastPlayed")
+    }
+
     func position(of path: String) -> Double { positions[path] ?? 0 }
 
     /// Saves where a video was stopped. Near the start counts as not started, near the end as watched.
@@ -113,6 +120,11 @@ final class VideoLibrary {
     func titles(in category: VideoCategory, genre: String?, matching text: String) -> [VideoTitle] {
         var titles: [VideoTitle]
         switch category {
+        case .recentlyPlayed:
+            titles = (allTitles + catalog.musicVideos.map(VideoTitle.musicVideo))
+                .compactMap { title in lastPlayed[title.id].map { (title, $0) } }
+                .sorted { $0.1 > $1.1 }
+                .prefix(60).map(\.0)
         case .movies: titles = catalog.movies.map(VideoTitle.movie)
         case .shows: titles = catalog.shows.map(VideoTitle.show)
         case .musicVideos: titles = catalog.musicVideos.map(VideoTitle.musicVideo)
