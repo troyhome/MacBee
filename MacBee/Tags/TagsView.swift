@@ -133,6 +133,11 @@ private struct TagBeePanel: View {
                     if let path = preferences.tagEditorPath { NSWorkspace.shared.open(URL(fileURLWithPath: path)) }
                 }
                 .disabled(!hasEditor)
+                Spacer()
+                Button("Clear List") { clearList() }
+                    .keyboardShortcut(.delete, modifiers: .command)
+                    .disabled(results.isEmpty)
+                    .help("Empty the list (⌘⌫)")
             }
             List(selection: $selection) {
                 ForEach(results, id: \.path) { track in
@@ -160,9 +165,15 @@ private struct TagBeePanel: View {
                 Task {
                     var tracks: [Track] = []
                     for payload in payloads { tracks += await store.tracks(for: payload) }
-                    dropped = tracks
-                    results = tracks
-                    selection = Set(tracks.map(\.path))
+                    // Added to what's already there (each song once); Clear List starts over.
+                    var list = dropped ?? []
+                    let have = Set(list.map(\.path))
+                    list += tracks.filter { !have.contains($0.path) }.reduce(into: [Track]()) { kept, track in
+                        if !kept.contains(where: { $0.path == track.path }) { kept.append(track) }
+                    }
+                    dropped = list
+                    results = list
+                    selection.formUnion(tracks.map(\.path))
                 }
                 return true
             } isTargeted: { dropTargeted = $0 }
@@ -208,6 +219,15 @@ private struct TagBeePanel: View {
     }
 
     private var hasEditor: Bool { preferences.tagEditorPath != nil }
+
+    /// Empties the list: dragged songs, the playlist shown, and the search.
+    private func clearList() {
+        dropped = nil
+        app.trackStudioSourcePlaylistId = nil
+        query = ""
+        results = []
+        selection = []
+    }
 
     private func send(_ tracks: [Track]) {
         guard !tracks.isEmpty else { return }

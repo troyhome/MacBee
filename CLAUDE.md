@@ -331,7 +331,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   - In Track Studio, Music / Collections / Artists / Albums / Search open beside it on the left
     (`AppModel.trackStudioBrowse`, `browsableBesideTrackStudio`; ContentRouter splits with a ColumnResizer,
     @AppStorage "trackStudioWidth"); "Close <page>" gives Track Studio the whole window. Songs, albums, artists or
-    playlists dragged onto the TagBee list load there ("Songs dragged here").
+    playlists dragged onto the TagBee list are added to it (each song once; "Songs dragged here"); Clear List (⌘⌫)
+    empties it.
 - Macs: "CMBA" = Troy's Coding MacBook Air (this one, Claude works here); "DDMBA" = Daily Driver MacBook Air.
   `Tools/macbee.sh updater` makes /Applications/Update MacBee.app on a Mac (DDMBA didn't have it).
 - All five roadmap phases built.
