@@ -246,6 +246,8 @@ final class AppModel {
 
     /// Re-scans when the saved list is more than 10 minutes old (opening Videos stays instant).
     func refreshVideosIfStale() async {
+        // Wait for the music folders to be known, or music videos would be missed.
+        if let library, library.folders.isEmpty, library.stats.tracks > 0 { return }
         if let scanned = videos.catalog.scannedAt, Date().timeIntervalSince(scanned) < 600 { return }
         await refreshVideos()
     }

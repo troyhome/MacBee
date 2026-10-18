@@ -63,6 +63,17 @@ final class PlayerViewModel {
         onNewQueue?(nil)
     }
 
+    /// For double-click / Return in a list: pauses or resumes if this song is already the one playing,
+    /// otherwise plays the list from this song.
+    func playOrToggle(_ tracks: [Track], at index: Int) {
+        guard tracks.indices.contains(index) else { return }
+        if currentTrack?.path == tracks[index].path {
+            togglePlayPause()
+        } else {
+            play(tracks, startAt: index)
+        }
+    }
+
     /// Turns shuffle on and plays the tracks from a random one.
     func playShuffled(_ tracks: [Track]) {
         guard !tracks.isEmpty else { return }

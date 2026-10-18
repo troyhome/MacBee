@@ -2,7 +2,7 @@ import MacBeeLibrary
 import SwiftUI
 
 /// Playlist Studio: browse and filter the library (or one playlist's songs) in the middle, build a playlist on the right.
-/// Double-click or drag songs across; "Add Selected" adds several at once. The panes take a tint of the accent
+/// Drag songs across, or select them and click "Add Selected" (⌘Return). Double-click or Return plays or pauses a song. The panes take a tint of the accent
 /// color so studio mode is easy to spot; clicking Playlist Studio again leaves it.
 struct PlaylistStudioView: View {
     @Environment(AppModel.self) private var app
@@ -99,7 +99,10 @@ struct PlaylistStudioView: View {
                     TrackContextMenu(tracks: chosen) { player.play(chosen) }
                 }
             } primaryAction: { paths in
-                add(model.results.filter { paths.contains($0.path) })
+                // Double-click or Return: play (or pause) the song. Adding is drag, "Add Selected" or ⌘Return.
+                if let index = model.results.firstIndex(where: { paths.contains($0.path) }) {
+                    player.playOrToggle(model.results, at: index)
+                }
             }
             .scrollContentBackground(.hidden)
             .overlay {

@@ -66,12 +66,17 @@ struct StudioPlaylistPanel: View {
                     if !ids.isEmpty {
                         Button("Remove from Playlist") { remove(ids, from: id) }
                     }
+                } primaryAction: { ids in
+                    // Double-click or Return: play (or pause) from this song.
+                    if let index = entries.firstIndex(where: { ids.contains($0.itemId) }) {
+                        player.playOrToggle(entries.map(\.track), at: index)
+                    }
                 }
                 .onDeleteCommand { remove(selection, from: id) }
                 .scrollContentBackground(.hidden)
                 .overlay {
                     if entries.isEmpty {
-                        Text("Drag songs here from the left, or double-click them.")
+                        Text("Drag songs here from the left, or select them and click Add Selected.")
                             .font(.system(size: 12))
                             .foregroundStyle(theme.textTertiary)
                     }
@@ -157,8 +162,16 @@ private struct StudioPlaylistHeader: View {
                 }
                 .controlSize(.small)
                 HStack(spacing: 8) {
-                    Button("Play") { player.play(entries.map(\.track)) }
-                        .disabled(entries.isEmpty)
+                    Button {
+                        if isPlayingThis { player.togglePlayPause() } else { player.play(entries.map(\.track)) }
+                    } label: {
+                        Image(systemName: isPlayingThis && player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(theme.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(entries.isEmpty)
+                    .help(isPlayingThis && player.isPlaying ? "Pause" : "Play this playlist")
                     Picker("Disc", selection: capacityBinding) {
                         Text("No time limit").tag(Int?.none)
                         ForEach(CapacityFiller.templates, id: \.seconds) { Text("MiniDisc \($0.seconds / 60) min").tag(Optional($0.seconds)) }
@@ -188,6 +201,12 @@ private struct StudioPlaylistHeader: View {
     }
 
     private var total: Double { entries.map(\.track.duration).reduce(0, +) }
+
+    /// The song playing is one of this playlist's.
+    private var isPlayingThis: Bool {
+        guard let current = player.currentTrack?.path else { return false }
+        return entries.contains { $0.track.path == current }
+    }
 
     private var capacityBinding: Binding<Int?> {
         Binding(get: { playlist.capacitySeconds }, set: { seconds in

@@ -34,6 +34,12 @@ final class VideoLibrary {
             index?.save()
         }
         if let index { found = Self.enrich(found, with: index) }
+        // The music folders weren't known yet (MacBee still starting) or none could be reached:
+        // keep the music videos found last time instead of emptying the list.
+        if found.musicVideos.isEmpty && !previous.musicVideos.isEmpty
+            && !reachable.contains(where: { $0.kind == .musicVideos }) {
+            found.musicVideos = previous.musicVideos
+        }
         found = Self.removingExcluded(from: found)
         // A drive that's away keeps its videos listed until it's back.
         if reachable.count == roots.count || !found.isEmpty || previous.isEmpty {

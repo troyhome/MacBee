@@ -285,6 +285,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     capacitySeconds); studio header has a Disc limit picker, `CapacityBar` (time used of 74:00/80:00, Overtime red,
     Underfill orange when > 7 min free) and Auto-fill (`CapacityFiller.fill`, from the studio's filtered songs,
     shuffled, never over the limit). Playlist pages show the bar too.
+  - Fixes after Troy's Phase 3 test: music videos vanished (a video scan ran before the music folders were
+    loaded, so it found none and replaced the list). Now the stale-refresh waits for the folders, and a scan that
+    couldn't reach any music folder keeps the previous music videos. Playlist Studio: double-click / Return plays
+    or pauses a song (`PlayerViewModel.playOrToggle`) in both lists (adding is drag, Add Selected, ⌘Return); the
+    studio playlist's Play button is a small play/pause icon.
 - Roadmap Phases 4-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
