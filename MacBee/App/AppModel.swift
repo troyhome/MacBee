@@ -23,6 +23,8 @@ final class AppModel {
     let videos = VideoLibrary()
     /// The video playing over the window, if any.
     var playingVideo: VideoPlayback?
+    /// The video is shrunk to the mini player in the corner, so the rest of MacBee can be used.
+    var videoIsMini = false
     let preferences: PreferencesStore
 
     /// Where you are now. Every change remembers the previous place for the back arrow.
@@ -169,6 +171,7 @@ final class AppModel {
     func playVideo(_ playback: VideoPlayback) {
         if player.isPlaying { player.togglePlayPause() }
         showNowPlaying = false
+        videoIsMini = false
         playingVideo = playback
     }
 

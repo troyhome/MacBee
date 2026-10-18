@@ -178,6 +178,14 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     - Plex enrichment (`Plex/PlexVideoIndex.swift`, `PlexAPI+Video.swift`): matches by file name against Plex movie
       and TV libraries for titles, years, genres, summaries and posters (cached in ~/Library/Caches/MacBee/Posters).
     - The old AVKit/AVPlayerView video player is gone; everything plays through mpv now.
+    - Stills for videos without posters (music videos, and movies/shows Plex doesn't know): `VideoThumbnailer`
+      (MacBeeVideo) grabs a frame 10% in with mpv `screenshot-raw` (the LGPL build has no image encoders, so
+      vo=image fails) and saves a JPEG via ImageIO in ~/Library/Caches/MacBee/VideoFrames. Shown in the same 2:3
+      card as posters (blurred fill + whole frame). `VideoFrames` actor limits it to 2 at a time.
+    - Mini player: the pip button in the video's top bar shrinks it to a 384×216 box above the play bar
+      (`AppModel.videoIsMini`); drag to move, double-click or the expand button for full size. The mpv view
+      stays the same SwiftUI view in both sizes so playback isn't interrupted.
+    - Show pages list seasons as tabs (was a pull-down menu), per Troy.
 - Roadmap Phases 2-5: not started.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

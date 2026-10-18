@@ -12,8 +12,8 @@ struct VideoPosterCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            PosterImage(path: title.posterPath, title: title.title)
-                .aspectRatio(isWide ? 16 / 9 : 2 / 3, contentMode: .fit)
+            PosterImage(path: title.posterPath, title: title.title, previewFile: title.previewFile)
+                .aspectRatio(2 / 3, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(alignment: .topLeading) { qualityBadges.padding(6) }
                 .overlay(alignment: .topTrailing) {
@@ -37,11 +37,6 @@ struct VideoPosterCard: View {
         .onHover { isHovering in withAnimation(.easeOut(duration: 0.15)) { hovering = isHovering } }
         .onTapGesture(perform: onOpen)
         .help(title.title)
-    }
-
-    private var isWide: Bool {
-        if case .musicVideo = title { return true }
-        return false
     }
 
     @ViewBuilder
@@ -92,14 +87,13 @@ struct VideoLikeButton: View {
     }
 }
 
-/// Posters in a grid. Movies and shows use tall posters, music videos wide ones.
+/// Posters in a grid, the same for movies, shows and music videos.
 struct VideoPosterGrid: View {
     let titles: [VideoTitle]
     let onOpen: (VideoTitle) -> Void
 
     var body: some View {
-        let wide = titles.allSatisfy { if case .musicVideo = $0 { true } else { false } }
-        let columns = [GridItem(.adaptive(minimum: wide ? 220 : 140, maximum: wide ? 300 : 190), spacing: 20, alignment: .top)]
+        let columns = [GridItem(.adaptive(minimum: 140, maximum: 190), spacing: 20, alignment: .top)]
         LazyVGrid(columns: columns, alignment: .leading, spacing: 24) {
             ForEach(titles) { title in
                 VideoPosterCard(title: title) { onOpen(title) }

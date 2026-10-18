@@ -42,6 +42,15 @@ enum VideoTitle: Identifiable, Hashable {
         }
     }
 
+    /// The file to take a still picture from when there's no poster.
+    var previewFile: VideoFile? {
+        switch self {
+        case let .movie(movie): movie.file
+        case let .show(show): show.firstEpisode?.file
+        case let .musicVideo(video): video.file
+        }
+    }
+
     var added: Date {
         switch self {
         case let .movie(movie): movie.added

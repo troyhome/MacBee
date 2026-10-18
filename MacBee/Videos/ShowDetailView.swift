@@ -1,7 +1,7 @@
 import MacBeeVideo
 import SwiftUI
 
-/// One TV show: poster, title, Play (continues where you left off), a season picker and the episode list.
+/// One TV show: poster, title, Play (continues where you left off), the seasons as tabs and the episode list.
 struct ShowDetailView: View {
     let show: Show
     let onBack: () -> Void
@@ -14,7 +14,7 @@ struct ShowDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .bottom, spacing: 28) {
-                    PosterImage(path: show.posterPath, title: show.title, maxPixels: 700)
+                    PosterImage(path: show.posterPath, title: show.title, maxPixels: 700, previewFile: show.firstEpisode?.file)
                         .aspectRatio(2 / 3, contentMode: .fit)
                         .frame(width: 200)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -46,11 +46,23 @@ struct ShowDetailView: View {
                     }
                 }
                 if show.seasons.count > 1 {
-                    Picker("Season", selection: Binding(get: { selectedSeason?.number ?? 1 }, set: { seasonNumber = $0 })) {
-                        ForEach(show.seasons) { Text("Season \($0.number)").tag($0.number) }
+                    // Every season as a tab along the top, like the TV app.
+                    HorizontalCarousel {
+                        HStack(spacing: 8) {
+                            ForEach(show.seasons) { season in
+                                let selected = season.number == selectedSeason?.number
+                                Button("Season \(season.number)") { seasonNumber = season.number }
+                                    .buttonStyle(.plain)
+                                    .font(.system(size: 13, weight: selected ? .semibold : .medium))
+                                    .foregroundStyle(selected ? theme.onAccent : theme.textPrimary)
+                                    .padding(.horizontal, 14)
+                                    .frame(height: 30)
+                                    .background(Capsule().fill(selected ? theme.accent : theme.surface))
+                                    .contentShape(Capsule())
+                            }
+                        }
+                        .padding(.vertical, 2)
                     }
-                    .pickerStyle(.menu)
-                    .fixedSize()
                 }
                 if let season = selectedSeason {
                     LazyVStack(spacing: 2) {

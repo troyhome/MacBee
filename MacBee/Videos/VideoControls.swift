@@ -8,6 +8,7 @@ struct VideoControls: View {
     let player: MPVPlayer
     let playback: VideoPlayback
     let visible: Bool
+    let onMini: () -> Void
     let onClose: () -> Void
 
     @Environment(\.theme) private var theme
@@ -53,6 +54,8 @@ struct VideoControls: View {
             .lineLimit(1)
             Spacer()
             VideoLikeButton(id: playback.likeId, diameter: 34)
+            CircleButton(systemImage: "pip.enter", help: "Mini player: keep watching while you browse",
+                         tinted: false, diameter: 34, action: onMini)
         }
         .padding(20)
         .background(LinearGradient(colors: [.black.opacity(0.7), .clear], startPoint: .top, endPoint: .bottom))
@@ -148,5 +151,55 @@ struct VideoControls: View {
         let total = Int(seconds)
         let h = total / 3600, m = (total % 3600) / 60, s = total % 60
         return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    }
+}
+
+/// Buttons over the mini player, shown while the mouse is over it: expand, play/pause, close,
+/// and a thin bar showing how far along the video is.
+struct MiniVideoControls: View {
+    let player: MPVPlayer
+    let onExpand: () -> Void
+    let onClose: () -> Void
+    @Environment(\.theme) private var theme
+    @State private var hovering = false
+
+    var body: some View {
+        ZStack {
+            if hovering {
+                Color.black.opacity(0.35)
+                HStack(spacing: 22) {
+                    button("arrow.up.left.and.arrow.down.right", help: "Back to full size", action: onExpand)
+                    button(player.isPaused ? "play.fill" : "pause.fill", help: "Play/Pause", size: 24) { player.togglePause() }
+                    button("xmark", help: "Close video", action: onClose)
+                }
+            }
+            VStack {
+                Spacer()
+                GeometryReader { geometry in
+                    Rectangle()
+                        .fill(theme.accent)
+                        .frame(width: geometry.size.width * progress)
+                }
+                .frame(height: 3)
+            }
+        }
+        .onHover { hovering = $0 }
+        .help("Drag to move. Double-click for full size.")
+    }
+
+    private var progress: CGFloat {
+        player.duration > 0 ? CGFloat(min(1, player.position / player.duration)) : 0
+    }
+
+    private func button(_ systemImage: String, help: String, size: CGFloat = 16, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: size, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 }

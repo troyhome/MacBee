@@ -12,7 +12,7 @@ struct MovieDetailView: View {
     var body: some View {
         ScrollView {
             HStack(alignment: .top, spacing: 32) {
-                PosterImage(path: movie.posterPath, title: movie.title, maxPixels: 900)
+                PosterImage(path: movie.posterPath, title: movie.title, maxPixels: 900, previewFile: movie.file)
                     .aspectRatio(2 / 3, contentMode: .fit)
                     .frame(width: 260)
                     .clipShape(RoundedRectangle(cornerRadius: 10))

@@ -1,16 +1,20 @@
 import AppKit
 import ImageIO
+import MacBeeVideo
 import SwiftUI
 
-/// A poster from a file next to the video, shrunk and cached. Without one, a plain card with the title,
-/// tinted by the title so cards look different from each other.
+/// A poster from a file next to the video (or from Plex), shrunk and cached. Without one, a still from the
+/// video itself (`previewFile`): blurred to fill the poster, with the whole frame in the middle. Without that,
+/// a plain card with the title, tinted by the title so cards look different from each other.
 struct PosterImage: View {
     let path: String?
     let title: String
     var maxPixels = 600
+    var previewFile: VideoFile?
 
     @Environment(\.theme) private var theme
     @State private var image: NSImage?
+    @State private var frame: NSImage?
 
     var body: some View {
         ZStack {
@@ -18,6 +22,16 @@ struct PosterImage: View {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+            } else if let frame {
+                Image(nsImage: frame)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .blur(radius: 18)
+                    .overlay(Color.black.opacity(0.25))
+                Image(nsImage: frame)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .shadow(color: .black.opacity(0.5), radius: 8)
             } else {
                 LinearGradient(colors: [tint.opacity(0.85), tint.opacity(0.35)], startPoint: .topLeading, endPoint: .bottomTrailing)
                 Text(title)
@@ -28,7 +42,13 @@ struct PosterImage: View {
                     .padding(12)
             }
         }
-        .task(id: path) { image = await PosterCache.shared.image(at: path, maxPixels: maxPixels) }
+        .clipped()
+        .task(id: path) {
+            image = await PosterCache.shared.image(at: path, maxPixels: maxPixels)
+            if image == nil, let previewFile, let still = await VideoFrames.shared.frame(for: previewFile) {
+                frame = await PosterCache.shared.image(at: still, maxPixels: maxPixels)
+            }
+        }
     }
 
     private var tint: Color {
@@ -65,5 +85,27 @@ final class PosterCache {
         guard let (image, cost) = loaded else { return nil }
         cache.setObject(image, forKey: key, cost: cost)
         return image
+    }
+}
+
+/// Stills taken from videos without posters, two at a time so a page of cards doesn't flood the drive.
+actor VideoFrames {
+    static let shared = VideoFrames()
+    private var known: [String: String?] = [:]
+    private var running = 0
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+
+    func frame(for file: VideoFile) async -> String? {
+        if let found = known[file.path] { return found }
+        while running >= 2 { await withCheckedContinuation { waiting.append($0) } }
+        if let found = known[file.path] { return found }
+        running += 1
+        let path = await Task.detached(priority: .utility) {
+            VideoThumbnailer.thumbnail(for: file.url, size: file.size)?.path
+        }.value
+        running -= 1
+        if !waiting.isEmpty { waiting.removeFirst().resume() }
+        known[file.path] = path
+        return path
     }
 }
