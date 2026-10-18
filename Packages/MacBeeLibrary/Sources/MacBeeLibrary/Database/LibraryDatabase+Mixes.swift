@@ -14,8 +14,9 @@ public struct SavedMix: Identifiable, Hashable, Sendable {
 }
 
 /// Built-in smart playlists (roadmap Phase 3). They fill themselves from the library every time they're opened.
+/// Listed in this order. `topRated` is shown as "Favorites" (Troy); its raw value stays 3 so saved choices keep working.
 public enum SmartPlaylist: Int, CaseIterable, Identifiable, Sendable {
-    case recentlyAdded = 1, mostPlayed, topRated
+    case topRated = 3, recentlyAdded = 1, mostPlayed = 2
 
     public var id: Int { rawValue }
 
@@ -23,7 +24,7 @@ public enum SmartPlaylist: Int, CaseIterable, Identifiable, Sendable {
         switch self {
         case .recentlyAdded: "Recently Added"
         case .mostPlayed: "Most Played"
-        case .topRated: "Top Rated"
+        case .topRated: "Favorites"
         }
     }
 
@@ -31,7 +32,7 @@ public enum SmartPlaylist: Int, CaseIterable, Identifiable, Sendable {
         switch self {
         case .recentlyAdded: "The last \(limit) songs added"
         case .mostPlayed: "Your \(limit) most played songs"
-        case .topRated: "Up to \(limit) of your favorite songs"
+        case .topRated: "All the songs you've hearted"
         }
     }
 
@@ -39,7 +40,7 @@ public enum SmartPlaylist: Int, CaseIterable, Identifiable, Sendable {
         switch self {
         case .recentlyAdded: "clock.badge.plus"
         case .mostPlayed: "flame"
-        case .topRated: "heart.circle"
+        case .topRated: "heart.fill"
         }
     }
 
@@ -47,7 +48,7 @@ public enum SmartPlaylist: Int, CaseIterable, Identifiable, Sendable {
         switch self {
         case .recentlyAdded: 50
         case .mostPlayed: 100
-        case .topRated: 150
+        case .topRated: 1_000_000
         }
     }
 

@@ -278,7 +278,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     mix card / right-click "Save to Saved Mixes" (`saveMix`); Collections > Saved Mixes lists them (remove via
     right-click).
   - Smart playlists (`SmartPlaylist`, negative playlist ids -1/-2/-3): Recently Added (50), Most Played (100,
-    played at least once), Top Rated (150 favorites, by rating then plays). Top of the sidebar's playlists;
+    played at least once), Top Rated (150 favorites, by rating then plays; 2026-10-18 Troy: renamed "Favorites", heart icon,
+  all favorites, listed first; code name still `.topRated`). Top of the sidebar's playlists;
     `SmartPlaylistView` (Play, Shuffle, Save as Playlist); usable as a Playlist Studio source
     (`tracks(matching:)` handles negative ids) and draggable.
   - MiniDisc: Playlist Studio "New" menu > New 74min / 80min MD Mix (playlist named "<template> <date>" with
