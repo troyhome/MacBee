@@ -35,8 +35,8 @@ final class EqualizerTests: XCTestCase {
     }
 
     func testBuiltInPresets() {
-        XCTAssertEqual(EqualizerPreset.builtIns.map(\.name), ["Flat", "Typical", "Punchy", "Reduce Treble", "Brite", "Indie"])
-        XCTAssertEqual(Set(EqualizerPreset.builtIns.map(\.id)).count, 6)
+        XCTAssertEqual(EqualizerPreset.builtIns.map(\.name), ["Typical", "Punchy", "Reduce Treble", "Brite", "Indie"])
+        XCTAssertEqual(Set(EqualizerPreset.builtIns.map(\.id)).count, 5)
         for preset in EqualizerPreset.builtIns {
             XCTAssertEqual(preset.gains.count, 16, preset.name)
             XCTAssertTrue(preset.isBuiltIn)

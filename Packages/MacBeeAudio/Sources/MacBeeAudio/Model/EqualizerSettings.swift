@@ -83,6 +83,7 @@ public struct EqualizerPreset: Codable, Sendable, Equatable, Identifiable, Hasha
     }
 
     //                                      25   40   63  100  160  250  400  630   1k 1.6k 2.5k   4k 6.3k  10k  16k  20k
+    /// All sliders at 0 dB. Used by Reset; not in the preset menu (it sounds the same as no EQ).
     public static let flat = builtIn(1, "Flat", preamp: 0,
                                          [   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0])
     public static let typical = builtIn(2, "Typical", preamp: -3,
@@ -97,5 +98,5 @@ public struct EqualizerPreset: Codable, Sendable, Equatable, Identifiable, Hasha
                                          [   2, 2.5, 2.5,   2,   1,   0,  -1,  -1,   0,   1,   2,   3,   3, 2.5,   2, 1.5])
 
     /// In the order shown in the preset menu.
-    public static let builtIns: [EqualizerPreset] = [flat, typical, punchy, reduceTreble, brite, indie]
+    public static let builtIns: [EqualizerPreset] = [typical, punchy, reduceTreble, brite, indie]
 }

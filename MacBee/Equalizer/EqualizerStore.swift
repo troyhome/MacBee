@@ -35,8 +35,11 @@ final class EqualizerStore {
         return allPresets.first { $0.id == id && settings.matches($0) }
     }
 
-    /// Shown on the preset menu: the preset's name, or "Custom" after moving sliders.
-    var presetTitle: String { selectedPreset?.name ?? "Custom" }
+    /// Shown on the preset menu: the preset's name, "No Preset" when every slider is at 0, or "Custom".
+    var presetTitle: String {
+        if settings.isFlat { return "No Preset" }
+        return selectedPreset?.name ?? "Custom"
+    }
 
     var isActive: Bool { settings.isActive }
 
@@ -56,7 +59,7 @@ final class EqualizerStore {
         commit()
     }
 
-    /// Choosing a preset also turns the EQ on (except Flat, which leaves the switch alone).
+    /// Choosing a preset also turns the EQ on (Reset, which uses Flat, leaves the switch alone).
     func choose(_ preset: EqualizerPreset) {
         settings.apply(preset)
         if preset != .flat { settings.isEnabled = true }

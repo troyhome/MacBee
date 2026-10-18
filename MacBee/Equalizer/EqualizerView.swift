@@ -42,7 +42,7 @@ struct EqualizerView: View {
                 isNaming = true
             }
             Button("Reset") { eq.choose(.flat) }
-                .help("Puts every slider back to 0 dB (Flat)")
+                .help("Puts every slider back to 0 dB")
         }
     }
 
