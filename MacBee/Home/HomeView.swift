@@ -5,6 +5,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(MusicLibrary.self) private var library
     @Environment(PlayerViewModel.self) private var player
+    @Environment(PreferencesStore.self) private var preferences
     @Environment(\.theme) private var theme
     @State private var model = HomeViewModel()
 
@@ -35,56 +36,75 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 32)
 
-                StatCardsRow(stats: library.stats)
-                    .padding(.horizontal, 32)
-
-                HomeSection(title: "Recently Played") {
-                    if model.recentlyPlayed.isEmpty {
-                        EmptyRowMessage(model.isLoaded ? "Albums you play will show up here." : "")
-                    } else {
-                        AlbumCardRow(albums: model.recentlyPlayed)
-                    }
-                }
-
-                if !model.mixes.isEmpty {
-                    HomeSection(title: "Suggested Mixes", subtitle: "New picks every day",
-                                action: ("Refresh Suggestions", "arrow.clockwise",
-                                         { Task { await model.refreshMixes(from: library.database) } })) {
-                        MixRow(mixes: model.mixes)
-                    }
-                }
-
-                if !model.recentlyAdded.isEmpty {
-                    HomeSection(title: "Recently Added") {
-                        AlbumCardRow(albums: model.recentlyAdded)
-                    }
-                }
-
-                if !model.forgottenGems.isEmpty {
-                    HomeSection(title: "Forgotten Gems", subtitle: "Albums you loved but haven't played in a while") {
-                        AlbumCardRow(albums: model.forgottenGems)
-                    }
-                }
-
-                HomeSection(title: "Play History") {
-                    if model.historyDays.isEmpty {
-                        EmptyRowMessage(model.isLoaded ? "No plays yet. Songs count once you've heard half (or 4 minutes)." : "")
-                    } else {
-                        PlayHistoryList(days: model.historyDays,
-                                        canLoadMore: model.canLoadMoreHistory) {
-                            Task { await model.loadMoreHistory(from: library.database) }
-                        }
-                        .padding(.horizontal, 32)
-                    }
-                }
-
-                HomeSection(title: "Library") {
-                    LibraryStatusPanel()
-                        .padding(.horizontal, 32)
+                ForEach(preferences.homeOrder.filter { !preferences.homeHidden.contains($0) }) { kind in
+                    section(kind)
                 }
             }
             .padding(.vertical, 28)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+extension HomeView {
+    /// One block of the page; the order comes from Settings > General.
+    @ViewBuilder
+    func section(_ kind: HomeSectionKind) -> some View {
+        switch kind {
+        case .stats:
+            StatCardsRow(stats: library.stats)
+                .padding(.horizontal, 32)
+        case .recentlyPlayed:
+            HomeSection(title: "Recently Played") {
+                if model.recentlyPlayed.isEmpty {
+                    EmptyRowMessage(model.isLoaded ? "Albums you play will show up here." : "")
+                } else {
+                    AlbumCardRow(albums: model.recentlyPlayed)
+                }
+            }
+        case .suggestedMixes:
+            if !model.mixes.isEmpty {
+                HomeSection(title: "Suggested Mixes", subtitle: "New picks every day",
+                            action: ("Refresh Suggestions", "arrow.clockwise",
+                                     { Task { await model.refreshMixes(from: library.database) } })) {
+                    MixRow(mixes: model.mixes)
+                }
+            }
+        case .recentlyAdded:
+            if !model.recentlyAdded.isEmpty {
+                HomeSection(title: "Recently Added") {
+                    AlbumCardRow(albums: model.recentlyAdded)
+                }
+            }
+        case .forgottenGems:
+            if !model.forgottenGems.isEmpty {
+                HomeSection(title: "Forgotten Gems", subtitle: "Albums you loved but haven't played in a while") {
+                    AlbumCardRow(albums: model.forgottenGems)
+                }
+            }
+        case .playHistory:
+            HomeSection(title: "Play History") {
+                if model.historyDays.isEmpty {
+                    EmptyRowMessage(model.isLoaded ? "No plays yet. Songs count once you've heard half (or 4 minutes)." : "")
+                } else {
+                    // About 10 songs tall; scroll inside it for the rest.
+                    ScrollView {
+                        PlayHistoryList(days: model.historyDays,
+                                        canLoadMore: model.canLoadMoreHistory) {
+                            Task { await model.loadMoreHistory(from: library.database) }
+                        }
+                        .padding(.trailing, 12)
+                    }
+                    .frame(maxWidth: 780, alignment: .leading)
+                    .frame(height: 500)
+                    .padding(.horizontal, 32)
+                }
+            }
+        case .library:
+            HomeSection(title: "Library") {
+                LibraryStatusPanel()
+                    .padding(.horizontal, 32)
+            }
         }
     }
 }

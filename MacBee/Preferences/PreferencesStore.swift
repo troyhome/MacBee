@@ -21,6 +21,9 @@ final class PreferencesStore {
     var tagEditorPath: String? { didSet { save(tagEditorPath, "tagEditorPath") } }
     /// Artists who only appear on compilations are left out of the Artists page.
     var hideCompilationOnlyArtists: Bool { didSet { save(hideCompilationOnlyArtists, "hideCompilationOnlyArtists") } }
+    /// The Music page's sections in the order shown (hidden ones are left out of `homeHidden`).
+    var homeOrder: [HomeSectionKind] { didSet { save(homeOrder.map(\.rawValue), "homeOrder") } }
+    var homeHidden: Set<HomeSectionKind> { didSet { save(homeHidden.map(\.rawValue), "homeHidden") } }
     /// Folders (or whole drives) with movies and TV shows, for the Videos page.
     var videoFolders: [String] { didSet { save(videoFolders, "videoFolders") } }
     /// The keyboard's media keys control MacBee whenever it has music loaded, even with other players open.
@@ -39,6 +42,10 @@ final class PreferencesStore {
         routineCheck = (d.object(forKey: "routineCheck") as? Int).flatMap(RoutineCheck.init) ?? .every30
         playbackSource = d.string(forKey: "playbackSource").flatMap(PlaybackSourcePreference.init) ?? .automatic
         tagEditorPath = d.string(forKey: "tagEditorPath")
+        let savedOrder = (d.stringArray(forKey: "homeOrder") ?? []).compactMap(HomeSectionKind.init)
+        // Sections added in later versions go at the end.
+        homeOrder = savedOrder + HomeSectionKind.allCases.filter { !savedOrder.contains($0) }
+        homeHidden = Set((d.stringArray(forKey: "homeHidden") ?? []).compactMap(HomeSectionKind.init))
         hideCompilationOnlyArtists = d.object(forKey: "hideCompilationOnlyArtists") as? Bool ?? false
         videoFolders = d.stringArray(forKey: "videoFolders") ?? []
         mediaKeysAlwaysMacBee = d.object(forKey: "mediaKeysAlwaysMacBee") as? Bool ?? true

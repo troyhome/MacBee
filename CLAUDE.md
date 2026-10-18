@@ -341,6 +341,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     empties it.
 - Macs: "CMBA" = Troy's Coding MacBook Air (this one, Claude works here); "DDMBA" = Daily Driver MacBook Air.
   `Tools/macbee.sh updater` makes /Applications/Update MacBee.app on a Mac (DDMBA didn't have it).
+  - Music page: Play History is a 500-pt scroll box (~10 songs). Section order and visibility in Settings >
+    General > Music page (drag rows, tick boxes, Reset): `HomeSectionKind`, `PreferencesStore.homeOrder/homeHidden`.
 - All five roadmap phases built.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
