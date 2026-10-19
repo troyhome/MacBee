@@ -149,6 +149,14 @@ final class AppModel {
             playingFrom = from
         }
 
+        #if DEBUG
+        // For checking a page by eye during development: `MacBee -debugSmartPlaylist 3` opens Favorites.
+        let debugSmart = UserDefaults.standard.integer(forKey: "debugSmartPlaylist")
+        if let smart = SmartPlaylist(rawValue: debugSmart) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.openPlaylist(smart.playlistId) }
+        }
+        #endif
+
         // Stop playback and give up exclusive access when the app quits.
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                object: nil, queue: .main) { [engine] _ in
@@ -222,6 +230,18 @@ final class AppModel {
     /// Opens an album page on top of the current page.
     func openAlbum(_ album: AlbumSummary) {
         location.albums.append(album)
+    }
+
+    /// Opens an album page by its key (from a song's Album column).
+    func openAlbum(key: String) async {
+        guard let album = try? await library?.database.album(key: key) else { return }
+        openAlbum(album)
+    }
+
+    /// Shows an artist on the Artists page (from a song's Artist column).
+    func openArtist(key: String) {
+        UserDefaults.standard.set(key, forKey: "selectedArtist")
+        go(to: .artists)
     }
 
     /// Opens the album of the song that's playing, on the Albums page.

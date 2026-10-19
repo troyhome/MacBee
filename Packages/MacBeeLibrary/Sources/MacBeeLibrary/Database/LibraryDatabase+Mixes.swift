@@ -108,12 +108,21 @@ public extension LibraryDatabase {
             order = "playCount DESC, lastPlayedAt DESC"
             condition = "AND playCount > 0"
         case .topRated:
-            // Favorites, best rated and most played first.
-            order = "COALESCE(rating, 0) DESC, playCount DESC, lastPlayedAt DESC"
+            // Most recently hearted first (songs hearted before this was recorded: by when they were added).
+            order = "COALESCE(favoritedAt, dateAdded) DESC, id DESC"
             condition = "AND isFavorite = 1"
         }
         let sql = "SELECT * FROM track WHERE \(Self.visible()) \(condition) ORDER BY \(order) LIMIT ?"
         return try await writer.read { db in try Track.fetchAll(db, sql: sql, arguments: [smart.limit]) }
+    }
+
+    /// When each hearted song was hearted (songs hearted before MacBee recorded it fall back to when they
+    /// were added), keyed by song id.
+    func favoritedDates() async throws -> [Int64: Date] {
+        try await writer.read { db in
+            let rows = try Row.fetchAll(db, sql: "SELECT id, COALESCE(favoritedAt, dateAdded) AS at FROM track WHERE isFavorite = 1")
+            return Dictionary(rows.map { ($0["id"] as Int64, $0["at"] as Date) }, uniquingKeysWith: { a, _ in a })
+        }
     }
 
     // MARK: - MiniDisc playlists

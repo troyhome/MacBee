@@ -312,6 +312,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     song, no playlist file). Two-finger tap stopped working: diagnostic log added (category "SecondaryClick").
 - Roadmap Phase 4 PASSED (Troy, 2026-10-18: "Next"). Plex posters came back after Troy signed in to Plex again
   (the keychain change on the other Mac had lost the token on this Mac: both keychains returned -25300).
+- Smart playlist pages (Favorites, Recently Added, Most Played) are TIDAL-style (`SmartPlaylistView` +
+  `MacBee/Library/TrackTable.swift`): Play/Shuffle pills, Filter tracks, sortable #/Title+cover/Artist/Album/
+  Date Added/Time columns (sticky header; click = sort, again = reverse, third = page order), + and heart per
+  row, artist/album names open their pages. DB v9: `track.favoritedAt`, kept by trigger `trackFavoritedAt`
+  (any isFavorite change); Favorites ordered newest-hearted first, Date Added = hearted date (older favorites
+  fall back to dateAdded). Debug-only launch arg `-debugSmartPlaylist 3` opens Favorites for checking by eye.
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
   install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by

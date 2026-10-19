@@ -122,4 +122,20 @@ final class ProfileSyncTests: XCTestCase {
         let kept = try await macA.track(id: onlyA)
         XCTAssertEqual(kept?.isFavorite, true)
     }
+
+    func testFavoritedDateIsRecorded() async throws {
+        let (mac, ids) = try await library(drive: "A")
+        try await mac.setFavorite(trackId: ids[1], true)
+        try await Task.sleep(for: .milliseconds(20))
+        try await mac.setFavorite(trackId: ids[0], true)
+        let dates = try await mac.favoritedDates()
+        XCTAssertEqual(Set(dates.keys), [ids[0], ids[1]])
+        XCTAssertGreaterThan(dates[ids[0]]!, dates[ids[1]]!)
+        XCTAssertLessThan(abs(dates[ids[0]]!.timeIntervalSinceNow), 5)
+        let order = try await mac.tracks(for: .topRated).compactMap(\.id)
+        XCTAssertEqual(order, [ids[0], ids[1]])
+        try await mac.setFavorite(trackId: ids[0], false)
+        let after = try await mac.favoritedDates()
+        XCTAssertEqual(Set(after.keys), [ids[1]])
+    }
 }

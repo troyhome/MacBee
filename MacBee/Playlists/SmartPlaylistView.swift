@@ -1,8 +1,9 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// A smart playlist's page: its songs (refilled from the library each time), Play, Shuffle, and
-/// "Save as Playlist" to keep a copy of today's list.
+/// A smart playlist's page (Favorites, Recently Added, Most Played), laid out like TIDAL's Tracks page: big
+/// Play and Shuffle buttons, a filter box, and a table of songs with covers, sortable columns, and + and heart
+/// on every row. Songs are refilled from the library each time; "Save as Playlist" keeps a copy of today's list.
 struct SmartPlaylistView: View {
     let smart: SmartPlaylist
 
@@ -11,72 +12,75 @@ struct SmartPlaylistView: View {
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
     @State private var tracks: [Track] = []
-    @State private var selection = Set<String>()
+    @State private var added: [Int64: Date] = [:]
+    @State private var filter = ""
+    @State private var sort = TrackTableSort()
+
+    /// The songs as shown: filtered, then sorted by the chosen column.
+    private var shown: [Track] {
+        let words = filter.lowercased().split(separator: " ").map(String.init)
+        let matching = words.isEmpty ? tracks : tracks.filter { track in
+            let text = "\(track.displayTitle) \(track.displayArtist) \(track.displayAlbum)".lowercased()
+            return words.allSatisfy(text.contains)
+        }
+        return sort.apply(to: matching, added: dateAdded)
+    }
 
     var body: some View {
+        let shown = shown
         VStack(alignment: .leading, spacing: 0) {
             header
                 .padding(.horizontal, 28)
-                .padding(.top, 24)
-                .padding(.bottom, 10)
-            List(selection: $selection) {
-                ForEach(tracks, id: \.path) { track in
-                    TrackRow(track: track, showsArtist: true,
-                             isCurrent: player.currentTrack?.path == track.path,
-                             isPlaying: player.isPlaying, isFavorite: player.isFavorite(track))
-                        .tag(track.path)
-                        .draggable(DragPayload.tracks([track.id].compactMap { $0 }).string)
-                }
+                .padding(.top, 26)
+            FilterField(prompt: "Filter tracks", text: $filter)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 18)
+            TrackTable(tracks: shown, sort: $sort, dateAdded: dateAdded) { index in
+                player.play(shown, startAt: index)
             }
-            .contextMenu(forSelectionType: String.self) { paths in
-                TrackContextMenu(tracks: tracks.filter { paths.contains($0.path) }) {
-                    play(tracks.firstIndex { paths.contains($0.path) })
-                }
-            } primaryAction: { paths in
-                play(tracks.firstIndex { paths.contains($0.path) })
-            }
-            .scrollContentBackground(.hidden)
             .overlay {
                 if tracks.isEmpty {
                     ContentUnavailableView(smart.title, systemImage: smart.systemImage, description: Text(emptyText))
+                } else if shown.isEmpty {
+                    ContentUnavailableView.search(text: filter)
                 }
             }
         }
         .navigationTitle(smart.title)
         .task(id: "\(smart.rawValue)-\(library.revision)-\(player.playsRecorded)-\(player.favoritesSaved)") {
             tracks = (try? await library.database.tracks(for: smart)) ?? []
+            if smart == .topRated { added = (try? await library.database.favoritedDates()) ?? [:] }
         }
     }
 
+    /// Favorites: when the song was hearted. Otherwise when it was added to the library.
+    private func dateAdded(_ track: Track) -> Date {
+        if smart == .topRated, let id = track.id, let date = added[id] { return date }
+        return track.dateAdded
+    }
+
     private var header: some View {
-        HStack(spacing: 14) {
-            Image(systemName: smart.systemImage)
-                .font(.system(size: 28))
-                .foregroundStyle(theme.accent)
-                .frame(width: 64, height: 64)
-                .background(RoundedRectangle(cornerRadius: 10).fill(theme.surface))
-            VStack(alignment: .leading, spacing: 3) {
-                Text("SMART PLAYLIST")
-                    .font(.system(size: 9, weight: .bold))
-                    .tracking(0.8)
-                    .foregroundStyle(theme.accent)
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(smart.title)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(theme.textPrimary)
                 Text("\(smart.subtitle) · \(tracks.count) songs, \(Format.minutes(tracks.map(\.duration).reduce(0, +)))")
                     .font(.system(size: 12))
                     .foregroundStyle(theme.textSecondary)
             }
-            Spacer()
-            CircleButton(systemImage: "play.fill", help: "Play") { player.play(tracks) }
+            HStack(spacing: 12) {
+                PillButton(title: "Play", systemImage: "play.fill", prominent: true) { player.play(shown) }
+                    .disabled(tracks.isEmpty)
+                PillButton(title: "Shuffle", systemImage: "shuffle", prominent: false) { player.playShuffled(shown) }
+                    .disabled(tracks.isEmpty)
+                Spacer()
+                Button("Save as Playlist") {
+                    Task { _ = await store.newPlaylist(with: shown) }
+                }
                 .disabled(tracks.isEmpty)
-            CircleButton(systemImage: "shuffle", help: "Shuffle") { player.playShuffled(tracks) }
-                .disabled(tracks.isEmpty)
-            Button("Save as Playlist") {
-                Task { _ = await store.newPlaylist(with: tracks) }
+                .help("Make an ordinary playlist with these songs as they are now")
             }
-            .disabled(tracks.isEmpty)
-            .help("Make an ordinary playlist with these songs as they are now")
         }
     }
 
@@ -87,10 +91,31 @@ struct SmartPlaylistView: View {
         case .topRated: "Heart songs to see them here."
         }
     }
+}
 
-    private func play(_ index: Int?) {
-        guard let index else { return }
-        player.play(tracks, startAt: index)
+/// A large rounded Play or Shuffle button (TIDAL style): white for the main action, dark for the other.
+struct PillButton: View {
+    let title: String
+    let systemImage: String
+    let prominent: Bool
+    let action: () -> Void
+
+    @Environment(\.theme) private var theme
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(prominent ? Color.black : theme.textPrimary)
+                .frame(width: 140, height: 44)
+                .background(Capsule().fill(prominent ? Color.white.opacity(hovering ? 0.85 : 1) : (hovering ? theme.elevated : theme.surface)))
+                .contentShape(Capsule())
+                .opacity(isEnabled ? 1 : 0.4)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
     }
 }
 

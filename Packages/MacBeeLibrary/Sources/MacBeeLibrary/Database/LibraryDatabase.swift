@@ -181,6 +181,22 @@ public final class LibraryDatabase: Sendable {
             }
         }
 
+        // When each song was hearted, for the Favorites page's Date Added column. A trigger keeps it right
+        // however a song is hearted (the heart button, an album's heart, a sync from another Mac).
+        migrator.registerMigration("v9") { db in
+            try db.alter(table: "track") { t in
+                t.add(column: "favoritedAt", .datetime)
+            }
+            try db.execute(sql: """
+                CREATE TRIGGER trackFavoritedAt AFTER UPDATE OF isFavorite ON track
+                WHEN NEW.isFavorite IS NOT OLD.isFavorite
+                BEGIN
+                    UPDATE track SET favoritedAt = CASE WHEN NEW.isFavorite THEN strftime('%Y-%m-%d %H:%M:%f', 'now') END
+                    WHERE id = NEW.id;
+                END
+                """)
+        }
+
         return migrator
     }
 
