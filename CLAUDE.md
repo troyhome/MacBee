@@ -314,9 +314,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   (the keychain change on the other Mac had lost the token on this Mac: both keychains returned -25300).
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
-  run `brew install gh && gh auth login` once per Mac. The repo is private, so Releases are only downloadable by
-  Troy. Plan: no Mac App Store (sandbox blocks hog mode, media-key tap, free network-drive access); once the
-  Developer membership is active, add Developer ID signing + notarization to the release step.
+  install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by
+  anyone (repo made PUBLIC 2026-10-19 at Troy's request; history scanned for secrets first, none found).
+  Troy WANTS the Mac App Store once his Developer membership is active. Work needed: App Sandbox entitlements,
+  music/video folders via open panel + security-scoped bookmarks (also network volumes), media keys via
+  MPRemoteCommandCenter only (drop the CGEvent tap that steals keys from Qobuz), verify hog mode under sandbox,
+  mpv/MoltenVK dylibs signed in bundle, App Review. Until then Developer ID + notarization for the .dmg.
 - Roadmap Phase 5 PASSED 2026-10-18 (Troy confirmed automatic sync works between CMBA and DDMBA). Roadmap complete:
   - TagBee: Track Studio > TagBee tab = search songs, tick, "Open N in TagBee" (double-click opens one), and a
     "Send to TagBee" menu (song playing / album playing / just open TagBee). Uses `ExternalTagEditor`, which
