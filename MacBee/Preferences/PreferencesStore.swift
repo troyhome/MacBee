@@ -28,6 +28,10 @@ final class PreferencesStore {
     var homeHidden: Set<HomeSectionKind> { didSet { save(homeHidden.map(\.rawValue), "homeHidden") } }
     /// Folders (or whole drives) with movies and TV shows, for the Videos page.
     var videoFolders: [String] { didSet { save(videoFolders, "videoFolders") } }
+    /// Video folders switched off: kept in the list, but their movies and shows are left out.
+    var pausedVideoFolders: [String] { didSet { save(pausedVideoFolders, "pausedVideoFolders") } }
+    /// The video folders that are switched on.
+    var activeVideoFolders: [String] { videoFolders.filter { !pausedVideoFolders.contains($0) } }
     /// The keyboard's media keys control MacBee whenever it has music loaded, even with other players open.
     var mediaKeysAlwaysMacBee: Bool { didSet { save(mediaKeysAlwaysMacBee, "mediaKeysAlwaysMacBee") } }
     /// When a song, album or playlist ends, keep going with a mix made from the last song.
@@ -55,6 +59,7 @@ final class PreferencesStore {
         homeHidden = Set((d.stringArray(forKey: "homeHidden") ?? []).compactMap(HomeSectionKind.init))
         hideCompilationOnlyArtists = d.object(forKey: "hideCompilationOnlyArtists") as? Bool ?? false
         videoFolders = d.stringArray(forKey: "videoFolders") ?? []
+        pausedVideoFolders = d.stringArray(forKey: "pausedVideoFolders") ?? []
         mediaKeysAlwaysMacBee = d.object(forKey: "mediaKeysAlwaysMacBee") as? Bool ?? true
         continuousPlay = d.object(forKey: "continuousPlay") as? Bool ?? true
         continuousPlayEpisodes = d.object(forKey: "continuousPlayEpisodes") as? Bool ?? true

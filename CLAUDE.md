@@ -324,6 +324,9 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   length; timed lyrics preferred) is asked, and the result is saved as <song>.lrc next to the file (falls back
   to App Support/MacBee/Lyrics/<name>-<hash>.lrc if read-only; `LyricsReader.savedCopiesFolder`). Misses are
   remembered 14 days (UserDefaults "lyricsNotFound"). Live test runs with MACBEE_ONLINE_TESTS=1.
+- Video folders can be paused like music folders: `PreferencesStore.pausedVideoFolders` / `activeVideoFolders`,
+  `AppModel.setVideoFolder(_:paused:)` (rescans videos). Switches in Settings > Library > Video folders and on
+  the Music page's library panel (`VideoFolderStatusRow`).
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
   install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by

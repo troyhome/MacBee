@@ -352,9 +352,16 @@ final class AppModel {
 
     /// Looks for videos again in the video folders and (for music videos) the music folders.
     func refreshVideos() async {
-        await videos.refresh(videoFolders: preferences.videoFolders.map { URL(fileURLWithPath: $0) },
+        await videos.refresh(videoFolders: preferences.activeVideoFolders.map { URL(fileURLWithPath: $0) },
                              musicFolders: library?.folders.filter { $0.isOnline && !$0.folder.isPaused }.map(\.folder.url) ?? [],
                              plex: plex)
+    }
+
+    /// Switches a video folder on or off, then looks for videos again.
+    func setVideoFolder(_ path: String, paused: Bool) {
+        preferences.pausedVideoFolders.removeAll { $0 == path }
+        if paused { preferences.pausedVideoFolders.append(path) }
+        Task { await refreshVideos() }
     }
 
     /// Re-scans when the saved list is more than 10 minutes old (opening Videos stays instant).

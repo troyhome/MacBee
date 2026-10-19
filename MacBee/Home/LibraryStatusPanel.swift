@@ -39,6 +39,9 @@ struct LibraryStatusPanel: View {
                         return true
                     }
             }
+            ForEach(preferences.videoFolders, id: \.self) { path in
+                VideoFolderStatusRow(path: path, paused: preferences.pausedVideoFolders.contains(path))
+            }
             if library.folders.count > 1 {
                 Text("Drag folders to set their priority. Switch one off to pause it.")
                     .font(.system(size: 11))
@@ -158,6 +161,43 @@ private struct FolderStatusRow: View {
             Text(state.folder.isPaused ? "Paused" : (state.isOnline ? "Connected" : "Not connected"))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(state.folder.isPaused ? theme.textTertiary : (state.isOnline ? theme.good : theme.warning))
+        }
+        .font(.system(size: 13))
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 8).fill(theme.surface))
+    }
+}
+
+/// A movies-and-shows folder on the Music page, with its own on/off switch (set up in Settings > Library).
+private struct VideoFolderStatusRow: View {
+    let path: String
+    let paused: Bool
+    @Environment(AppModel.self) private var app
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let connected = FileManager.default.fileExists(atPath: path)
+        HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.clear) // lines up with the music folders, which can be dragged
+            Toggle("", isOn: Binding(get: { !paused }, set: { app.setVideoFolder(path, paused: !$0) }))
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .labelsHidden()
+                .help(paused ? "Paused: switch on to include this folder's videos" : "Switch off to pause this folder")
+            Image(systemName: "film.stack")
+                .foregroundStyle(theme.textSecondary)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(path)
+                    .foregroundStyle(paused ? theme.textTertiary : theme.textPrimary)
+                Text("Videos")
+                    .font(.system(size: 11))
+                    .foregroundStyle(theme.textTertiary)
+            }
+            Spacer()
+            Text(paused ? "Paused" : (connected ? "Connected" : "Not connected"))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(paused ? theme.textTertiary : (connected ? theme.good : theme.warning))
         }
         .font(.system(size: 13))
         .padding(12)

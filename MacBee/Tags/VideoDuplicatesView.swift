@@ -132,7 +132,7 @@ struct VideoDuplicatesView: View {
 
     /// Video folders and music folders, for the "Duplicates in" menu.
     private var folders: [String] {
-        app.preferences.videoFolders + (app.library?.folders.filter { !$0.folder.isPaused }.map(\.folder.path) ?? [])
+        app.preferences.activeVideoFolders + (app.library?.folders.filter { !$0.folder.isPaused }.map(\.folder.path) ?? [])
     }
 
     private func removeSelected() {

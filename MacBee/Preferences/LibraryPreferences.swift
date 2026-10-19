@@ -222,18 +222,28 @@ private struct VideoFoldersSection: View {
     var body: some View {
         Section("Video folders") {
             ForEach(preferences.videoFolders, id: \.self) { path in
+                let paused = preferences.pausedVideoFolders.contains(path)
+                let connected = FileManager.default.fileExists(atPath: path)
                 HStack(spacing: 10) {
+                    Toggle("", isOn: Binding(get: { !paused }, set: { app.setVideoFolder(path, paused: !$0) }))
+                        .toggleStyle(.switch)
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .help(paused ? "Paused: this folder's videos are left out. Switch on to include them."
+                                     : "Switch off to leave this folder's videos out without removing it")
                     Image(systemName: "film.stack")
                         .foregroundStyle(.secondary)
                     Text(path)
                         .lineLimit(1)
                         .truncationMode(.middle)
+                        .foregroundStyle(paused ? .secondary : .primary)
                     Spacer()
-                    Text(FileManager.default.fileExists(atPath: path) ? "Connected" : "Not connected")
+                    Text(paused ? "Paused" : connected ? "Connected" : "Not connected")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(FileManager.default.fileExists(atPath: path) ? .green : .orange)
+                        .foregroundStyle(paused ? Color.secondary : connected ? .green : .orange)
                     Button("Remove") {
                         preferences.videoFolders.removeAll { $0 == path }
+                        preferences.pausedVideoFolders.removeAll { $0 == path }
                         Task { await app.refreshVideos() }
                     }
                 }
