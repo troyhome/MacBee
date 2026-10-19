@@ -34,8 +34,26 @@ public enum LyricsReader {
         let url = URL(fileURLWithPath: track.path)
         let embedded = embeddedLyrics(in: url)
         if case .timed = embedded { return embedded }
-        if let fromFile = lrcFile(next: url) { return fromFile }
+        if let fromFile = lrcFile(next: url) ?? savedCopy(for: url) { return fromFile }
         return embedded
+    }
+
+    /// Where lyrics found online are kept when the song's own folder can't be written to (a read-only drive).
+    /// Set by the app; nil = only next to the song.
+    nonisolated(unsafe) public static var savedCopiesFolder: URL?
+
+    /// The saved copy's file for a song (named from its path, so different songs never share one).
+    public static func savedCopyURL(for song: URL) -> URL? {
+        guard let folder = savedCopiesFolder else { return nil }
+        var hash: UInt64 = 5381
+        for byte in song.path.utf8 { hash = (hash &* 33) ^ UInt64(byte) }
+        let name = song.deletingPathExtension().lastPathComponent.prefix(60)
+        return folder.appendingPathComponent("\(name)-\(String(hash, radix: 16)).lrc")
+    }
+
+    static func savedCopy(for song: URL) -> Lyrics? {
+        guard let url = savedCopyURL(for: song) else { return nil }
+        return lrcFile(at: url)
     }
 
     /// Plain lyrics spread evenly over the song, so they can still scroll along (roughly) with the music.
@@ -51,7 +69,10 @@ public enum LyricsReader {
     }
 
     static func lrcFile(next url: URL) -> Lyrics? {
-        let lrc = url.deletingPathExtension().appendingPathExtension("lrc")
+        lrcFile(at: url.deletingPathExtension().appendingPathExtension("lrc"))
+    }
+
+    static func lrcFile(at lrc: URL) -> Lyrics? {
         guard let data = try? Data(contentsOf: lrc),
               let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else { return nil }
         let lines = LRCParser.parse(text)

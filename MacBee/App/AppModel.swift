@@ -25,6 +25,8 @@ final class AppModel {
     let equalizer: EqualizerStore
     /// Movies, shows and music videos.
     let videos = VideoLibrary()
+    /// Lyrics looked up online for songs without any.
+    let lyrics = LyricsService()
     /// The video being watched, if any.
     private(set) var videoSession: VideoSession?
     /// The video is in the mini player window instead of over the main window.

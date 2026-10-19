@@ -318,6 +318,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   row, artist/album names open their pages. DB v9: `track.favoritedAt`, kept by trigger `trackFavoritedAt`
   (any isFavorite change); Favorites ordered newest-hearted first, Date Added = hearted date (older favorites
   fall back to dateAdded). Debug-only launch arg `-debugSmartPlaylist 3` opens Favorites for checking by eye.
+- Lyrics found online (`MacBee/NowPlaying/LyricsService.swift`, `MacBeeLibrary/Lyrics/LyricsFinder.swift`):
+  Settings > General > Lyrics "Find missing lyrics online" (default on). When a song starts (RootView task on
+  currentTrack) and it has no lyrics, LRCLIB (lrclib.net, no key; /api/get then /api/search within 3 s of the
+  length; timed lyrics preferred) is asked, and the result is saved as <song>.lrc next to the file (falls back
+  to App Support/MacBee/Lyrics/<name>-<hash>.lrc if read-only; `LyricsReader.savedCopiesFolder`). Misses are
+  remembered 14 days (UserDefaults "lyricsNotFound"). Live test runs with MACBEE_ONLINE_TESTS=1.
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
   install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by

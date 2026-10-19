@@ -1,12 +1,14 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// Lyrics (Now Playing and the lyrics panel): the text embedded in the song's tags, or an .lrc file next to it.
+/// Lyrics (Now Playing and the lyrics panel): the text embedded in the song's tags, or an .lrc file next to it
+/// (including ones MacBee found online, see `LyricsService`).
 /// They follow the song: the current line is highlighted and kept in view; click a line to jump there.
 /// Lyrics without timings are spread evenly over the song, so they still move along with it (roughly).
 struct LyricsPanel: View {
     let track: Track
     @Environment(PlayerViewModel.self) private var player
+    @Environment(AppModel.self) private var app
     @State private var lyrics: Lyrics?
     @State private var loadedPath: String?
 
@@ -27,13 +29,14 @@ struct LyricsPanel: View {
             case nil:
                 HStack(spacing: 8) {
                     Image(systemName: "quote.bubble")
-                    Text(loadedPath == track.path ? "No lyrics for this song." : "")
+                    Text(app.lyrics.searchingPath == track.path ? "Looking for lyrics online…"
+                         : loadedPath == track.path ? "No lyrics for this song." : "")
                 }
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.45))
             }
         }
-        .task(id: track.path) {
+        .task(id: "\(track.path)-\(app.lyrics.savedCount)") {
             let song = track
             lyrics = await Task.detached(priority: .userInitiated) { LyricsReader.lyrics(for: song) }.value
             loadedPath = song.path

@@ -52,6 +52,12 @@ struct GeneralPreferences: View {
             Section("Display") {
                 Toggle("Show quality badges (e.g. FLAC 24/96)", isOn: $preferences.showQualityBadges)
             }
+            Section("Lyrics") {
+                Toggle("Find missing lyrics online", isOn: $preferences.findLyricsOnline)
+                Text("When a song without lyrics plays, MacBee looks them up at LRCLIB (a free lyrics library) and saves them as an .lrc file next to the song, so they show in the lyrics panel from then on.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Continuous play") {
                 Toggle("Keep playing when a song, album or playlist ends", isOn: $preferences.continuousPlay)
                 Text("MacBee carries on with a mix made from the last song. Repeat All still repeats instead.")

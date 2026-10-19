@@ -48,6 +48,11 @@ struct RootView: View {
             }
             .animation(.easeOut(duration: 0.2), value: model.videoSession == nil || model.videoIsMini)
             .environment(library)
+            .task(id: player.currentTrack?.path) {
+                // A song without lyrics gets them looked up online as it starts (Settings > General > Lyrics).
+                guard model.preferences.findLyricsOnline, let track = player.currentTrack else { return }
+                await model.lyrics.fill(track)
+            }
             .alert("Tag editor", isPresented: Binding(
                 get: { model.tagEditor?.problem != nil },
                 set: { if !$0 { model.tagEditor?.problem = nil } })) {

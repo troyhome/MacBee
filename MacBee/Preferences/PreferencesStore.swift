@@ -11,6 +11,8 @@ final class PreferencesStore {
     var lastPage: SidebarItem { didSet { save(lastPage.rawValue, "lastPage") } }
     var checkLibraryAtLaunch: Bool { didSet { save(checkLibraryAtLaunch, "checkLibraryAtLaunch") } }
     var showQualityBadges: Bool { didSet { save(showQualityBadges, "showQualityBadges") } }
+    /// Look up lyrics online for songs without any, and save them next to the song.
+    var findLyricsOnline: Bool { didSet { save(findLyricsOnline, "findLyricsOnline") } }
     var playCountRule: PlayCountRule { didSet { save(playCountRule.rawValue, "playCountRule") } }
     /// Sidebar width when expanded, in points.
     var sidebarWidth: Double { didSet { save(sidebarWidth, "sidebarWidth") } }
@@ -41,6 +43,7 @@ final class PreferencesStore {
         lastPage = d.string(forKey: "lastPage").flatMap(SidebarItem.init) ?? .albums
         checkLibraryAtLaunch = d.object(forKey: "checkLibraryAtLaunch") as? Bool ?? true
         showQualityBadges = d.object(forKey: "showQualityBadges") as? Bool ?? true
+        findLyricsOnline = d.object(forKey: "findLyricsOnline") as? Bool ?? true
         playCountRule = d.string(forKey: "playCountRule").flatMap(PlayCountRule.init) ?? .halfOrFourMinutes
         sidebarWidth = d.object(forKey: "sidebarWidth") as? Double ?? 196
         routineCheck = (d.object(forKey: "routineCheck") as? Int).flatMap(RoutineCheck.init) ?? .every30
