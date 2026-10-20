@@ -328,6 +328,15 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
 - Video folders can be paused like music folders: `PreferencesStore.pausedVideoFolders` / `activeVideoFolders`,
   `AppModel.setVideoFolder(_:paused:)` (rescans videos). Switches in Settings > Library > Video folders and on
   the Music page's library panel (`VideoFolderStatusRow`).
+- Copy To rebuilt (Troy): Scan Device -> report (new / changed: newer mtime or other size / moved: MacBee's
+  own copy under an outdated name / found elsewhere: same song by tags (artist|title|album + length within 2 s)
+  under another name, not MacBee's / unchanged / unneeded / other files) with choices (`DeviceSync.Choices`:
+  copy new, replace changed+moved, elsewhere = leave theirs (playlists point at them) / replace / keep both,
+  remove unneeded) -> Start Copy -> `DeviceSync.Job` of operations run by `CopyToRunner` (AppModel.copyTo) on
+  a background task: Pause / Resume / Stop, copies via a .macbee-part temp file, auto-pause when the device
+  disappears or is full, job saved to App Support/MacBee/copy-to-job.json (survives unplug and quit), manifest
+  saved every 5 s; finished report (copied, replaced, renamed, removed, failures, size, time). The old freeze was
+  the view re-statting every file's size on each progress update. Debug-only `-debugCopyTo 1` auto-scans+copies.
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
   install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by

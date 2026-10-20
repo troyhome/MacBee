@@ -27,6 +27,8 @@ final class AppModel {
     let videos = VideoLibrary()
     /// Lyrics looked up online for songs without any.
     let lyrics = LyricsService()
+    /// Copy To's scan and copy, which keep going while you browse.
+    let copyTo = CopyToRunner()
     /// The video being watched, if any.
     private(set) var videoSession: VideoSession?
     /// The video is in the mini player window instead of over the main window.
@@ -153,6 +155,13 @@ final class AppModel {
 
         #if DEBUG
         // For checking a page by eye during development: `MacBee -debugSmartPlaylist 3` opens Favorites.
+        // `MacBee -debugCopyTo 1 -syncDestination <folder> -syncSelection s:3` opens Copy To, scans, and copies.
+        if UserDefaults.standard.bool(forKey: "debugCopyTo") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                UserDefaults.standard.set("sync", forKey: "tagsSection")
+                self?.go(to: .tags)
+            }
+        }
         let debugSmart = UserDefaults.standard.integer(forKey: "debugSmartPlaylist")
         if let smart = SmartPlaylist(rawValue: debugSmart) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.openPlaylist(smart.playlistId) }
