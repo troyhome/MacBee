@@ -8,6 +8,8 @@ struct TrackRow: View {
     var isCurrent = false
     var isPlaying = false
     var isFavorite = false
+    /// A small cover before the title (Track Studio).
+    var showsArtwork = false
 
     @Environment(\.theme) private var theme
     @Environment(PreferencesStore.self) private var preferences
@@ -25,6 +27,11 @@ struct TrackRow: View {
             }
             .font(.system(size: 12).monospacedDigit())
             .frame(width: 34, alignment: .trailing)
+
+            if showsArtwork {
+                ArtworkView(artworkId: track.artworkId, pixelSize: 72, cornerRadius: 3)
+                    .frame(width: 32, height: 32)
+            }
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(track.displayTitle)

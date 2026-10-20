@@ -60,6 +60,26 @@ struct TagsView: View {
     }
 }
 
+/// How Track Studio's TagBee list is organized.
+enum ResultGrouping: String, CaseIterable, Identifiable {
+    case songs, albums, artists
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .songs: "Songs"
+        case .albums: "Albums"
+        case .artists: "Artists"
+        }
+    }
+    var systemImage: String {
+        switch self {
+        case .songs: "music.note"
+        case .albums: "square.stack"
+        case .artists: "music.mic"
+        }
+    }
+}
+
 enum TagsSection: String, CaseIterable, Identifiable {
     case duplicates, tagBee, sync
     var id: String { rawValue }
@@ -95,6 +115,9 @@ private struct TagBeePanel: View {
     @State private var selection = Set<String>()
     /// Showing every song in the library that has no artwork.
     @State private var missingArtwork = false
+    /// How the list is organized: one list of songs, or sections by album or artist.
+    @AppStorage("trackStudioGrouping") private var grouping: ResultGrouping = .albums
+    @State private var showingWand = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -139,6 +162,15 @@ private struct TagBeePanel: View {
                 Button("Album Playing") { Task { await sendPlayingAlbum() } }
                     .disabled(player.currentTrack == nil || !hasEditor)
                     .help("Open every song of the album that's playing in TagBee")
+                Button {
+                    showingWand = true
+                } label: {
+                    Label("Find Covers", systemImage: "wand.and.stars")
+                }
+                .disabled(results.isEmpty || app.tagEditor?.canSetCovers != true)
+                .help(app.tagEditor?.canSetCovers == true
+                      ? "Look up covers online for every album in this list and choose one for each"
+                      : "Needs TagBee 1.1 or newer (open Update TagBee)")
                 Button("Missing Artwork") { showMissingArtwork() }
                     .help("List every song in the library that has no cover, grouped by album, to fix in TagBee")
                 Button("Open TagBee") {
@@ -151,12 +183,22 @@ private struct TagBeePanel: View {
                     .disabled(results.isEmpty)
                     .help("Empty the list (⌘⌫)")
             }
+            // Organize the results: plain list, or sections by album or artist.
+            PillTabs(items: ResultGrouping.allCases, selection: $grouping, title: \.title, systemImage: \.systemImage)
+                .scaleEffect(0.9, anchor: .leading)
+                .opacity(results.isEmpty ? 0.5 : 1)
             List(selection: $selection) {
-                ForEach(results, id: \.path) { track in
-                    TrackRow(track: track, showsArtist: true,
-                             isCurrent: player.currentTrack?.path == track.path,
-                             isPlaying: player.isPlaying, isFavorite: player.isFavorite(track))
-                        .tag(track.path)
+                switch grouping {
+                case .songs:
+                    ForEach(results, id: \.path) { row($0) }
+                case .albums, .artists:
+                    ForEach(groups, id: \.key) { group in
+                        Section {
+                            ForEach(group.tracks, id: \.path) { row($0) }
+                        } header: {
+                            groupHeader(group)
+                        }
+                    }
                 }
             }
             .contextMenu(forSelectionType: String.self) { paths in
@@ -201,6 +243,7 @@ private struct TagBeePanel: View {
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 10)
+        .sheet(isPresented: $showingWand) { CoverWandSheet(tracks: results) }
         .onChange(of: app.trackStudioSourcePlaylistId) { _, id in
             dropped = nil
             if id != nil { missingArtwork = false }
@@ -230,6 +273,67 @@ private struct TagBeePanel: View {
             }
             selection = selection.intersection(results.map(\.path))
         }
+    }
+
+    private func row(_ track: Track) -> some View {
+        TrackRow(track: track, showsArtist: true,
+                 isCurrent: player.currentTrack?.path == track.path,
+                 isPlaying: player.isPlaying, isFavorite: player.isFavorite(track), showsArtwork: true)
+            .tag(track.path)
+    }
+
+    private struct ResultGroup {
+        let key: String
+        let title: String
+        let subtitle: String
+        let artworkId: Int64?
+        let tracks: [Track]
+    }
+
+    /// The results in sections, in the order they first appear.
+    private var groups: [ResultGroup] {
+        let byAlbum = grouping == .albums
+        var order: [String] = []
+        var members: [String: [Track]] = [:]
+        for t in results {
+            let key = byAlbum ? t.albumKey : t.artistKey
+            if members[key] == nil { order.append(key) }
+            members[key, default: []].append(t)
+        }
+        return order.map { key in
+            let list = members[key]!
+            let first = list[0]
+            return ResultGroup(key: key,
+                               title: byAlbum ? first.displayAlbum : first.displayAlbumArtist,
+                               subtitle: byAlbum ? first.displayAlbumArtist : "",
+                               artworkId: list.first { $0.artworkId != nil }?.artworkId,
+                               tracks: list)
+        }
+    }
+
+    private func groupHeader(_ group: ResultGroup) -> some View {
+        let paths = Set(group.tracks.map(\.path))
+        let allSelected = paths.isSubset(of: selection)
+        return HStack(spacing: 10) {
+            ArtworkView(artworkId: group.artworkId, pixelSize: 96, cornerRadius: 4)
+                .frame(width: 40, height: 40)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(group.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.textPrimary)
+                Text([group.subtitle, "\(group.tracks.count) song\(group.tracks.count == 1 ? "" : "s")"]
+                        .filter { !$0.isEmpty }.joined(separator: " · "))
+                    .font(.system(size: 11)).foregroundStyle(theme.textSecondary)
+            }
+            .lineLimit(1)
+            Spacer()
+            Button(allSelected ? "Deselect" : "Select") {
+                if allSelected { selection.subtract(paths) } else { selection.formUnion(paths) }
+            }
+            .controlSize(.small)
+            Button("Open in TagBee") { send(group.tracks) }
+                .controlSize(.small)
+                .disabled(!hasEditor)
+        }
+        .padding(.vertical, 4)
     }
 
     /// The name of the playlist (or smart playlist) clicked in the sidebar, if any.
