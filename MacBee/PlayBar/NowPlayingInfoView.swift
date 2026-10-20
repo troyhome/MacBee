@@ -1,3 +1,5 @@
+import AppKit
+import MacBeeLibrary
 import SwiftUI
 
 /// Artwork thumbnail and track info on the left of the play bar.
@@ -16,7 +18,10 @@ struct NowPlayingInfoView: View {
             }
             .buttonStyle(.plain)
             .disabled(player.currentTrack == nil)
-            .help("Open Now Playing")
+            .help("Open Now Playing (right-click for more)")
+            .contextMenu {
+                if let track = player.currentTrack { PlayingSongMenu(track: track) }
+            }
 
             if let track = player.currentTrack {
                 TrackInfoText(track: track)
@@ -26,5 +31,21 @@ struct NowPlayingInfoView: View {
                     .foregroundStyle(theme.textTertiary)
             }
         }
+    }
+}
+
+/// Right-click on the play bar's cover: things to do with the song that's playing.
+private struct PlayingSongMenu: View {
+    let track: Track
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        AddToPlaylistMenu { [track] }
+        Divider()
+        Button("Go to Album") { Task { await app.openAlbum(key: track.albumKey) } }
+        Button("Go to Artist") { app.openArtist(key: track.artistKey) }
+        Divider()
+        EditTagsButton(tracks: [track])
+        Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([track.url]) }
     }
 }

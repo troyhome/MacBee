@@ -22,7 +22,6 @@ struct NowPlayingView: View {
         .background(Color.black)
         .environment(\.colorScheme, .dark)
         .background(closeShortcut)
-        .secondaryClickPlaysPauses()
     }
 
     private var main: some View {

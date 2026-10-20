@@ -17,11 +17,11 @@ struct EditTagsButton: View {
 
     var body: some View {
         if let editor = app.tagEditor, let name = editor.editorName {
-            Button("Edit Tags in \(name)…") {
+            Button("Send to \(name)") {
                 Task { editor.editShowingProblems(await tracks()) }
             }
         } else {
-            Button("Edit Tags… (choose an editor in Preferences)") {}
+            Button("Send to TagBee (choose the editor in Settings)") {}
                 .disabled(true)
         }
     }

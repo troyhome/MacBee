@@ -337,6 +337,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   disappears or is full, job saved to App Support/MacBee/copy-to-job.json (survives unplug and quit), manifest
   saved every 5 s; finished report (copied, replaced, renamed, removed, failures, size, time). The old freeze was
   the view re-statting every file's size on each progress update. Debug-only `-debugCopyTo 1` auto-scans+copies.
+- Two-finger pause REMOVED (Troy, 2026-10-19): SecondaryClickPlayPause.swift deleted; right-click is for menus now.
+  Play-bar cover right-click = `PlayingSongMenu` (Add to Playlist, Go to Album, Go to Artist, Send to TagBee, Show
+  in Finder). Album page: Shuffle, Play, heart, and `AlbumMoreMenu` "…" (same menu as artist-page album cards:
+  Play Next, Add to Queue, Add to Playlist, Send to TagBee, Show in Finder); the labeled pills are gone.
+  `EditTagsButton` now reads "Send to TagBee".
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
   install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by

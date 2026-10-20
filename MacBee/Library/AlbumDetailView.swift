@@ -2,7 +2,7 @@ import MacBeeLibrary
 import SwiftUI
 
 /// One album: big cover, title, artist, Shuffle / Play, the labeled actions
-/// (Play Next, Add to Queue, Add to Playlist, Favorite), and the track list.
+/// (a heart, and a "…" menu with Play Next, Add to Queue, Add to Playlist, Send to TagBee, Show in Finder), and the track list.
 /// Double-click a track to play from there. The back button returns to where you came from.
 struct AlbumDetailView: View {
     let album: AlbumSummary
@@ -118,10 +118,11 @@ private struct AlbumHeader: View {
                 HStack(spacing: 12) {
                     CircleButton(systemImage: "shuffle", help: "Shuffle", diameter: 40, action: onShuffle)
                     PlayCapsuleButton(action: onPlay)
+                    AlbumFavoriteButton(tracks: tracks)
+                    AlbumMoreMenu(tracks: tracks)
+                        .disabled(tracks.isEmpty)
                 }
                 .padding(.top, 14)
-                AlbumActions(tracks: tracks)
-                    .padding(.top, 6)
             }
             Spacer(minLength: 0)
         }
@@ -169,71 +170,32 @@ private struct PlayCapsuleButton: View {
     }
 }
 
-/// Play Next, Add to Queue, Add to Playlist and Favorite, as small labeled buttons under Play.
-private struct AlbumActions: View {
+/// The album's heart, next to Play (the other album actions are in the "…" menu beside it).
+private struct AlbumFavoriteButton: View {
     let tracks: [Track]
     @Environment(PlayerViewModel.self) private var player
+    @Environment(\.theme) private var theme
+    @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            ActionPill(title: "Play Next", systemImage: "text.line.first.and.arrowtriangle.forward",
-                       help: "Play these songs right after the current one") { player.playNext(tracks) }
-            ActionPill(title: "Add to Queue", systemImage: "text.line.last.and.arrowtriangle.forward",
-                       help: "Add these songs to the end of Up Next") { player.addToQueue(tracks) }
-            Menu {
-                AddToPlaylistItems { tracks }
-            } label: {
-                ActionPillLabel(title: "Add to Playlist", systemImage: "text.badge.plus")
-            }
-            .menuStyle(.button)
-            .buttonStyle(.plain)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help("Add this album to a playlist")
-            ActionPill(title: isFavorite ? "Favorited" : "Favorite", systemImage: isFavorite ? "heart.fill" : "heart",
-                       help: isFavorite ? "Remove from Favorites" : "Add to Favorites (shows in Collections)") {
-                player.setFavorite(tracks, !isFavorite)
-            }
+        Button {
+            player.setFavorite(tracks, !isFavorite)
+        } label: {
+            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(theme.accent)
+                .frame(width: 34, height: 34)
+                .background(Circle().fill(hovering ? theme.elevated : theme.surface))
+                .contentShape(Circle())
         }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
         .disabled(tracks.isEmpty)
+        .help(isFavorite ? "Remove from Favorites" : "Add to Favorites (shows in Collections)")
     }
 
     /// The album counts as a favorite when every song on it is one.
     private var isFavorite: Bool {
         !tracks.isEmpty && tracks.allSatisfy { player.isFavorite($0) }
-    }
-}
-
-private struct ActionPill: View {
-    let title: String
-    let systemImage: String
-    let help: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            ActionPillLabel(title: title, systemImage: systemImage)
-        }
-        .buttonStyle(.plain)
-        .help(help)
-    }
-}
-
-/// Icon and text in a rounded pill, brighter while hovered.
-private struct ActionPillLabel: View {
-    let title: String
-    let systemImage: String
-    @Environment(\.theme) private var theme
-    @State private var hovering = false
-
-    var body: some View {
-        Label(title, systemImage: systemImage)
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(theme.textPrimary)
-            .padding(.horizontal, 12)
-            .frame(height: 28)
-            .background(Capsule().fill(hovering ? theme.elevated : theme.surface))
-            .contentShape(Capsule())
-            .onHover { hovering = $0 }
     }
 }

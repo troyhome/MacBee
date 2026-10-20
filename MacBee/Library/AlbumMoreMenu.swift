@@ -1,7 +1,9 @@
+import AppKit
 import MacBeeLibrary
 import SwiftUI
 
-/// Round "…" button with Play Next, Add to Queue and Add to Playlist for a whole album.
+/// Round "…" button for a whole album: Play Next, Add to Queue, Add to Playlist, Send to TagBee, Show in Finder.
+/// Used on album cards on artist pages and on the album page, so both offer the same things.
 struct AlbumMoreMenu: View {
     let tracks: [Track]
     @Environment(PlayerViewModel.self) private var player
@@ -13,6 +15,11 @@ struct AlbumMoreMenu: View {
             Button("Play Next") { player.playNext(tracks) }
             Button("Add to Queue") { player.addToQueue(tracks) }
             AddToPlaylistMenu { tracks }
+            Divider()
+            EditTagsButton(tracks: tracks)
+            Button("Show in Finder") {
+                NSWorkspace.shared.activateFileViewerSelecting(tracks.prefix(1).map(\.url))
+            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 14, weight: .semibold))
@@ -26,6 +33,6 @@ struct AlbumMoreMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .onHover { hovering = $0 }
-        .help("Play Next, Add to Queue, Add to Playlist")
+        .help("Play Next, Add to Queue, Add to Playlist, Send to TagBee, Show in Finder")
     }
 }
