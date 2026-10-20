@@ -24,8 +24,9 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
   Plex token lives in the data protection keychain (`MacBee/Plex/KeychainStore.swift`) with no "wants to access key"
   prompts; the old self-signed "MacBee Local Signing" cert got error -34018 there. `Tools/macbee.sh` passes
   `-allowProvisioningUpdates` so Xcode renews the signing profile on each build. Each Mac must be signed in to
-  Xcode > Settings > Accounts with Troy's Apple ID. Troy enrolled in the paid Apple Developer Program on 2026-10-18;
-  until Apple activates it the team shows as "Personal Team" and profiles last only 7 days (rebuild/update renews).
+  Xcode > Settings > Accounts with Troy's Apple ID. Troy's paid Apple Developer Program membership was approved 2026-10-19 (same team ID); signing profiles now
+  last a year. If a build ever gets a 7-day profile again, delete ~/Library/Developer/Xcode/UserData/Provisioning
+  Profiles/* and rebuild.
   Don't go back to ad-hoc ("-") or self-signed signing.
 - Virtual output devices (BoomAudio, Loopback, BlackHole; transport type virtual or unknown) are never switched
   in sample rate or bit depth: doing so made Boom 3D produce loud noise. They show as "not bit-perfect".
