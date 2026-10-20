@@ -93,6 +93,8 @@ private struct TagBeePanel: View {
     @State private var dropped: [Track]?
     @State private var dropTargeted = false
     @State private var selection = Set<String>()
+    /// Showing every song in the library that has no artwork.
+    @State private var missingArtwork = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -100,6 +102,7 @@ private struct TagBeePanel: View {
                 HStack(spacing: 10) {
                     Button {
                         dropped = nil
+                        missingArtwork = false
                         app.trackStudioSourcePlaylistId = nil
                     } label: {
                         Label("Back to Library", systemImage: "chevron.left")
@@ -110,7 +113,7 @@ private struct TagBeePanel: View {
                             .background(Capsule().fill(theme.accent))
                     }
                     .buttonStyle(.plain)
-                    Text("SHOWING A PLAYLIST")
+                    Text(missingArtwork ? "SHOWING" : "SHOWING A PLAYLIST")
                         .font(.system(size: 9, weight: .bold))
                         .tracking(0.8)
                         .foregroundStyle(theme.accent)
@@ -119,7 +122,8 @@ private struct TagBeePanel: View {
                         .foregroundStyle(theme.textPrimary)
                 }
             }
-            FilterField(prompt: sourceName == nil ? "Find songs, albums or artists to tag" : "Search this playlist",
+            FilterField(prompt: sourceName == nil ? "Find songs, albums or artists to tag"
+                            : missingArtwork ? "Search the songs without artwork" : "Search this playlist",
                         text: $query)
                 .frame(maxWidth: 420)
             // The TagBee actions, as buttons in a row under the search box.
@@ -135,6 +139,8 @@ private struct TagBeePanel: View {
                 Button("Album Playing") { Task { await sendPlayingAlbum() } }
                     .disabled(player.currentTrack == nil || !hasEditor)
                     .help("Open every song of the album that's playing in TagBee")
+                Button("Missing Artwork") { showMissingArtwork() }
+                    .help("List every song in the library that has no cover, grouped by album, to fix in TagBee")
                 Button("Open TagBee") {
                     if let path = preferences.tagEditorPath { NSWorkspace.shared.open(URL(fileURLWithPath: path)) }
                 }
@@ -185,7 +191,8 @@ private struct TagBeePanel: View {
             } isTargeted: { dropTargeted = $0 }
             .overlay {
                 if results.isEmpty {
-                    ContentUnavailableView(sourceName == nil ? "Find songs to tag" : "No songs", systemImage: "tag",
+                    ContentUnavailableView(sourceName == nil ? "Find songs to tag"
+                                           : missingArtwork ? "Every song has artwork" : "No songs", systemImage: "tag",
                                            description: Text(hasEditor
                                                ? "Search above, click a playlist in the sidebar, or drag songs, albums or artists here. Tick songs (⌘-click or ⇧-click for several) and open them in TagBee; double-click opens one. Changes saved in TagBee show up here by themselves."
                                                : "TagBee isn't installed. Choose a tag editor in Settings > Tag Editor."))
@@ -194,12 +201,21 @@ private struct TagBeePanel: View {
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 10)
-        .onChange(of: app.trackStudioSourcePlaylistId) { dropped = nil }
-        .task(id: "\(query)-\(app.trackStudioSourcePlaylistId ?? 0)-\(library.revision)-\(dropped?.count ?? -1)") {
+        .onChange(of: app.trackStudioSourcePlaylistId) { _, id in
+            dropped = nil
+            if id != nil { missingArtwork = false }
+        }
+        .task(id: "\(query)-\(app.trackStudioSourcePlaylistId ?? 0)-\(library.revision)-\(dropped?.count ?? -1)-\(missingArtwork)") {
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
             let text = query.trimmingCharacters(in: .whitespaces)
-            if let dropped {
+            if missingArtwork {
+                // Every song without a cover (file or folder), sorted by artist and album.
+                var filter = TrackFilter()
+                filter.missingArtwork = true
+                filter.text = text
+                results = (try? await library.database.tracks(matching: filter, limit: 20000)) ?? []
+            } else if let dropped {
                 results = text.isEmpty ? dropped : dropped.filter {
                     [$0.displayTitle, $0.displayArtist, $0.displayAlbum].contains { $0.localizedCaseInsensitiveContains(text) }
                 }
@@ -218,6 +234,10 @@ private struct TagBeePanel: View {
 
     /// The name of the playlist (or smart playlist) clicked in the sidebar, if any.
     private var sourceName: String? {
+        if missingArtwork {
+            let albums = Set(results.map(\.albumKey)).count
+            return "Songs without artwork: \(results.count) in \(albums) album\(albums == 1 ? "" : "s")"
+        }
         if dropped != nil { return "Songs dragged here" }
         guard let id = app.trackStudioSourcePlaylistId else { return nil }
         if let smart = SmartPlaylist(playlistId: id) { return smart.title }
@@ -226,9 +246,18 @@ private struct TagBeePanel: View {
 
     private var hasEditor: Bool { preferences.tagEditorPath != nil }
 
+    private func showMissingArtwork() {
+        dropped = nil
+        app.trackStudioSourcePlaylistId = nil
+        query = ""
+        selection = []
+        missingArtwork = true
+    }
+
     /// Empties the list: dragged songs, the playlist shown, and the search.
     private func clearList() {
         dropped = nil
+        missingArtwork = false
         app.trackStudioSourcePlaylistId = nil
         query = ""
         results = []

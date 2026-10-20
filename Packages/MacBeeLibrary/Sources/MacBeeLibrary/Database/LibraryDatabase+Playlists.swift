@@ -242,6 +242,7 @@ public extension LibraryDatabase {
         case .atLeast10: conditions.append("playCount >= 10")
         }
         if filter.favoritesOnly { conditions.append("isFavorite = 1") }
+        if filter.missingArtwork { conditions.append("artworkId IS NULL") }
         var order = "artistKey, year, albumKey, discNumber, trackNumber"
         var smartOrder: [Int64]?
         if let smart = SmartPlaylist(playlistId: filter.playlistId) {

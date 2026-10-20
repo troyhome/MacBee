@@ -59,6 +59,8 @@ public struct TrackFilter: Sendable, Hashable {
     public var minimumStars: Int?
     public var playCount: PlayCountFilter = .any
     public var favoritesOnly = false
+    /// Only songs with no cover at all (none in the file and none in its folder).
+    public var missingArtwork = false
 
     public init() {}
 }

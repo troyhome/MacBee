@@ -198,6 +198,18 @@ final class PlaylistTests: XCTestCase {
         XCTAssertEqual(filtered, ["Two", "One"])
     }
 
+    func testMissingArtworkFilter() async throws {
+        let ids = try await addSongs(["Has Cover", "No Cover"])
+        try await db.writer.write { db in
+            try db.execute(sql: "INSERT INTO artwork (hash, fileExtension) VALUES ('abc', 'jpg')")
+            try db.execute(sql: "UPDATE track SET artworkId = ? WHERE id = ?", arguments: [db.lastInsertedRowID, ids[0]])
+        }
+        var f = TrackFilter()
+        f.missingArtwork = true
+        let missing = try await db.tracks(matching: f).map(\.displayTitle)
+        XCTAssertEqual(missing, ["No Cover"])
+    }
+
     // MARK: M3U
 
     func testM3UParseAndExport() async throws {
