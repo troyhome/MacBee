@@ -51,8 +51,11 @@ public struct Episode: Codable, Hashable, Sendable, Identifiable {
     /// The episode's own title when the file name has one, e.g. "My Return".
     public var title: String?
     public var file: VideoFile
+    /// Other copies of the same episode (another video folder or drive). Only `file` is shown.
+    public var otherFiles: [VideoFile]? = nil
 
     public var id: String { file.path }
+    public var allFiles: [VideoFile] { [file] + (otherFiles ?? []) }
     /// e.g. "S1 · E3"
     public var code: String { "S\(season) · E\(number)" }
 }

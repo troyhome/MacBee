@@ -342,6 +342,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   in Finder). Album page: Shuffle, Play, heart, and `AlbumMoreMenu` "…" (same menu as artist-page album cards:
   Play Next, Add to Queue, Add to Playlist, Send to TagBee, Show in Finder); the labeled pills are gone.
   `EditTagsButton` now reads "Send to TagBee".
+- Video folders have priority like music folders (list order): VideoScanner ranks files by folder; a movie's
+  shown copy and each episode's copy come from the first folder that has it (then 4K, then size). Episodes are
+  one entry per season+number (`Episode.otherFiles` holds the other copies; shown in Track Studio > Duplicates >
+  Videos; excluded copies promote the next). Movies without a year merge into the one dated film of that title.
+  `AppModel.videoCatalogVersion` (2) forces one rescan when the scanner changes.
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
   install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by

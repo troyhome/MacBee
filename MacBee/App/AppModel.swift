@@ -377,9 +377,15 @@ final class AppModel {
     func refreshVideosIfStale() async {
         // Wait for the music folders to be known, or music videos would be missed.
         if let library, library.folders.isEmpty, library.stats.tracks > 0 { return }
-        if let scanned = videos.catalog.scannedAt, Date().timeIntervalSince(scanned) < 600 { return }
+        // A list made by an older MacBee is redone once, so improvements to how videos are sorted show up.
+        let current = UserDefaults.standard.integer(forKey: "videoCatalogVersion") == Self.videoCatalogVersion
+        if current, let scanned = videos.catalog.scannedAt, Date().timeIntervalSince(scanned) < 600 { return }
         await refreshVideos()
+        UserDefaults.standard.set(Self.videoCatalogVersion, forKey: "videoCatalogVersion")
     }
+
+    /// Raise when the video scanner changes how it builds the list. 2: one entry per episode across folders.
+    static let videoCatalogVersion = 2
 
     /// "Playing From": back to the page the music was started from (or the playing song's album).
     /// In Track Studio it opens beside the studio instead of leaving it (Troy).

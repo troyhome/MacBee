@@ -85,4 +85,25 @@ final class VideoScannerTests: XCTestCase {
         VideoCatalogStore.save(catalog, to: file)
         XCTAssertEqual(VideoCatalogStore.load(from: file), catalog)
     }
+
+    /// Two video folders with the same films and episodes: each shows once, from the first folder.
+    func testSameVideosInTwoFoldersShowOnce() throws {
+        try make("A/Heat (1995)/Heat (1995).mkv", size: 30_000_000)
+        try make("B/Heat (1995)/Heat (1995).mkv", size: 40_000_000)   // bigger, but the second folder
+        try make("B/Heat.mkv", size: 35_000_000)                       // no year: still the same film
+        try make("A/Scrubs/Season 1/Scrubs S01E01.mkv")
+        try make("B/Scrubs/Season 1/Scrubs S01E01.mkv")
+        try make("B/Scrubs/Season 1/Scrubs S01E02.mkv")               // only in the second folder: fills in
+        let catalog = VideoScanner.scan([.init(url: root.appendingPathComponent("A"), kind: .moviesAndShows),
+                                         .init(url: root.appendingPathComponent("B"), kind: .moviesAndShows)])
+        XCTAssertEqual(catalog.movies.count, 1)
+        XCTAssertEqual(catalog.movies[0].files.count, 3)
+        XCTAssertTrue(catalog.movies[0].files[0].path.contains("/A/"), "the first folder's copy is shown")
+        XCTAssertEqual(catalog.shows.count, 1)
+        let episodes = catalog.shows[0].seasons[0].episodes
+        XCTAssertEqual(episodes.map(\.number), [1, 2])
+        XCTAssertTrue(episodes[0].file.path.contains("/A/"))
+        XCTAssertEqual(episodes[0].otherFiles?.count, 1)
+        XCTAssertTrue(episodes[1].file.path.contains("/B/"))
+    }
 }

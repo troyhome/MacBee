@@ -134,6 +134,18 @@ final class VideoLibrary {
             movie.files.removeAll { excluded.contains($0.path) }
             return movie.files.isEmpty ? nil : movie
         }
+        for s in catalog.shows.indices {
+            for n in catalog.shows[s].seasons.indices {
+                catalog.shows[s].seasons[n].episodes = catalog.shows[s].seasons[n].episodes.compactMap { episode in
+                    let files = episode.allFiles.filter { !excluded.contains($0.path) }
+                    guard let first = files.first else { return nil }
+                    var episode = episode
+                    episode.file = first
+                    episode.otherFiles = files.count > 1 ? Array(files.dropFirst()) : nil
+                    return episode
+                }
+            }
+        }
         catalog.musicVideos = catalog.musicVideos.compactMap { video in
             let files = video.allFiles.filter { !excluded.contains($0.path) }
             guard let first = files.first else { return nil }

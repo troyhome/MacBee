@@ -2,7 +2,7 @@ import AppKit
 import MacBeeVideo
 import SwiftUI
 
-/// Movies and music videos with more than one file (another drive, folder or format), with the same tools as
+/// Movies, TV episodes and music videos with more than one file (another drive, folder or format), with the same tools as
 /// the songs list: Duplicates in (one folder), search, tick boxes, Select All, Auto Select, Remove from Library
 /// (the file stays on disk), Delete from Disk, Accept and Restore.
 struct VideoDuplicatesView: View {
@@ -124,10 +124,16 @@ struct VideoDuplicatesView: View {
             Group(id: $0.id, title: $0.title, subtitle: ["Movie", $0.year.map(String.init)].compactMap { $0 }.joined(separator: " · "),
                   files: $0.files)
         }
+        let episodes = catalog.shows.flatMap { show in
+            show.seasons.flatMap(\.episodes).filter { !($0.otherFiles ?? []).isEmpty }.map {
+                Group(id: $0.id, title: "\(show.title) \($0.code)", subtitle: ["Episode", $0.title].compactMap { $0 }.joined(separator: " · "),
+                      files: $0.allFiles)
+            }
+        }
         let videos = catalog.musicVideos.filter { !($0.otherFiles ?? []).isEmpty }.map {
             Group(id: $0.id, title: $0.title, subtitle: "Music video · \($0.folderName)", files: $0.allFiles)
         }
-        return movies + videos
+        return movies + episodes + videos
     }
 
     /// Video folders and music folders, for the "Duplicates in" menu.

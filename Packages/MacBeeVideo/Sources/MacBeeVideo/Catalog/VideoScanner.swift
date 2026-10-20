@@ -23,11 +23,15 @@ public enum VideoScanner {
         var shows: [String: Show] = [:]
         var musicVideos: [MusicVideo] = []
         var musicVideoIndex: [String: Int] = [:]
+        /// Which folder each file came from (0 = first). Folders come in priority order, like music folders:
+        /// the same movie or episode in a later folder only fills in what the earlier ones don't have.
+        var rank: [String: Int] = [:]
 
-        for root in roots {
+        for (index, root) in roots.enumerated() {
             // Resolved, so paths from the walk line up with it (/var vs /private/var, symlinked drives).
             let rootURL = root.url.resolvingSymlinksInPath()
             for found in videoFiles(in: rootURL) {
+                rank[found.file.path] = index
                 switch root.kind {
                 case .musicVideos:
                     // The same video in another music folder (a second drive) shows once: the first folder wins,
@@ -47,17 +51,34 @@ public enum VideoScanner {
             }
         }
 
+        // The copy shown: from the first folder that has it, then 4K before HD, then the largest.
+        func better(_ a: VideoFile, _ b: VideoFile) -> Bool {
+            let (ra, rb) = (rank[a.path] ?? 0, rank[b.path] ?? 0)
+            if ra != rb { return ra < rb }
+            return (a.is4K ? 1 : 0, a.size) > (b.is4K ? 1 : 0, b.size)
+        }
+
         var catalog = VideoCatalog()
-        catalog.movies = movies.values.map { movie in
+        catalog.movies = mergingYearless(Array(movies.values)).map { movie in
             var movie = movie
-            movie.files.sort { ($0.is4K ? 1 : 0, $0.size) > ($1.is4K ? 1 : 0, $1.size) }
+            movie.files.sort(by: better)
             return movie
         }.sorted { sortKey($0.title) < sortKey($1.title) }
         catalog.shows = shows.values.map { show in
             var show = show
             show.seasons = show.seasons.map { season in
+                // One entry per episode: the same episode found in several folders shows once.
+                var byNumber: [Int: [Episode]] = [:]
+                for episode in season.episodes { byNumber[episode.number, default: []].append(episode) }
                 var season = season
-                season.episodes.sort { ($0.number, $0.file.path) < ($1.number, $1.file.path) }
+                season.episodes = byNumber.values.map { copies in
+                    let ordered = copies.sorted { better($0.file, $1.file) }
+                    var episode = ordered[0]
+                    let others = ordered.dropFirst().map(\.file)
+                    episode.otherFiles = others.isEmpty ? nil : Array(others)
+                    if episode.title == nil { episode.title = ordered.compactMap(\.title).first }
+                    return episode
+                }.sorted { $0.number < $1.number }
                 return season
             }.sorted { $0.number < $1.number }
             return show
@@ -113,6 +134,27 @@ public enum VideoScanner {
         }
         if movie.genres.isEmpty { movie.genres = genres(in: folder, names: ["\(fileName).nfo", "movie.nfo"]) }
         movies[key] = movie
+    }
+
+    /// A movie found without a year in one folder ("Heat.mkv") and with one in another ("Heat (1995)") is the
+    /// same film when there's only one film by that title.
+    static func mergingYearless(_ movies: [Movie]) -> [Movie] {
+        var byTitle: [String: [Int]] = [:]
+        for (index, movie) in movies.enumerated() { byTitle[movie.title.lowercased(), default: []].append(index) }
+        var merged = movies
+        var dropped = Set<Int>()
+        for indices in byTitle.values where indices.count > 1 {
+            let dated = indices.filter { movies[$0].year != nil }
+            let undated = indices.filter { movies[$0].year == nil }
+            guard dated.count == 1, let target = dated.first else { continue }
+            for index in undated {
+                merged[target].files += movies[index].files
+                if merged[target].posterPath == nil { merged[target].posterPath = movies[index].posterPath }
+                if merged[target].genres.isEmpty { merged[target].genres = movies[index].genres }
+                dropped.insert(index)
+            }
+        }
+        return merged.enumerated().filter { !dropped.contains($0.offset) }.map(\.element)
     }
 
     /// The same folder can show up as /var/… and /private/var/…; compare without the /private.
