@@ -1,3 +1,4 @@
+import AppKit
 import MacBeeLibrary
 import SwiftUI
 
@@ -202,7 +203,12 @@ private struct TagBeePanel: View {
                 }
             }
             .contextMenu(forSelectionType: String.self) { paths in
-                Button("Open in TagBee") { send(results.filter { paths.contains($0.path) }) }
+                let tracks = results.filter { paths.contains($0.path) }
+                Button("Open in TagBee") { send(tracks) }
+                Divider()
+                Button("Show in Library") { if let first = tracks.first { Task { await app.showInLibrary(first) } } }
+                    .help("Open the song's album next to Track Studio")
+                Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting(tracks.map(\.url)) }
             } primaryAction: { paths in
                 send(results.filter { paths.contains($0.path) })
             }

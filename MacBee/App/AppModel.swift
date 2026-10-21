@@ -249,6 +249,17 @@ final class AppModel {
         openAlbum(album)
     }
 
+    /// "Show in Library": the song's album. In Track Studio it opens beside the studio instead of leaving it.
+    func showInLibrary(_ track: Track) async {
+        guard let album = try? await library?.database.album(key: track.albumKey) else { return }
+        if isInTrackStudio {
+            trackStudioBrowse = .albums
+            location.albums = [album]
+        } else {
+            location = Location(page: .albums, albums: [album])
+        }
+    }
+
     /// Shows an artist on the Artists page (from a song's Artist column).
     func openArtist(key: String) {
         UserDefaults.standard.set(key, forKey: "selectedArtist")
