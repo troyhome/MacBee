@@ -29,8 +29,7 @@ struct TrackRow: View {
             .frame(width: 34, alignment: .trailing)
 
             if showsArtwork {
-                ArtworkView(artworkId: track.artworkId, pixelSize: 72, cornerRadius: 3)
-                    .frame(width: 32, height: 32)
+                PreviewArtwork(track: track, isCurrent: isCurrent, isPlaying: isPlaying)
             }
 
             VStack(alignment: .leading, spacing: 1) {
@@ -70,5 +69,37 @@ struct TrackRow: View {
         guard let n = track.trackNumber else { return "–" }
         if showsDisc, let disc = track.discNumber { return "\(disc)-\(n)" }
         return "\(n)"
+    }
+}
+
+/// A song's small cover with a play button on it (shown while the mouse is over it, or while it's the song
+/// playing), for previewing songs in Track Studio. Playing a song this way keeps the rest of the queue after it.
+private struct PreviewArtwork: View {
+    let track: Track
+    let isCurrent: Bool
+    let isPlaying: Bool
+    @Environment(PlayerViewModel.self) private var player
+    @State private var hovering = false
+
+    var body: some View {
+        ArtworkView(artworkId: track.artworkId, pixelSize: 72, cornerRadius: 3)
+            .frame(width: 32, height: 32)
+            .overlay {
+                if hovering || isCurrent {
+                    Button {
+                        if isCurrent { player.togglePlayPause() } else { player.playNow(track) }
+                    } label: {
+                        Image(systemName: isCurrent && isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 32, height: 32)
+                            .background(RoundedRectangle(cornerRadius: 3).fill(.black.opacity(0.5)))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(isCurrent && isPlaying ? "Pause" : "Play this song now")
+                }
+            }
+            .onHover { hovering = $0 }
     }
 }

@@ -353,6 +353,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   full scans flag missing files BEFORE saving new ones (undone if cancelled/offline), and `Track.apply` clears
   isMissing. Embedded pictures with no data are skipped (some MP3s carry an empty one before the real cover);
   one-time re-read of songs without artwork ("MacBee.rereadSongsWithoutArtwork.v1").
+- Track Studio song covers have a preview button (`PreviewArtwork` in TrackRow.swift, shown on hover or for the
+  playing song): plays the song now with `player.playNow` (queue kept after it); on the playing song it pauses/resumes.
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
   install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by
