@@ -39,4 +39,38 @@ final class RefreshFilesTests: XCTestCase {
         let again = try await library.database.stats()
         XCTAssertEqual(again.tracks, 1)
     }
+
+    /// A tag editor renamed and changed a song as it saved: re-reading the folder keeps it the same song.
+    func testRenamedFileInSameFolderKeepsFavorite() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let music = root.appendingPathComponent("Music/Artist/Album", isDirectory: true)
+        try FileManager.default.createDirectory(at: music, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let old = music.appendingPathComponent("01 Song.wav")
+        try writeWAV(to: old)
+        let library = try await MusicLibrary(location: LibraryLocation(directory: root.appendingPathComponent("Lib")))
+        _ = try await library.database.insertFolder(path: root.appendingPathComponent("Music").standardizedFileURL.path,
+                                                    name: "Music")
+        _ = try await library.refreshFiles([old.standardizedFileURL.path])
+        let database = await library.database
+        let id = try await database.tracks(matching: TrackFilter(), limit: 10).first!.id!
+        try await library.database.setFavorite(trackId: id, true)
+
+        // Renamed, and a little bigger (say, a cover was added).
+        let renamed = music.appendingPathComponent("Song - Artist - 01.wav")
+        try FileManager.default.moveItem(at: old, to: renamed)
+        let handle = try FileHandle(forWritingTo: renamed)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(count: 64))
+        try handle.close()
+
+        let files = try await library.refreshDirectory(music.standardizedFileURL.path)
+        XCTAssertEqual(files, [renamed.standardizedFileURL.path])
+        let track = try await library.database.track(id: id)
+        XCTAssertEqual(track?.path, renamed.standardizedFileURL.path)
+        XCTAssertEqual(track?.isFavorite, true)
+        XCTAssertEqual(track?.isMissing, false)
+        let stats = try await library.database.stats()
+        XCTAssertEqual(stats.tracks, 1)
+    }
 }

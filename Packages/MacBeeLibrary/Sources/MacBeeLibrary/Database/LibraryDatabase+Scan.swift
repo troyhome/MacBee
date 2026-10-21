@@ -100,9 +100,29 @@ extension LibraryDatabase {
             .filter(Column("isMissing") == true && Column("fileSize") == scanned.fileSize)
             .fetchAll(db)
         let title = scanned.title.map(LibraryKeys.normalize)
-        return candidates.first { candidate in
-            candidate.title.map(LibraryKeys.normalize) == title
-                && abs(candidate.duration - scanned.duration) < 1
+        if let match = candidates.first(where: { candidate in
+            candidate.title.map(LibraryKeys.normalize) == title && abs(candidate.duration - scanned.duration) < 1
+        }) {
+            return match
+        }
+        // A tag editor that renames files as it saves (TagBee) also changes their size (a new cover, lyrics).
+        // In the same folder, the same title and length is still the same song.
+        let folder = (scanned.path as NSString).deletingLastPathComponent
+        let nearby = try Track
+            .filter(Column("isMissing") == true && Column("path").like(folder + "/%"))
+            .fetchAll(db)
+            .filter { ($0.path as NSString).deletingLastPathComponent == folder }
+        return nearby.first { candidate in
+            candidate.title.map(LibraryKeys.normalize) == title && abs(candidate.duration - scanned.duration) < 1
+        }
+    }
+
+    /// Tracks whose file is directly in `folder` (not in folders below it): id and path.
+    func tracks(inDirectory folder: String) async throws -> [(id: Int64, path: String)] {
+        try await writer.read { db in
+            try Row.fetchAll(db, sql: "SELECT id, path FROM track WHERE path LIKE ?", arguments: [folder + "/%"])
+                .map { ($0["id"] as Int64, $0["path"] as String) }
+                .filter { ($0.path as NSString).deletingLastPathComponent == folder }
         }
     }
 }

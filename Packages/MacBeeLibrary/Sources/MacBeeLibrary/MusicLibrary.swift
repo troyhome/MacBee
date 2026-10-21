@@ -1,4 +1,5 @@
 import Foundation
+import MacBeeAudio
 import Observation
 
 /// Where the library keeps its files.
@@ -85,10 +86,22 @@ public final class MusicLibrary {
         }
         if checkForChanges { scanAll() }
         await rereadMP3Compilations()
+        await rereadSongsWithoutArtwork()
     }
 
     /// One-time fix: older versions read every MP3 with a compilation frame as a compilation, even "0" (no).
     /// Re-reads those files once so their albums leave Various Artists.
+    /// Once: songs read before MacBee skipped empty embedded pictures (some files carry an empty one in front of
+    /// the real cover) are read again so their covers show.
+    private func rereadSongsWithoutArtwork() async {
+        let key = "MacBee.rereadSongsWithoutArtwork.v1"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        guard let paths = try? await database.pathsWithoutArtwork() else { return }
+        let reachable = paths.filter { FileManager.default.fileExists(atPath: $0) }
+        if !reachable.isEmpty { _ = try? await refreshFiles(reachable) }
+        if reachable.count == paths.count { UserDefaults.standard.set(true, forKey: key) }
+    }
+
     private func rereadMP3Compilations() async {
         let key = "MacBee.rereadMP3Compilations.v1"
         guard !UserDefaults.standard.bool(forKey: key) else { return }
@@ -287,6 +300,22 @@ public final class MusicLibrary {
         // Edited tags can change duplicates and compilations, so re-work those out too.
         if count > 0 { await applyVisibility() }
         return count
+    }
+
+    /// Re-reads every song in one folder (not the folders below it), for when a tag editor saved and maybe renamed
+    /// its files: songs whose files are gone are marked missing first, so renamed files are recognized as the
+    /// same songs (keeping plays and favorites). Returns the songs' paths now in the folder.
+    @discardableResult
+    public func refreshDirectory(_ folder: String) async throws -> [String] {
+        let files = ((try? FileManager.default.contentsOfDirectory(atPath: folder)) ?? [])
+            .filter { !$0.hasPrefix(".") && DecoderFactory.supportedExtensions.contains(($0 as NSString).pathExtension.lowercased()) }
+            .map { folder + "/" + $0 }
+        let present = Set(files)
+        let gone = try await database.tracks(inDirectory: folder).filter { !present.contains($0.path) }.map(\.id)
+        try await database.setMissing(gone, true)
+        _ = try await refreshFiles(files)
+        if !gone.isEmpty { await applyVisibility() }
+        return files
     }
 
     // MARK: - Missing files

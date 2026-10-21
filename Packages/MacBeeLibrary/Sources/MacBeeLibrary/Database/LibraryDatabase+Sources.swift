@@ -102,6 +102,12 @@ public extension LibraryDatabase {
         }
     }
 
+    func pathsWithoutArtwork() async throws -> [String] {
+        try await writer.read { db in
+            try String.fetchAll(db, sql: "SELECT path FROM track WHERE artworkId IS NULL AND isMissing = 0")
+        }
+    }
+
     // MARK: - Duplicates page
 
     /// Every song that has more than one copy: the copy that shows first, then the others.

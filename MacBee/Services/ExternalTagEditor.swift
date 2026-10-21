@@ -132,18 +132,33 @@ final class ExternalTagEditor: TagEditorService {
         }
     }
 
-    /// Re-reads any watched file whose modification date changed.
+    /// Re-reads any watched file whose modification date changed. A watched file that's gone was usually renamed
+    /// by the editor as it saved (TagBee can name files from their tags), so its whole folder is read again and
+    /// the new files are watched instead.
     func checkForChanges() async {
         guard !watched.isEmpty else { return }
         let current = await Self.modificationDates(Array(watched.keys))
         var changed: [String] = []
-        for (path, date) in current where watched[path] != nil && watched[path] != date {
-            watched[path] = date
-            changed.append(path)
+        var renamedIn = Set<String>()
+        for path in Array(watched.keys) {
+            guard let date = current[path] else {
+                watched[path] = nil
+                renamedIn.insert((path as NSString).deletingLastPathComponent)
+                continue
+            }
+            if watched[path] != date {
+                watched[path] = date
+                changed.append(path)
+            }
         }
-        guard !changed.isEmpty else { return }
+        changed.removeAll { renamedIn.contains(($0 as NSString).deletingLastPathComponent) }
         do {
-            try await library.refreshFiles(changed)
+            if !changed.isEmpty { try await library.refreshFiles(changed) }
+            for folder in renamedIn where FileManager.default.fileExists(atPath: folder) {
+                let files = try await library.refreshDirectory(folder)
+                let dates = await Self.modificationDates(files)
+                for file in files where watched[file] == nil { watched[file] = dates[file] ?? .distantPast }
+            }
         } catch {
             problem = "Couldn't re-read the edited songs. \(error.localizedDescription)"
         }

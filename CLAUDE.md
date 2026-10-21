@@ -347,6 +347,12 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   one entry per season+number (`Episode.otherFiles` holds the other copies; shown in Track Studio > Duplicates >
   Videos; excluded copies promote the next). Movies without a year merge into the one dated film of that title.
   `AppModel.videoCatalogVersion` (2) forces one rescan when the scanner changes.
+- Edits in TagBee show up automatically even when TagBee renames files as it saves: ExternalTagEditor sees a
+  watched file vanish and calls `MusicLibrary.refreshDirectory` (marks gone files missing, re-reads the folder,
+  watches the new names). Moved-file matching also accepts same folder + same title + length (size may differ),
+  full scans flag missing files BEFORE saving new ones (undone if cancelled/offline), and `Track.apply` clears
+  isMissing. Embedded pictures with no data are skipped (some MP3s carry an empty one before the real cover);
+  one-time re-read of songs without artwork ("MacBee.rereadSongsWithoutArtwork.v1").
 - Releases: `Tools/macbee.sh release [version]` bumps MARKETING_VERSION (1.0 -> 1.1 by default) and the build number,
   builds the .dmg, commits "MacBee X", tags vX, pushes, and runs `gh release create` with the .dmg. Needs Troy to
   install gh (GitHub pkg installer, no Homebrew on CMBA) and `gh auth login` once per Mac. Releases are downloadable by

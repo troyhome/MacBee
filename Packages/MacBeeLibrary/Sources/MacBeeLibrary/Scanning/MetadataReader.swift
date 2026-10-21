@@ -57,9 +57,10 @@ struct MetadataReader: Sendable {
         t.bitrate = p.bitrate
         t.codec = Self.codecName(pathExtension: url.pathExtension, formatName: p.formatName)
 
-        // Embedded front cover first, then any embedded picture, then cover.jpg / folder.jpg.
-        let pictures = m.attachedPictures
-        let embedded = m.attachedPictures(ofType: .frontCover).first ?? pictures.first
+        // Embedded front cover first, then any embedded picture, then cover.jpg / folder.jpg. Empty pictures are
+        // skipped: some taggers leave an empty one in front of the real cover.
+        let pictures = m.attachedPictures.filter { !$0.imageData.isEmpty }
+        let embedded = pictures.first { $0.type == .frontCover } ?? pictures.first
         if let data = embedded?.imageData {
             t.artwork = artwork.store(imageData: data)
         }

@@ -115,6 +115,7 @@ extension Track {
         codec = s.codec
         if let tagRating = s.rating { rating = tagRating }
         self.artworkId = artworkId
+        isMissing = false // just read from disk, so it's there (matters for a moved file matched to a missing song)
 
         displayAlbumArtist = LibraryKeys.albumArtist(albumArtist: s.albumArtist, artist: s.artist,
                                                      isCompilation: s.isCompilation)

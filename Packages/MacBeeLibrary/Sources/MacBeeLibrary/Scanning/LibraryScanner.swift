@@ -57,6 +57,9 @@ actor LibraryScanner {
         let plan = ScanPlanner.plan(existing: existing, found: foundStamps, rereadAll: force)
         report.unchanged = plan.unchanged
         report.skippedRemovals = plan.skippedRemovals
+        // Files that are gone are flagged before new ones are saved, so a file that was renamed (a tag editor
+        // naming files from their tags) is recognized as the same song and keeps its plays and favorite.
+        try await database.setMissing(plan.missing, true)
 
         // 3. Read tags for new and changed files, a few at a time, saving in batches.
         status.phase = .reading
@@ -109,11 +112,11 @@ actor LibraryScanner {
         // 4. Flag missing / restored files (skipped if the scan was cancelled).
         status.phase = .finishing
         progress(status)
-        if !report.cancelled && !folder.isReachable {
-            // Drive dropped while reading tags: keep what we saved, but don't flag anything missing.
-            report.wasOffline = true
-        } else if !report.cancelled {
-            try await database.setMissing(plan.missing, true)
+        if report.cancelled || !folder.isReachable {
+            // Cancelled, or the drive dropped while reading tags: keep what we saved, but flag nothing missing.
+            try await database.setMissing(plan.missing, false)
+            if !report.cancelled { report.wasOffline = true }
+        } else {
             try await database.setMissing(plan.restored, false)
             report.missing = plan.missing.count
             report.restored = plan.restored.count
