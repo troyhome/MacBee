@@ -2,7 +2,6 @@ import SwiftUI
 
 struct GeneralPreferences: View {
     @Environment(PreferencesStore.self) private var preferences
-    @Environment(AppModel.self) private var app
 
     var body: some View {
         @Bindable var preferences = preferences
@@ -65,21 +64,6 @@ struct GeneralPreferences: View {
                     .foregroundStyle(.secondary)
                 Toggle("TV shows: play the next episode automatically", isOn: $preferences.continuousPlayEpisodes)
             }
-            Section("Media keys") {
-                Toggle("Media keys always control MacBee", isOn: $preferences.mediaKeysAlwaysMacBee)
-                    .onChange(of: preferences.mediaKeysAlwaysMacBee) { _, on in
-                        on ? app.mediaKeys.start(askForPermission: true) : app.mediaKeys.stop()
-                    }
-                if preferences.mediaKeysAlwaysMacBee && !app.mediaKeys.isActive {
-                    HStack {
-                        Text("Needs the Accessibility permission")
-                            .foregroundStyle(.orange)
-                        Spacer()
-                        Button("Open System Settings") { openAccessibilitySettings() }
-                    }
-                }
-                PreferenceNote("While MacBee has music loaded, play/pause, next and previous go to MacBee even if Qobuz, Spotify or Apple Music is open. To allow it, turn MacBee on in System Settings > Privacy & Security > Accessibility.")
-            }
             Section("Play counts") {
                 Picker("Count a song as played", selection: $preferences.playCountRule) {
                     ForEach(PlayCountRule.allCases) { Text($0.title).tag($0) }
@@ -89,12 +73,5 @@ struct GeneralPreferences: View {
             }
         }
         .formStyle(.grouped)
-    }
-
-    private func openAccessibilitySettings() {
-        app.mediaKeys.start(askForPermission: true)
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
-        }
     }
 }

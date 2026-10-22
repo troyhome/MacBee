@@ -32,8 +32,6 @@ final class PreferencesStore {
     var pausedVideoFolders: [String] { didSet { save(pausedVideoFolders, "pausedVideoFolders") } }
     /// The video folders that are switched on.
     var activeVideoFolders: [String] { videoFolders.filter { !pausedVideoFolders.contains($0) } }
-    /// The keyboard's media keys control MacBee whenever it has music loaded, even with other players open.
-    var mediaKeysAlwaysMacBee: Bool { didSet { save(mediaKeysAlwaysMacBee, "mediaKeysAlwaysMacBee") } }
     /// When a song, album or playlist ends, keep going with a mix made from the last song.
     var continuousPlay: Bool { didSet { save(continuousPlay, "continuousPlay") } }
     /// TV shows: the next episode starts when one ends.
@@ -60,7 +58,6 @@ final class PreferencesStore {
         hideCompilationOnlyArtists = d.object(forKey: "hideCompilationOnlyArtists") as? Bool ?? false
         videoFolders = d.stringArray(forKey: "videoFolders") ?? []
         pausedVideoFolders = d.stringArray(forKey: "pausedVideoFolders") ?? []
-        mediaKeysAlwaysMacBee = d.object(forKey: "mediaKeysAlwaysMacBee") as? Bool ?? true
         continuousPlay = d.object(forKey: "continuousPlay") as? Bool ?? true
         continuousPlayEpisodes = d.object(forKey: "continuousPlayEpisodes") as? Bool ?? true
         useDefaultTagEditorIfNeeded()

@@ -1,6 +1,10 @@
 import AppKit
 import MacBeeLibrary
 import MediaPlayer
+import OSLog
+
+// TEMP (media key check): remove once Troy's Qobuz test is done.
+private let nowPlayingLog = Logger(subsystem: "com.troyhomenchuk.MacBee", category: "NowPlaying")
 
 /// Connects MacBee to the keyboard's media keys and the "Now Playing" panel in Control Center
 /// (title, artist, cover, position, and play/pause/next/previous/seek from there).
@@ -16,10 +20,13 @@ final class NowPlayingService {
     private var updateTask: Task<Void, Never>?
     /// Cover for the current track, loaded once per track.
     private var artwork: (trackPath: String, item: MPMediaItemArtwork?)?
+    // TEMP (media key check)
+    private var lastLogged: String?
 
     init(player: PlayerViewModel, library: MusicLibrary?) {
         self.player = player
         self.library = library
+        nowPlayingLog.notice("created; registering commands") // TEMP
         registerCommands()
         observePlayback()
         // Refresh once a second; the system moves the position smoothly in between.
@@ -77,6 +84,7 @@ final class NowPlayingService {
     /// Commands arrive on the main thread.
     private nonisolated func run(_ action: @escaping @MainActor (PlayerViewModel) -> Void) -> MPRemoteCommandHandlerStatus {
         MainActor.assumeIsolated {
+            nowPlayingLog.notice("command received, track loaded: \(self.player.currentTrack != nil)") // TEMP
             guard player.currentTrack != nil else { return .noActionableNowPlayingItem }
             action(player)
             return .success
@@ -90,6 +98,7 @@ final class NowPlayingService {
         guard let track = player.currentTrack else {
             center.nowPlayingInfo = nil
             center.playbackState = .stopped
+            if lastLogged != "stopped" { lastLogged = "stopped"; nowPlayingLog.notice("reported stopped (no track)") } // TEMP
             return
         }
         let newTrack = artwork?.trackPath != track.path
@@ -117,10 +126,15 @@ final class NowPlayingService {
         ]
         if let item = artwork?.item { info[MPMediaItemPropertyArtwork] = item }
         center.nowPlayingInfo = info
-        switch player.engine.state {
-        case .playing: center.playbackState = .playing
-        case .paused: center.playbackState = .paused
-        case .stopped: center.playbackState = .stopped
+        // A song is loaded, so MacBee never reports "stopped" here. The engine stops for a moment between
+        // songs (and when a sample-rate switch restarts the output), and "stopped" lets macOS hand the
+        // media keys to another player. "Paused" keeps MacBee the Now Playing app, so play resumes it.
+        center.playbackState = player.engine.state == .playing ? .playing : .paused
+        // TEMP (media key check): log each change of what MacBee reports.
+        let reported = "\(center.playbackState == .playing ? "playing" : "paused") engine=\(player.engine.state) rate=\(player.isPlaying ? 1 : 0) track=\(track.displayTitle)"
+        if reported != lastLogged {
+            lastLogged = reported
+            nowPlayingLog.notice("reported \(reported, privacy: .public)")
         }
     }
 

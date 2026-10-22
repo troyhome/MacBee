@@ -104,8 +104,6 @@ final class AppModel {
     @ObservationIgnored private let queue = QueueManager()
     @ObservationIgnored private var started = false
     @ObservationIgnored private var nowPlaying: NowPlayingService?
-    /// Catches the media keys so other players (Qobuz, Spotify) don't get them.
-    let mediaKeys: MediaKeyTap
 
     init() {
         var library: MusicLibrary?
@@ -133,7 +131,6 @@ final class AppModel {
         player = PlayerViewModel(engine: engine, queue: queue, database: library?.database, preferences: preferences,
                                  router: PlaybackRouter(plex: plex, preferences: preferences))
         nowPlaying = NowPlayingService(player: player, library: library)
-        mediaKeys = MediaKeyTap(player: player)
         networkSync?.onMerged = { [weak self] in
             await self?.library?.refreshAfterSync()
             await self?.playlists?.reload()
@@ -438,15 +435,6 @@ final class AppModel {
     func start() async {
         guard !started else { return }
         started = true
-        if preferences.mediaKeysAlwaysMacBee { mediaKeys.start(askForPermission: true) }
-        // The permission may be given in System Settings while MacBee is open; try again on coming back.
-        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification,
-                                               object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self, self.preferences.mediaKeysAlwaysMacBee else { return }
-                self.mediaKeys.start(askForPermission: false)
-            }
-        }
         library?.periodicCheckInterval = preferences.routineCheck.interval
         await library?.start(checkForChanges: preferences.checkLibraryAtLaunch)
     }
