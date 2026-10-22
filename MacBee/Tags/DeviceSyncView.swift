@@ -254,7 +254,7 @@ private struct CopyToScanReport: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
 
-            row("plus.circle", "\(songs(scan.newSongs.count)) not on the device yet", detail: bytes(scan.newSongs.reduce(0) { $0 + $1.size })) {
+            row("plus.circle", "\(songs(scan.newSongs.count)) to add", detail: "Not on the device yet · " + bytes(scan.newSongs.reduce(0) { $0 + $1.size })) {
                 Toggle("Copy them", isOn: $runner.choices.copyNew).disabled(scan.newSongs.isEmpty)
             }
             row("arrow.triangle.2.circlepath", "\(songs(scan.changed.count + scan.moved.count)) changed since they were copied",
