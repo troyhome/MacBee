@@ -39,6 +39,8 @@ struct TagsView: View {
                         app.trackStudioBrowse = nil
                     } label: {
                         Label("Close \(browse.title)", systemImage: "sidebar.left")
+                            .lineLimit(1)
+                            .fixedSize()
                     }
                     .help("Hide \(browse.title) and give Track Studio the whole window")
                 }

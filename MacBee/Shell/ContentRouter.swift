@@ -39,17 +39,32 @@ struct ContentRouter: View {
                 }
             }
         case .tags:
-            if let browse = app.trackStudioBrowse {
-                // Track Studio stays open on the right while a library page is browsed on the left.
-                HStack(spacing: 0) {
+            // Track Studio stays open on the right while a library page is browsed on the left. Track Studio keeps
+            // the same place in this layout either way, so opening or closing the page beside it keeps its list.
+            HStack(spacing: 0) {
+                if let browse = app.trackStudioBrowse {
                     libraryPage(browse)
                         .frame(minWidth: 320, maxWidth: .infinity)
+                        .overlay(alignment: .topTrailing) {
+                            Button {
+                                app.trackStudioBrowse = nil
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .frame(width: 28, height: 28)
+                                    .background(Circle().fill(.regularMaterial))
+                                    .contentShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .padding(10)
+                            .help("Close \(browse.title) and give Track Studio the whole window")
+                        }
                     ColumnResizer(width: $trackStudioWidth, range: 420...1100, resizesLeftColumn: false, defaultWidth: 620)
-                    TagsView()
-                        .frame(width: trackStudioWidth)
                 }
-            } else {
-                stack { TagsView() }
+                // Its own navigation (not the album path), so albums opened beside it don't open inside it too.
+                NavigationStack { TagsView() }
+                    .frame(width: app.trackStudioBrowse == nil ? nil : trackStudioWidth)
+                    .frame(maxWidth: app.trackStudioBrowse == nil ? .infinity : nil)
             }
         case .playlistStudio:
             stack { PlaylistStudioView() }
