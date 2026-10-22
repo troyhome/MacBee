@@ -14,6 +14,8 @@ final class RecordOutSession {
         case setup
         case leadIn(secondsLeft: Int)
         case recording
+        /// Stopped at the end of a song by "Pause After This Song"; Resume Play continues with the next one.
+        case paused
         case finished
         case stopped
     }
@@ -29,6 +31,13 @@ final class RecordOutSession {
 
     static let leadInSeconds = 3
     static let discLengths = [60, 74, 80]
+
+    /// "Pause After This Song" was clicked: the list stops when the current song ends.
+    private(set) var pauseAfterCurrent = false
+    /// Index (into `tracks`) of the first song in the current run; Resume Play starts a new run.
+    private(set) var runStart = 0
+    /// Index of the song Resume Play starts with.
+    private var resumeIndex = 0
 
     @ObservationIgnored private let player: PlayerViewModel
     @ObservationIgnored private var leadInTask: Task<Void, Never>?
@@ -50,27 +59,60 @@ final class RecordOutSession {
 
     var isRunning: Bool {
         switch phase {
-        case .leadIn, .recording: true
+        case .leadIn, .recording, .paused: true
         default: false
         }
     }
 
     /// 1-based number of the song now playing, while recording.
     var currentNumber: Int? {
-        guard phase == .recording, let index = player.queue.currentIndex else { return nil }
-        return index + 1
+        switch phase {
+        case .recording:
+            guard let index = player.queue.currentIndex else { return nil }
+            return runStart + index + 1
+        case .paused:
+            return resumeIndex // the last song played
+        default:
+            return nil
+        }
     }
 
     func start() {
         guard !tracks.isEmpty, !isRunning else { return }
+        runStart = 0
+        pauseAfterCurrent = false
         savedShuffle = player.queue.isShuffled
         savedRepeat = player.queue.repeatMode
         player.queue.setShuffled(false)
         player.queue.repeatMode = .off
         player.engine.stop()
         player.engine.setRecordOut(RecordOutMode(gap: gap))
-        player.queueFinishedOverride = { [weak self] in self?.finish() }
+        player.queueFinishedOverride = { [weak self] in self?.listEnded() }
+        playAfterLeadIn(from: 0)
+    }
 
+    /// Lets the current song finish, then stops (the songs after it are kept for Resume Play).
+    /// Clicking again before the song ends cancels it.
+    func togglePauseAfterCurrent() {
+        guard phase == .recording, let number = currentNumber else { return }
+        if pauseAfterCurrent {
+            pauseAfterCurrent = false
+            player.addToQueue(Array(tracks[number...]))
+        } else {
+            pauseAfterCurrent = true
+            resumeIndex = number
+            player.clearUpNext()
+        }
+    }
+
+    /// Continues with the song after the last one played, after the same lead-in as Start.
+    func resume() {
+        guard phase == .paused, tracks.indices.contains(resumeIndex) else { return }
+        pauseAfterCurrent = false
+        playAfterLeadIn(from: resumeIndex)
+    }
+
+    private func playAfterLeadIn(from index: Int) {
         leadInTask = Task { [weak self] in
             for left in stride(from: Self.leadInSeconds, to: 0, by: -1) {
                 self?.phase = .leadIn(secondsLeft: left)
@@ -78,8 +120,9 @@ final class RecordOutSession {
                 if Task.isCancelled { return }
             }
             guard let self else { return }
+            runStart = index
             phase = .recording
-            player.play(tracks)
+            player.play(Array(tracks[index...]))
         }
     }
 
@@ -102,9 +145,14 @@ final class RecordOutSession {
             .joined(separator: "\n")
     }
 
-    private func finish() {
-        cleanUp()
-        phase = .finished
+    private func listEnded() {
+        if pauseAfterCurrent && tracks.indices.contains(resumeIndex) {
+            pauseAfterCurrent = false
+            phase = .paused
+        } else {
+            cleanUp()
+            phase = .finished
+        }
     }
 
     private func cleanUp() {

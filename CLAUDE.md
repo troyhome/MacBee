@@ -473,7 +473,9 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   song; shuffle/repeat off while running (restored after), end of list doesn't start continuous play
   (`PlayerViewModel.queueFinishedOverride`). Engine: `RecordOutMode` (MacBeeAudio, tested) via
   `setRecordOut`: songs never enqueued gaplessly, gap before each next song, output capped at 48 kHz (MiniDisc
-  optical takes 32/44.1/48). "Copy Track Names" copies a numbered title list. USB transfer (NetMD) is a separate
+  optical takes 32/44.1/48). "Copy Track Names" copies a numbered title list. "Pause After This Song" (Troy) clears Up
+  Next so the list stops when the song ends (phase .paused; also works during the gap: engine `queueDidChange`
+  re-plans a scheduled gap start); "Resume Play" plays on from the next song after the lead-in (`runStart`). USB transfer (NetMD) is a separate
   project, MD-deck (see /mnt/project-files/MD-DECK_HANDOFF.md in the Claude project).
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.

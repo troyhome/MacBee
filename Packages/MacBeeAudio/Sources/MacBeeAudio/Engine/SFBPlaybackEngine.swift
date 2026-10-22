@@ -65,6 +65,8 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     @ObservationIgnored private var preloadTask: Task<Void, Never>?
     /// The current track ended before the next one finished loading; start it as soon as it's ready.
     @ObservationIgnored private var startWhenPreloaded = false
+    /// Recording mode: a song ended and the next one starts after the silent gap.
+    @ObservationIgnored private var waitingInGap = false
 
     public init(settings: OutputSettings = .default) {
         self.settings = settings
@@ -135,6 +137,12 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     }
 
     public func queueDidChange() {
+        // In a recording gap the next song is already scheduled; re-plan it from the changed queue.
+        let wasInGap = waitingInGap
+        if wasInGap {
+            waitingInGap = false
+            generation += 1
+        }
         cancelPreload()
         if enqueuedNext != nil || pendingNext != nil {
             player.clearQueue()
@@ -143,6 +151,9 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         }
         if let url = lastDecodingURL ?? currentTrack {
             preloadNext(after: url)
+        }
+        if wasInGap {
+            if preloadingURL != nil { startWhenPreloaded = true } else { finishQueue() }
         }
     }
 
@@ -265,6 +276,7 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         pendingNext = nil
         lastDecodingURL = nil
         userRequestedURL = nil
+        waitingInGap = false
         cancelPreload()
     }
 
@@ -394,8 +406,10 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         player.stop()
         Task {
             if delay > 0 {
+                waitingInGap = true
                 try? await Task.sleep(for: .seconds(delay))
-                guard myGeneration == generation else { return } // stopped or another song chosen
+                guard myGeneration == generation else { return } // stopped, queue changed or another song chosen
+                waitingInGap = false
             }
             do {
                 try await start(decoder, url: url, userInitiated: false, generation: myGeneration)

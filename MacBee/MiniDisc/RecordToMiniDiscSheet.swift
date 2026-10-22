@@ -68,8 +68,13 @@ struct RecordToMiniDiscSheet: View {
         case let .leadIn(left):
             Text("Starting in \(left)…").font(.system(size: 14, weight: .semibold)).foregroundStyle(theme.accent)
         case .recording:
-            Text("Playing song \(session.currentNumber ?? 1) of \(session.tracks.count)")
+            Text(session.pauseAfterCurrent
+                 ? "Pausing after song \(session.currentNumber ?? 1) of \(session.tracks.count)"
+                 : "Playing song \(session.currentNumber ?? 1) of \(session.tracks.count)")
                 .font(.system(size: 14, weight: .semibold)).foregroundStyle(theme.accent)
+        case .paused:
+            Text("Paused after song \(session.currentNumber ?? 0) of \(session.tracks.count)")
+                .font(.system(size: 14, weight: .semibold)).foregroundStyle(theme.warning)
         case .finished:
             Label("Done. Stop the recorder now.", systemImage: "checkmark.circle.fill")
                 .font(.system(size: 14, weight: .semibold)).foregroundStyle(theme.good)
@@ -178,6 +183,7 @@ struct RecordToMiniDiscSheet: View {
             .help("Copies a numbered list of titles, for typing them in on the recorder")
             Spacer()
             if session.isRunning {
+                pauseButton
                 Button("Stop") { session.stop() }
                     .keyboardShortcut(.cancelAction)
             } else {
@@ -190,6 +196,25 @@ struct RecordToMiniDiscSheet: View {
                         .disabled(session.tracks.isEmpty)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var pauseButton: some View {
+        switch session.phase {
+        case .paused:
+            Button("Resume Play", systemImage: "play.fill") { session.resume() }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+                .help("Start the recorder again, then click: plays on from the next song after a 3-second lead-in")
+        case .recording:
+            Button(session.pauseAfterCurrent ? "Keep Playing" : "Pause After This Song",
+                   systemImage: session.pauseAfterCurrent ? "play.fill" : "pause.fill") {
+                session.togglePauseAfterCurrent()
+            }
+            .help("Stops when this song ends, so you can pause the recorder; Resume Play continues with the next song")
+        default:
+            EmptyView()
         }
     }
 
