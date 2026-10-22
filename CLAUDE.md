@@ -142,10 +142,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
     - Videos sidebar page + Collection Videos tab (`MacBee/Videos/`): finds MP4/M4V/MOV in the music folders
       (not in the database; re-searched when the page opens), thumbnails via AVAssetImageGenerator, plays in an
       AVKit overlay over the window (Esc closes; music pauses; starting music closes the video).
-    - Media keys: MPRemoteCommandCenter alone lost to Qobuz. `MediaKeyTap` (Playback/) is a CGEvent tap on
-      NX_SYSDEFINED media keys that swallows play/next/previous while MacBee has a song loaded. Needs the
-      Accessibility permission (asked at launch; General preferences has the toggle "Media keys always control
-      MacBee", default on, and an Open System Settings button). Nothing loaded = keys go to other apps.
+    - Media keys: an event tap (`MediaKeyTap`, needed Accessibility) was added here and REMOVED 2026-10-22 for the
+      App Store. See "Media keys rule" below.
     - Two-finger click now pauses/resumes instead of skipping (`secondaryClickPlaysPauses()`).
   - Fixes after Troy's second test (2026-10-17):
     - Playing a video crashed MacBee (SwiftUI `VideoPlayer` from _AVKit_SwiftUI aborts in metadata init on
@@ -361,7 +359,7 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   anyone (repo made PUBLIC 2026-10-19 at Troy's request; history scanned for secrets first, none found).
   Troy WANTS the Mac App Store once his Developer membership is active. Work needed: App Sandbox entitlements,
   music/video folders via open panel + security-scoped bookmarks (also network volumes), media keys via
-  MPRemoteCommandCenter only (drop the CGEvent tap that steals keys from Qobuz), verify hog mode under sandbox,
+  MPRemoteCommandCenter only (DONE 2026-10-22: the CGEvent tap is gone), verify hog mode under sandbox,
   mpv/MoltenVK dylibs signed in bundle, App Review. Until then Developer ID + notarization for the .dmg.
 - Roadmap Phase 5 PASSED 2026-10-18 (Troy confirmed automatic sync works between CMBA and DDMBA). Roadmap complete:
   - TagBee: Track Studio > TagBee tab = search songs, tick, "Open N in TagBee" (double-click opens one), and a
@@ -460,6 +458,15 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   `DispatchQueue.main.sync`, while the main thread was in `mpv_set_property` (scheduleRefit) waiting for that lock.
   The setter now uses main.async. Never block mpv's threads on the main thread.
 - All five roadmap phases built.
+- Media keys rule (2026-10-22, APPSTORE_MEDIA_KEYS.md Parts 1-2, Troy's App Store plan): MacBee never intercepts
+  media keys. No `CGEvent.tapCreate`, global NSEvent key monitors, `IOHIDManager`, `AXIsProcessTrusted` or
+  Accessibility prompt, ever (local monitors inside MacBee's windows are fine). `NowPlayingService` registers with
+  MPRemoteCommandCenter / MPNowPlayingInfoCenter like Apple Music; the app that most recently started playing gets
+  the keys. While a song is loaded it reports "paused", never "stopped" (the engine stops briefly between songs and
+  on rate switches, which could hand the keys away). Removed: MediaKeyTap.swift, the "Media keys always control
+  MacBee" setting. Why it "lost to Qobuz": checked with CGGetEventTapList on CMBA, Qobuz installs its own ACTIVE
+  event tap on media keys whenever it's open (it has Accessibility permission). Fix is on Troy's side: System
+  Settings > Privacy & Security > Accessibility > Qobuz off. Parts 3 (sandbox) and 4 (docs/ROADMAP.md) not done yet.
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).
