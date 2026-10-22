@@ -32,6 +32,7 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     public private(set) var lastError: String?
     public private(set) var settings: OutputSettings
     public private(set) var equalizer: EqualizerSettings = .off
+    public private(set) var recordOut: RecordOutMode?
 
     public var hardwareVolumeAvailable: Bool { outputDevice?.hasHardwareVolume ?? false }
 
@@ -95,6 +96,13 @@ public final class SFBPlaybackEngine: PlaybackEngine {
 
     public func pause() {
         player.pause()
+    }
+
+    public func setRecordOut(_ mode: RecordOutMode?) {
+        guard mode != recordOut else { return }
+        recordOut = mode
+        // Re-plan the next song: gapless while listening, separate (with a gap) while recording.
+        if state != .stopped { queueDidChange() }
     }
 
     public func resume() {
@@ -228,8 +236,9 @@ public final class SFBPlaybackEngine: PlaybackEngine {
 
         // Virtual devices (Boom 3D etc.) are left exactly as they are; changing them can cause loud noise.
         if !device.isVirtual {
+            let supported = recordOut?.allowedRates(device.supportedSampleRates) ?? device.supportedSampleRates
             let target = SampleRatePolicy.bestRate(for: info.deliveredSampleRate,
-                                                   supported: device.supportedSampleRates) ?? info.deliveredSampleRate
+                                                   supported: supported) ?? info.deliveredSampleRate
             do {
                 try await devices.setNominalSampleRate(target, on: device.id)
             } catch {
@@ -288,7 +297,7 @@ public final class SFBPlaybackEngine: PlaybackEngine {
                     // Current track already ended; start right away.
                     startWhenPreloaded = false
                     startNext(url: next, decoder: decoder)
-                } else if player.formatWillBeGaplessIfEnqueued(decoder.processingFormat) {
+                } else if recordOut == nil && player.formatWillBeGaplessIfEnqueued(decoder.processingFormat) {
                     try player.enqueue(decoder)
                     enqueuedNext = next
                 } else {
@@ -367,9 +376,10 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         // Ignore stale notifications from a track we just replaced.
         if pendingNext == nil && (isStarting || player.currentDecoder != nil) { return }
         if let pending = pendingNext {
-            // Different sample rate: switch the DAC, then continue.
+            // Different sample rate (or recording): switch the DAC, then continue, after a silent gap
+            // when recording.
             pendingNext = nil
-            startNext(url: pending.url, decoder: pending.decoder)
+            startNext(url: pending.url, decoder: pending.decoder, after: recordOut?.gap ?? 0)
         } else if preloadingURL != nil {
             // Next track is still loading (slow network). Start it when it arrives.
             startWhenPreloaded = true
@@ -378,11 +388,15 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         }
     }
 
-    private func startNext(url: URL, decoder: PCMDecoding) {
+    private func startNext(url: URL, decoder: PCMDecoding, after delay: TimeInterval = 0) {
         generation += 1
         let myGeneration = generation
         player.stop()
         Task {
+            if delay > 0 {
+                try? await Task.sleep(for: .seconds(delay))
+                guard myGeneration == generation else { return } // stopped or another song chosen
+            }
             do {
                 try await start(decoder, url: url, userInitiated: false, generation: myGeneration)
             } catch {

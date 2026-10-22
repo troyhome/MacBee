@@ -467,6 +467,14 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   MacBee" setting. Why it "lost to Qobuz": checked with CGGetEventTapList on CMBA, Qobuz installs its own ACTIVE
   event tap on media keys whenever it's open (it has Accessibility permission). Fix is on Troy's side: System
   Settings > Privacy & Security > Accessibility > Qobuz off. Parts 3 (sandbox) and 4 (docs/ROADMAP.md) not done yet.
+- Record to MiniDisc (2026-10-22, Troy; for recorders without USB): playlist "…" menu, or the button beside
+  an MD Mix's capacity bar, opens `RecordToMiniDiscSheet` (`MacBee/MiniDisc/`). `RecordOutSession`: 3 s lead-in,
+  then plays the list with a silent gap (2-6 s, UserDefaults "recordOutGap") so the recorder makes a new track per
+  song; shuffle/repeat off while running (restored after), end of list doesn't start continuous play
+  (`PlayerViewModel.queueFinishedOverride`). Engine: `RecordOutMode` (MacBeeAudio, tested) via
+  `setRecordOut`: songs never enqueued gaplessly, gap before each next song, output capped at 48 kHz (MiniDisc
+  optical takes 32/44.1/48). "Copy Track Names" copies a numbered title list. USB transfer (NetMD) is a separate
+  project, MD-deck (see /mnt/project-files/MD-DECK_HANDOFF.md in the Claude project).
 - Progress notes: whoever finishes a piece of work updates this Status section and pushes to main, so the other
   Mac (and the next chat) picks up where things stand.
 - Defaults Troy chose: start page "Where I left off"; theme "System" (follows macOS dark/light).

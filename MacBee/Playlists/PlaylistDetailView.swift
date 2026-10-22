@@ -20,6 +20,7 @@ struct PlaylistDetailView: View {
     @State private var newName = ""
     @State private var confirmDelete = false
     @State private var dropTargeted = false
+    @State private var recordingToMiniDisc = false
 
     var body: some View {
         if let playlist = store.playlist(id: playlistId) {
@@ -36,10 +37,14 @@ struct PlaylistDetailView: View {
                 .listRowSeparator(.hidden)
             if let capacity = playlist.capacitySeconds {
                 // MiniDisc mix: how full the disc is (more tools in Playlist Studio).
-                CapacityBar(total: entries.map(\.track.duration).reduce(0, +), capacity: Double(capacity))
-                    .frame(maxWidth: 420)
-                    .padding(.bottom, 10)
-                    .listRowSeparator(.hidden)
+                HStack(spacing: 16) {
+                    CapacityBar(total: entries.map(\.track.duration).reduce(0, +), capacity: Double(capacity))
+                        .frame(maxWidth: 420)
+                    Button("Record to MiniDisc…", systemImage: "opticaldisc") { recordingToMiniDisc = true }
+                        .disabled(entries.isEmpty)
+                }
+                .padding(.bottom, 10)
+                .listRowSeparator(.hidden)
             }
             if entries.isEmpty {
                 Text("This playlist is empty. Drag songs, albums or artists here, or right-click them and choose Add to Playlist.")
@@ -96,6 +101,10 @@ struct PlaylistDetailView: View {
         } isTargeted: { dropTargeted = $0 }
         .navigationTitle(playlist.name)
         .task(id: "\(playlistId)-\(store.contentRevision)-\(library.revision)") { await load() }
+        .sheet(isPresented: $recordingToMiniDisc) {
+            RecordToMiniDiscSheet(title: playlist.name, tracks: entries.map(\.track), player: player,
+                                  discMinutes: playlist.capacitySeconds.map { $0 / 60 })
+        }
         .alert("Rename Playlist", isPresented: $renaming) {
             TextField("Name", text: $newName)
             Button("Rename") { Task { await store.rename(playlist, to: newName) } }
@@ -142,6 +151,8 @@ struct PlaylistDetailView: View {
                             app.go(to: .playlistStudio)
                         }
                         Button("Export as M3U8…") { export(playlist) }
+                        Button("Record to MiniDisc…") { recordingToMiniDisc = true }
+                            .disabled(entries.isEmpty)
                         Divider()
                         artworkMenu(playlist)
                         Divider()

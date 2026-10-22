@@ -32,6 +32,10 @@ public protocol PlaybackEngine: AnyObject {
     var equalizer: EqualizerSettings { get }
     func applyEqualizer(_ settings: EqualizerSettings)
 
+    /// Recording mode (gaps between songs, capped sample rate), or `nil` for normal listening.
+    var recordOut: RecordOutMode? { get }
+    func setRecordOut(_ mode: RecordOutMode?)
+
     /// Applies new output settings. Restarts the current track only when required (device or DSD mode change).
     func apply(_ settings: OutputSettings)
 

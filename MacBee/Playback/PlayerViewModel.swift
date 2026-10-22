@@ -24,6 +24,8 @@ final class PlayerViewModel {
     /// Called when a new list of songs starts playing; the album when a whole album was started.
     /// AppModel uses it to remember the page the music was started from ("Playing From" in the sidebar).
     @ObservationIgnored var onNewQueue: ((AlbumSummary?) -> Void)?
+    /// While recording to MiniDisc, the end of the list goes here instead of starting a continuous-play mix.
+    @ObservationIgnored var queueFinishedOverride: (() -> Void)?
     /// The song the running mix was last built from. While set, the mix never ends: when the queue runs low,
     /// the next batch is built from the last song in it (the 25th, then the 50th, ...), so the mix drifts (Troy).
     private(set) var mixSeed: Track?
@@ -141,6 +143,7 @@ final class PlayerViewModel {
 
     /// The engine played the last song in the queue. With continuous play on, a mix from that song follows.
     func queueDidFinish() {
+        if let handler = queueFinishedOverride { handler(); return }
         guard preferences.continuousPlay, let last = queue.tracks.last ?? currentTrack else { return }
         Task { await startMix(from: last, includingSeed: false) }
     }
