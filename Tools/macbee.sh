@@ -44,7 +44,7 @@ case "${1:-build}" in
         ;;
     appstore)
         # The App Store version (sandboxed), built beside the everyday one; /Applications/MacBee.app isn't touched.
-        # It keeps its own data (library, settings) in ~/Library/Containers/com.troyhomenchuk.MacBee.
+        # It keeps its own data (library, settings) in ~/Library/Containers/com.troyhomenchuk.MacBee.appstore.
         xcodebuild -project "$ROOT/MacBee.xcodeproj" -scheme MacBee -configuration AppStore \
             -derivedDataPath "$OUT/DerivedData-AppStore" -allowProvisioningUpdates build
         APP="$OUT/DerivedData-AppStore/Build/Products/AppStore/MacBee.app"

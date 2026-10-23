@@ -473,16 +473,18 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   "AppStore" (target settings: ENABLE_APP_SANDBOX = YES, `MacBee-AppStore.entitlements` = sandbox, user-selected
   read-write, app-scope bookmarks, network client + server, keychain group; compilation condition APPSTORE).
   `Tools/macbee.sh appstore` builds it into ~/Library/Developer/MacBee/DerivedData-AppStore, checks signatures of the
-  embedded mpv/MoltenVK frameworks, quits the everyday MacBee and opens it. Same bundle id, so its data lives in
-  ~/Library/Containers/com.troyhomenchuk.MacBee (fresh library; the everyday copy is untouched). Never run both at once.
+  embedded mpv/MoltenVK frameworks, quits the everyday MacBee and opens it. Its bundle id is
+  com.troyhomenchuk.MacBee.appstore, data in ~/Library/Containers/com.troyhomenchuk.MacBee.appstore (fresh library).
+  NEVER give a sandboxed build the everyday id com.troyhomenchuk.MacBee: on its first launch macOS MOVED the everyday
+  copy's preferences plist into the container (2026-10-23; restored with `defaults import`). Never run both at once.
   Both builds now: `FolderAccess` (MacBeeLibrary/Tagging) keeps security-scoped bookmarks (UserDefaults
   "folderBookmarks") for music folders (`MusicLibrary.addFolder/removeFolder`), video folders and the Copy To device,
   opened at launch and again when a drive mounts. Covers are embedded by MacBee itself (`CoverWriter`, SFBAudioEngine,
   tested) instead of running TagBee's `--set-cover` helper with Process() (not allowed in the sandbox), so Find
   Covers no longer needs TagBee 1.1. Exclusive mode: `acquireHogMode` checks it really got the device and otherwise
-  reports "Exclusive mode isn't available..." (sandbox behaviour still to be tested). macOS copies the everyday
-  copy's preferences into the new container on first launch (Troy saw his video folder appear with 0 movies), so
-  the AppStore build drops video folders and the Copy To device that have no bookmark (`forgetFoldersWithoutAccess`). Not done yet: moving Troy's
+  reports "Exclusive mode isn't available..." (sandbox behaviour still to be tested). Users upgrading from a
+  non-sandboxed copy with the same id get their settings moved in, so the AppStore build drops video folders and the
+  Copy To device that have no bookmark (`forgetFoldersWithoutAccess`). Not done yet: moving Troy's
   existing data into the container (only if he switches his everyday copy), App Store upload/review.
 - Record to MiniDisc (2026-10-22, Troy; for recorders without USB): playlist "…" menu, or the button beside
   an MD Mix's capacity bar, opens `RecordToMiniDiscSheet` (`MacBee/MiniDisc/`). `RecordOutSession`: 3 s lead-in,
