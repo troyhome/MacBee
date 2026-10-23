@@ -10,7 +10,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .search: "Search"
         case .playingFrom: "Playing From"
-        case .home: "Music"
+        case .home: "Media"
         case .collection: "Collections"
         case .videos: "Videos"
         case .artists: "Artists"

@@ -485,7 +485,11 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   Covers no longer needs TagBee 1.1. Exclusive mode: `acquireHogMode` checks it really got the device and otherwise
   reports "Exclusive mode isn't available..." (sandbox behaviour still to be tested). Users upgrading from a
   non-sandboxed copy with the same id get their settings moved in, so the AppStore build drops video folders and the
-  Copy To device that have no bookmark (`forgetFoldersWithoutAccess`). Not done yet: moving Troy's
+  Copy To device that have no bookmark (`forgetFoldersWithoutAccess`). After Troy's first App Store test (2026-10-23): the
+  sidebar's first item is called **Media** (was Music; code stays `.home`); the Videos page offers Add Video Folder
+  when no video folder is set even if music videos were found; exclusive mode takes a break while a video plays
+  (`SFBPlaybackEngine.startExclusiveModeBreak` / `endExclusiveModeBreak` in AppModel.playVideo / closeVideo), since
+  the hog-mode device kept mpv's sound out. Music, folders remembered after relaunch and exclusive mode passed. Not done yet: moving Troy's
   existing data into the container (only if he switches his everyday copy), App Store upload/review.
 - Record to MiniDisc (2026-10-22, Troy; for recorders without USB): playlist "…" menu, or the button beside
   an MD Mix's capacity bar, opens `RecordToMiniDiscSheet` (`MacBee/MiniDisc/`). `RecordOutSession`: 3 s lead-in,

@@ -6,7 +6,7 @@ enum StartPage: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .home: "Music"
+        case .home: "Media"
         case .artists: "Artists"
         case .albums: "Albums"
         case .lastPage: "Where I left off"

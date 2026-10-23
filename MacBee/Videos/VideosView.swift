@@ -190,8 +190,21 @@ struct VideosView: View {
             } else if shownCategory == .musicVideos {
                 ContentUnavailableView("No music videos found", systemImage: "music.note.tv",
                                        description: Text("MacBee looks for videos in your music folders."))
+            } else if preferences.videoFolders.isEmpty {
+                // Music videos from the music folders can fill the catalog before any video folder is added.
+                ContentUnavailableView {
+                    Label("No video folders yet", systemImage: "film.stack")
+                } description: {
+                    Text("Choose the folder or drive with your movies and TV shows.")
+                } actions: {
+                    Button("Add Video Folder…") { addVideoFolder() }
+                }
             } else {
-                ContentUnavailableView("Nothing here yet", systemImage: shownCategory.systemImage)
+                ContentUnavailableView {
+                    Label("Nothing here yet", systemImage: shownCategory.systemImage)
+                } actions: {
+                    Button("Add Video Folder…") { addVideoFolder() }
+                }
             }
         }
     }

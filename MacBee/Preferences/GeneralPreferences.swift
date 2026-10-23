@@ -13,7 +13,7 @@ struct GeneralPreferences: View {
                 Toggle("Check the library for changes", isOn: $preferences.checkLibraryAtLaunch)
                 PreferenceNote("Looks for new, changed and removed files. Only sizes and dates are compared, so it's quick even on a network drive.")
             }
-            Section("Music page") {
+            Section("Media page") {
                 ForEach(preferences.homeOrder) { kind in
                     HStack(spacing: 10) {
                         Image(systemName: "line.3.horizontal")
@@ -40,7 +40,7 @@ struct GeneralPreferences: View {
                     }
                 }
                 HStack {
-                    PreferenceNote("Drag to set the order of the Music page; untick to hide a section.")
+                    PreferenceNote("Drag to set the order of the Media page; untick to hide a section.")
                     Spacer()
                     Button("Reset") {
                         preferences.homeOrder = HomeSectionKind.allCases

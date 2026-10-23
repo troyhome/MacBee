@@ -86,7 +86,7 @@ struct CollectionView: View {
             .overlay {
                 if model.isLoaded && model.savedMixes.isEmpty {
                     ContentUnavailableView("No saved mixes yet", systemImage: "square.stack.3d.up",
-                                           description: Text("On the Music page, hover over a suggested mix and click the bookmark to keep it here."))
+                                           description: Text("On the Media page, hover over a suggested mix and click the bookmark to keep it here."))
                 }
             }
         }

@@ -34,7 +34,7 @@ struct ArtistsView: View {
                     ArtistPageView(artist: artist) { other in selectedKey = other.artistKey }
                 } else if model.isLoaded {
                     ContentUnavailableView("No artists yet", systemImage: "music.mic",
-                                           description: Text("Add a music folder on the Music page."))
+                                           description: Text("Add a music folder on the Media page."))
                 } else {
                     Color.clear
                 }

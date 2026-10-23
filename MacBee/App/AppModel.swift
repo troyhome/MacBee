@@ -280,6 +280,8 @@ final class AppModel {
     /// Plays a video over the window, pausing the music first.
     func playVideo(_ playback: VideoPlayback) {
         if player.isPlaying { player.togglePlayPause() }
+        // Exclusive mode would keep the video's sound off the device.
+        engine.startExclusiveModeBreak()
         showNowPlaying = false
         videos.markPlayed(playback.likeId)
         videoSession?.stop()
@@ -295,6 +297,7 @@ final class AppModel {
         videoMiniWindow.hide()
         session.stop()
         videoSession = nil
+        engine.endExclusiveModeBreak()
     }
 
     /// Moves the video into its own small window.

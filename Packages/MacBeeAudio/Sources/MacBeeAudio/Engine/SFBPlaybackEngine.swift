@@ -59,6 +59,8 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     /// Guards against overlapping `play` calls (e.g. rapid skipping).
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var progressTask: Task<Void, Never>?
+    /// True while a video plays: exclusive mode is let go so the video's sound can reach the device.
+    @ObservationIgnored private var exclusiveModeOnBreak = false
     @ObservationIgnored private var isStarting = false
     /// Next track currently loading into memory in the background.
     @ObservationIgnored private var preloadingURL: URL?
@@ -453,8 +455,21 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         if state == .stopped { switchIdleDevice(); applyVolume() } else { restartCurrentTrack() }
     }
 
+    /// Lets another player in this app (the video player) use the device while exclusive mode is on.
+    /// Exclusive mode comes back with `endExclusiveModeBreak()`.
+    public func startExclusiveModeBreak() {
+        exclusiveModeOnBreak = true
+        releaseExclusiveAccess()
+    }
+
+    public func endExclusiveModeBreak() {
+        guard exclusiveModeOnBreak else { return }
+        exclusiveModeOnBreak = false
+        if settings.exclusiveMode, state != .stopped { acquireExclusiveAccess() }
+    }
+
     private func acquireExclusiveAccess() {
-        guard let device = outputDevice else { return }
+        guard !exclusiveModeOnBreak, let device = outputDevice else { return }
         do { try devices.acquireHogMode(on: device) } catch { report(error) }
         updateSignalPath()
     }

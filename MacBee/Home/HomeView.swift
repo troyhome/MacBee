@@ -19,7 +19,7 @@ struct HomeView: View {
                 content
             }
         }
-        .navigationTitle("Music")
+        .navigationTitle("Media")
         .confirmationDialog("Reset Play History?", isPresented: $confirmHistoryReset) {
             Button("Reset Play History", role: .destructive) {
                 Task { await model.resetPlayHistory(in: library.database) }
@@ -36,7 +36,7 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 34) {
                 HStack {
-                    Text("Music")
+                    Text("Media")
                         .font(.system(size: 30, weight: .bold))
                         .foregroundStyle(theme.textPrimary)
                     Spacer()

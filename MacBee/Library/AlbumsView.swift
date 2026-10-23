@@ -13,7 +13,7 @@ struct AlbumsView: View {
             .overlay {
                 if model.isLoaded && model.albums.isEmpty {
                     ContentUnavailableView("No albums yet", systemImage: "square.stack",
-                                           description: Text(model.errorMessage ?? "Add a music folder on the Music page."))
+                                           description: Text(model.errorMessage ?? "Add a music folder on the Media page."))
                 }
             }
             .navigationTitle("Albums")
