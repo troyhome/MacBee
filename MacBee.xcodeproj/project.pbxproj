@@ -256,6 +256,8 @@
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
+			name = AppStore;
+		};
 		A10000000000000000000B06 /* AppStore */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -287,6 +289,8 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 			};
+			name = AppStore;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
