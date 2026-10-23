@@ -466,7 +466,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   on rate switches, which could hand the keys away). Removed: MediaKeyTap.swift, the "Media keys always control
   MacBee" setting. Why it "lost to Qobuz": checked with CGGetEventTapList on CMBA, Qobuz installs its own ACTIVE
   event tap on media keys whenever it's open (it has Accessibility permission). Fix is on Troy's side: System
-  Settings > Privacy & Security > Accessibility > Qobuz off. Parts 3 (sandbox) and 4 (docs/ROADMAP.md) not done yet.
+  Settings > Privacy & Security > Accessibility > Qobuz off. Troy tested 2026-10-23: everything passed. Parts 3
+  (sandbox) and 4 (docs/ROADMAP.md) not done yet.
 - Record to MiniDisc (2026-10-22, Troy; for recorders without USB): playlist "…" menu, or the button beside
   an MD Mix's capacity bar, opens `RecordToMiniDiscSheet` (`MacBee/MiniDisc/`). `RecordOutSession`: 3 s lead-in,
   then plays the list with a silent gap (2-6 s, UserDefaults "recordOutGap") so the recorder makes a new track per
