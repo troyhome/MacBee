@@ -30,7 +30,7 @@ let package = Package(
         ),
         .testTarget(
             name: "MacBeeLibraryTests",
-            dependencies: ["MacBeeLibrary"]
+            dependencies: ["MacBeeLibrary", .product(name: "SFBAudioEngine", package: "SFBAudioEngine")]
         ),
     ]
 )

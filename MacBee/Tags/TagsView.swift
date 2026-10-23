@@ -170,10 +170,8 @@ private struct TagBeePanel: View {
                 } label: {
                     Label("Find Covers", systemImage: "wand.and.stars")
                 }
-                .disabled(results.isEmpty || app.tagEditor?.canSetCovers != true)
-                .help(app.tagEditor?.canSetCovers == true
-                      ? "Look up covers online for every album in this list and choose one for each"
-                      : "Needs TagBee 1.1 or newer (open Update TagBee)")
+                .disabled(results.isEmpty || app.tagEditor == nil)
+                .help("Look up covers online for every album in this list and choose one for each")
                 Button("Missing Artwork") { showMissingArtwork() }
                     .help("List every song in the library that has no cover, grouped by album, to fix in TagBee")
                 Button("Open TagBee") {

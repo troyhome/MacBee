@@ -72,49 +72,26 @@ final class ExternalTagEditor: TagEditorService {
         }
     }
 
-    // MARK: - Covers (written by TagBee without opening its window)
+    // MARK: - Covers (written by MacBee itself, so this works in the App Store sandbox too)
 
     struct CoverNotSaved: LocalizedError {
         let detail: String
         var errorDescription: String? { detail }
     }
 
-    /// True when the chosen editor is TagBee 1.1 or newer, which can embed covers for MacBee
-    /// (`TagBee --set-cover`). Older TagBees would open their window instead.
-    var canSetCovers: Bool {
-        guard let app = editorURL,
-              FileManager.default.isExecutableFile(atPath: app.appendingPathComponent("Contents/MacOS/TagBee").path),
-              let version = Bundle(url: app)?.infoDictionary?["CFBundleShortVersionString"] as? String else { return false }
-        return version.compare("1.1", options: .numeric) != .orderedAscending
-    }
 
     /// Embeds this cover (JPEG or PNG) into each song's file, then re-reads them so MacBee shows it.
     func setCover(_ image: Data, on tracks: [Track]) async throws {
-        guard let app = editorURL, canSetCovers else { throw NoEditorChosen() }
-        let tool = app.appendingPathComponent("Contents/MacOS/TagBee")
         let paths = Array(Set(tracks.map(\.path))).sorted()
         guard !paths.isEmpty else { return }
-        let output = try await Task.detached(priority: .userInitiated) { () -> (Int32, String) in
-            let file = FileManager.default.temporaryDirectory.appendingPathComponent("MacBee-cover-\(UUID().uuidString)")
-            try image.write(to: file)
-            defer { try? FileManager.default.removeItem(at: file) }
-            let process = Process()
-            process.executableURL = tool
-            process.arguments = ["--set-cover", file.path] + paths
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            process.standardError = pipe
-            try process.run()
-            let text = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-            process.waitUntilExit()
-            return (process.terminationStatus, text)
+        let failures = await Task.detached(priority: .userInitiated) {
+            CoverWriter.embed(image, inFilesAt: paths)
         }.value
         _ = try? await library.refreshFiles(paths)
-        if output.0 != 0 {
-            let errors = output.1.split(separator: "\n").filter { $0.hasPrefix("ERROR") }
-            throw CoverNotSaved(detail: errors.isEmpty
-                ? "TagBee couldn't save the cover. Update TagBee and try again."
-                : errors.prefix(3).joined(separator: "\n"))
+        if !failures.isEmpty {
+            let names = failures.prefix(3).map { "\(URL(fileURLWithPath: $0.path).lastPathComponent): \($0.reason)" }
+            throw CoverNotSaved(detail: "The cover couldn't be saved in \(failures.count) of \(paths.count) songs.\n"
+                                + names.joined(separator: "\n"))
         }
     }
 

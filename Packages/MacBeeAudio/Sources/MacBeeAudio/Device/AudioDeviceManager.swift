@@ -117,6 +117,9 @@ public final class AudioDeviceManager {
         if owner == getpid() { return }
         guard owner == -1 else { throw AudioEngineError.deviceBusy(device.name) }
         try HAL.set(device.id, HAL.address(kAudioDevicePropertyHogMode), getpid())
+        // The App Store sandbox may accept the request without handing the device over. Say so instead of
+        // showing exclusive mode as on.
+        guard ownsHogMode(device.id) else { throw AudioEngineError.exclusiveModeUnavailable(device.name) }
     }
 
     public func releaseHogMode(on id: AudioObjectID) {

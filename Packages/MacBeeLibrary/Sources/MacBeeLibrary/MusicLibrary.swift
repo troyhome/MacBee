@@ -77,6 +77,7 @@ public final class MusicLibrary {
 
     /// Loads folders and stats, starts watching, and (unless turned off) does a quick check for changes.
     public func start(watch: Bool = true, checkForChanges: Bool = true) async {
+        FolderAccess.shared.openAll()
         await reloadFolders()
         try? await database.refreshVisibility()
         await refreshStats()
@@ -126,6 +127,7 @@ public final class MusicLibrary {
             throw LibraryError.folderOverlaps(path, overlap.path)
         }
         let name = FileManager.default.displayName(atPath: path)
+        FolderAccess.shared.remember(url)
         let folder = try await database.insertFolder(path: path, name: name)
         await reloadFolders()
         monitor.watch(folders.map(\.folder.path))
@@ -192,7 +194,9 @@ public final class MusicLibrary {
     /// Removes a folder and its tracks from the library. Files on disk are not touched.
     public func removeFolder(id: Int64) async throws {
         pendingFolderIds.removeAll { $0 == id }
+        let path = folders.first { $0.folder.id == id }?.folder.path
         try await database.deleteFolder(id: id)
+        if let path { FolderAccess.shared.forget(path) }
         await reloadFolders()
         monitor.watch(folders.map(\.folder.path))
         await refreshStats()

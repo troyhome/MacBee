@@ -13,7 +13,8 @@ playback with a dark, TIDAL-inspired interface. It is being built in phases.
 ## Decisions already made
 - Audio engine: SFBAudioEngine (~> 0.14.0), wrapped by our own `PlaybackEngine` protocol.
 - Formats: FLAC, ALAC, WAV, AIFF, MP3, AAC, DSD (.dsf). DSD plays as DoP (bit-perfect, DAC must support it) or DSD64→PCM (default).
-- Minimum macOS 14 Sonoma. Direct download, not the App Store (no sandbox).
+- Minimum macOS 14 Sonoma. Everyday build = direct download, no sandbox. A separate sandboxed "AppStore" build
+  configuration exists for the Mac App Store (Troy chose two builds, 2026-10-23); see "App Store build" in Status.
 - Exclusive (hog) mode: off by default, one-click toggle in settings and the play bar.
 - Volume: hardware (DAC) volume by default; optional software volume, flagged "not bit-perfect" below 100%.
 - Music lives on a network drive mounted at `/Volumes/2 Set Music` (~9,500 tracks, growing). More folders can be added later.
@@ -466,8 +467,21 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   on rate switches, which could hand the keys away). Removed: MediaKeyTap.swift, the "Media keys always control
   MacBee" setting. Why it "lost to Qobuz": checked with CGGetEventTapList on CMBA, Qobuz installs its own ACTIVE
   event tap on media keys whenever it's open (it has Accessibility permission). Fix is on Troy's side: System
-  Settings > Privacy & Security > Accessibility > Qobuz off. Troy tested 2026-10-23: everything passed. Parts 3
-  (sandbox) and 4 (docs/ROADMAP.md) not done yet.
+  Settings > Privacy & Security > Accessibility > Qobuz off. Troy tested 2026-10-23: everything passed. Part 4
+  (docs/ROADMAP.md wording) done 2026-10-23.
+- App Store build (APPSTORE_MEDIA_KEYS.md Part 3, started 2026-10-23, waiting for Troy's test): build configuration
+  "AppStore" (target settings: ENABLE_APP_SANDBOX = YES, `MacBee-AppStore.entitlements` = sandbox, user-selected
+  read-write, app-scope bookmarks, network client + server, keychain group; compilation condition APPSTORE).
+  `Tools/macbee.sh appstore` builds it into ~/Library/Developer/MacBee/DerivedData-AppStore, checks signatures of the
+  embedded mpv/MoltenVK frameworks, quits the everyday MacBee and opens it. Same bundle id, so its data lives in
+  ~/Library/Containers/com.troyhomenchuk.MacBee (fresh library; the everyday copy is untouched). Never run both at once.
+  Both builds now: `FolderAccess` (MacBeeLibrary/Tagging) keeps security-scoped bookmarks (UserDefaults
+  "folderBookmarks") for music folders (`MusicLibrary.addFolder/removeFolder`), video folders and the Copy To device,
+  opened at launch and again when a drive mounts. Covers are embedded by MacBee itself (`CoverWriter`, SFBAudioEngine,
+  tested) instead of running TagBee's `--set-cover` helper with Process() (not allowed in the sandbox), so Find
+  Covers no longer needs TagBee 1.1. Exclusive mode: `acquireHogMode` checks it really got the device and otherwise
+  reports "Exclusive mode isn't available..." (sandbox behaviour still to be tested). Not done yet: moving Troy's
+  existing data into the container (only if he switches his everyday copy), App Store upload/review.
 - Record to MiniDisc (2026-10-22, Troy; for recorders without USB): playlist "…" menu, or the button beside
   an MD Mix's capacity bar, opens `RecordToMiniDiscSheet` (`MacBee/MiniDisc/`). `RecordOutSession`: 3 s lead-in,
   then plays the list with a silent gap (2-6 s, UserDefaults "recordOutGap") so the recorder makes a new track per

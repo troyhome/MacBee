@@ -435,6 +435,8 @@ final class AppModel {
     func start() async {
         guard !started else { return }
         started = true
+        // Picked folders (music, videos, Copy To device) open again; needed in the App Store build.
+        FolderAccess.shared.openAll()
         library?.periodicCheckInterval = preferences.routineCheck.interval
         await library?.start(checkForChanges: preferences.checkLibraryAtLaunch)
     }

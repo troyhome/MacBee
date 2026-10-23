@@ -12,6 +12,7 @@
 #   Tools/macbee.sh release [version]   raise the version (or set it), make the .dmg and post it as a GitHub
 #                             Release (needs GitHub's tool once: brew install gh && gh auth login)
 #   Tools/macbee.sh updater   (re)make the "Update MacBee" app in /Applications (one click = update)
+#   Tools/macbee.sh appstore  build and open the sandboxed App Store version (beside the everyday one)
 #   Tools/macbee.sh icon      redraw the app icon
 set -euo pipefail
 
@@ -40,6 +41,24 @@ case "${1:-build}" in
         ditto "$OUT/DerivedData-Release/Build/Products/Release/MacBee.app" /Applications/MacBee.app
         open /Applications/MacBee.app
         echo "Installed /Applications/MacBee.app"
+        ;;
+    appstore)
+        # The App Store version (sandboxed), built beside the everyday one; /Applications/MacBee.app isn't touched.
+        # It keeps its own data (library, settings) in ~/Library/Containers/com.troyhomenchuk.MacBee.
+        xcodebuild -project "$ROOT/MacBee.xcodeproj" -scheme MacBee -configuration AppStore \
+            -derivedDataPath "$OUT/DerivedData-AppStore" -allowProvisioningUpdates build
+        APP="$OUT/DerivedData-AppStore/Build/Products/AppStore/MacBee.app"
+        echo "Checking the signature of the app and everything inside it (mpv, MoltenVK)..."
+        codesign --verify --deep --strict "$APP" && echo "Signature OK"
+        find "$APP/Contents/Frameworks" -maxdepth 1 \( -name "*.framework" -o -name "*.dylib" \) 2>/dev/null | while read -r item; do
+            echo "  $(basename "$item"): $(codesign -dv "$item" 2>&1 | grep TeamIdentifier || echo 'not signed')"
+        done
+        codesign -d --entitlements - "$APP" 2>/dev/null | grep -q app-sandbox && echo "Sandbox: on"
+        # Only one MacBee at a time (both would answer the media keys and Mac-to-Mac sync).
+        osascript -e 'quit app "MacBee"' 2>/dev/null || true
+        sleep 2
+        open "$APP"
+        echo "Opened the App Store version: $APP"
         ;;
     update)
         # Get the newest version from GitHub and install it, unless it's already installed.

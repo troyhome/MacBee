@@ -222,6 +222,7 @@ struct VideosView: View {
         panel.prompt = "Add"
         panel.message = "Choose a folder with movies and TV shows"
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        FolderAccess.shared.remember(url)
         preferences.addVideoFolder(url.path)
         Task { await app.refreshVideos() }
     }

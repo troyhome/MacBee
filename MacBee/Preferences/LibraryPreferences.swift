@@ -243,6 +243,7 @@ private struct VideoFoldersSection: View {
                         .foregroundStyle(paused ? Color.secondary : connected ? .green : .orange)
                     Button("Remove") {
                         preferences.videoFolders.removeAll { $0 == path }
+                        FolderAccess.shared.forget(path)
                         preferences.pausedVideoFolders.removeAll { $0 == path }
                         Task { await app.refreshVideos() }
                     }
@@ -277,6 +278,7 @@ private struct VideoFoldersSection: View {
         panel.canChooseFiles = false
         panel.prompt = "Add"
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        FolderAccess.shared.remember(url)
         preferences.addVideoFolder(url.path)
         Task { await app.refreshVideos() }
     }

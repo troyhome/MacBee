@@ -24,9 +24,9 @@ passed (Troy confirmed). Roadmap complete. Phase status is tracked in
 - Preferences Hierarchy: Relocate all Plex server settings under the "Library" preferences tab.
 - Hover Navigation for Carousels: Add hover-triggered left and right navigation arrows to all horizontal scroll
   containers to allow mouse navigation without horizontal wheel or trackpad gestures.
-- System Media Dominance: Configure MPRemoteCommandCenter and MPNowPlayingInfoCenter to intercept system media
-  keys upon playback initiation, preventing background applications (Apple Music, Spotify) from receiving
-  playback events.
+- Media keys: Register with MPRemoteCommandCenter and MPNowPlayingInfoCenter and behave like any normal player
+  (the app that most recently started playing gets the keys). Never intercept media keys (no event taps, no
+  Accessibility permission).
 - Gesture Navigation: Add a global two-finger secondary tap/click gesture recognizer across the interface to
   trigger skip-to-next-track.
 

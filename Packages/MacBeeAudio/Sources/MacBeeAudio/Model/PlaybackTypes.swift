@@ -39,6 +39,7 @@ public enum AudioEngineError: LocalizedError {
     case decoderFailed(URL, String)
     case noOutputDevice
     case deviceBusy(String)
+    case exclusiveModeUnavailable(String)
     case sampleRateChangeTimedOut(Double)
 
     public var errorDescription: String? {
@@ -48,6 +49,8 @@ public enum AudioEngineError: LocalizedError {
         case let .decoderFailed(url, reason): return "Couldn't open \(url.lastPathComponent): \(reason)"
         case .noOutputDevice: return "No audio output device found."
         case let .deviceBusy(name): return "\(name) is in exclusive use by another app."
+        case let .exclusiveModeUnavailable(name):
+            return "Exclusive mode isn't available for \(name) in this version of MacBee. Music plays normally (shared)."
         case let .sampleRateChangeTimedOut(rate): return "The device didn't switch to \(AudioFormatInfo.formatRate(rate))."
         }
     }

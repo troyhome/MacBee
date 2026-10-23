@@ -178,6 +178,8 @@ struct DeviceSyncView: View {
         panel.prompt = "Choose"
         panel.message = "Choose the music player, SD card or folder to copy your playlists to"
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        if !destination.isEmpty { FolderAccess.shared.forget(destination) }
+        FolderAccess.shared.remember(url)
         destination = url.path
     }
 
