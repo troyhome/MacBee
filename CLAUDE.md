@@ -480,7 +480,9 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   opened at launch and again when a drive mounts. Covers are embedded by MacBee itself (`CoverWriter`, SFBAudioEngine,
   tested) instead of running TagBee's `--set-cover` helper with Process() (not allowed in the sandbox), so Find
   Covers no longer needs TagBee 1.1. Exclusive mode: `acquireHogMode` checks it really got the device and otherwise
-  reports "Exclusive mode isn't available..." (sandbox behaviour still to be tested). Not done yet: moving Troy's
+  reports "Exclusive mode isn't available..." (sandbox behaviour still to be tested). macOS copies the everyday
+  copy's preferences into the new container on first launch (Troy saw his video folder appear with 0 movies), so
+  the AppStore build drops video folders and the Copy To device that have no bookmark (`forgetFoldersWithoutAccess`). Not done yet: moving Troy's
   existing data into the container (only if he switches his everyday copy), App Store upload/review.
 - Record to MiniDisc (2026-10-22, Troy; for recorders without USB): playlist "…" menu, or the button beside
   an MD Mix's capacity bar, opens `RecordToMiniDiscSheet` (`MacBee/MiniDisc/`). `RecordOutSession`: 3 s lead-in,

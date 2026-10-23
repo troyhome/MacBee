@@ -431,12 +431,29 @@ final class AppModel {
         searchFocusRequest += 1
     }
 
+    #if APPSTORE
+    /// macOS copies the everyday MacBee's settings into the App Store version the first time it runs, including
+    /// video folders and the Copy To device. The sandbox only allows folders picked in this version, so those are
+    /// dropped and have to be added again.
+    private func forgetFoldersWithoutAccess() {
+        let access = FolderAccess.shared
+        preferences.videoFolders.removeAll { !access.isRemembered($0) }
+        preferences.pausedVideoFolders.removeAll { !access.isRemembered($0) }
+        if let device = UserDefaults.standard.string(forKey: "syncDestination"), !access.isRemembered(device) {
+            UserDefaults.standard.removeObject(forKey: "syncDestination")
+        }
+    }
+    #endif
+
     /// Loads the library and starts watching folders. Safe to call more than once.
     func start() async {
         guard !started else { return }
         started = true
         // Picked folders (music, videos, Copy To device) open again; needed in the App Store build.
         FolderAccess.shared.openAll()
+        #if APPSTORE
+        forgetFoldersWithoutAccess()
+        #endif
         library?.periodicCheckInterval = preferences.routineCheck.interval
         await library?.start(checkForChanges: preferences.checkLibraryAtLaunch)
     }
