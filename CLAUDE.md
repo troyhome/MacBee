@@ -471,7 +471,8 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   (docs/ROADMAP.md wording) done 2026-10-23.
 - App Store build (APPSTORE_MEDIA_KEYS.md Part 3, started 2026-10-23, waiting for Troy's test): build configuration
   "AppStore" (target settings: ENABLE_APP_SANDBOX = YES, `MacBee-AppStore.entitlements` = sandbox, user-selected
-  read-write, app-scope bookmarks, network client + server, keychain group; compilation condition APPSTORE).
+  read-write, app-scope bookmarks, network client + server, its own keychain group (so it never sees the everyday
+  copy's Plex sign-in); compilation condition APPSTORE).
   `Tools/macbee.sh appstore` builds it into ~/Library/Developer/MacBee/DerivedData-AppStore, checks signatures of the
   embedded mpv/MoltenVK frameworks, quits the everyday MacBee and opens it. Its bundle id is
   com.troyhomenchuk.MacBee.appstore, data in ~/Library/Containers/com.troyhomenchuk.MacBee.appstore (fresh library).
