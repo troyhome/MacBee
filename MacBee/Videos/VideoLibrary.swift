@@ -222,12 +222,15 @@ final class VideoLibrary {
     func position(of path: String) -> Double { positions[path] ?? 0 }
 
     /// Saves where a video was stopped. Near the start counts as not started, near the end as watched.
+    /// A video watched at least this long shows in Continue Watching (Troy: stopping early should still count).
+    static let continueAfter: Double = 5
+
     func savePosition(_ seconds: Double, duration: Double, for path: String) {
         if duration > 0 {
             durations[path] = duration
             UserDefaults.standard.set(durations, forKey: "videoDurations")
         }
-        if seconds > 30 {
+        if seconds >= Self.continueAfter {
             lastWatched[path] = Date()
             UserDefaults.standard.set(lastWatched, forKey: "videoLastWatched")
         }
@@ -235,7 +238,7 @@ final class VideoLibrary {
             positions[path] = nil
             watched.insert(path)
             UserDefaults.standard.set(Array(watched), forKey: "watchedVideos")
-        } else if seconds > 30 {
+        } else if seconds >= Self.continueAfter {
             positions[path] = seconds
         } else {
             positions[path] = nil
