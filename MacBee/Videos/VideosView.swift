@@ -91,13 +91,6 @@ struct VideosView: View {
         return VideoCategory.sidebar.contains(category) ? category : .movies
     }
 
-    /// Movies (or shows) stopped part-way through, for the row at the top of their page.
-    private var continueWatching: [VideoTitle] {
-        app.videos.continueWatching.filter { title in
-            if case .movie = title { return shownCategory == .movies }
-            return shownCategory == .shows
-        }
-    }
 
     private static let sortable: Set<VideoCategory> = [.movies, .shows, .musicVideos]
 
@@ -124,19 +117,12 @@ struct VideosView: View {
                         FilterField(prompt: "Search liked videos", text: $searchText)
                             .frame(width: 240)
                     }
-                    if (shownCategory == .movies || shownCategory == .shows) && searchText.isEmpty
-                        && !continueWatching.isEmpty {
-                        rowTitle("Continue Watching")
-                        HorizontalCarousel {
-                            HStack(alignment: .top, spacing: 18) {
-                                ForEach(continueWatching) { title in
-                                    VideoPosterCard(title: title) { openOrPlay(title) }
-                                        .frame(width: 150)
-                                }
-                            }
-                            .padding(.vertical, 6)
-                        }
-                        rowTitle(shownCategory == .movies ? "All Movies" : "All Shows")
+                    // Like the Apple TV app: what you're in the middle of, on every Videos page.
+                    let continuing = embedded || !searchText.isEmpty ? [] : app.videos.continueItems
+                    if !continuing.isEmpty {
+                        ContinueWatchingRow(items: continuing) { open = $0 }
+                        rowTitle(shownCategory == .movies ? "All Movies" : shownCategory == .shows ? "All Shows"
+                                 : shownCategory.title)
                     }
                     if shownCategory == .genres { genrePicker }
                     VideoPosterGrid(titles: titles) { openOrPlay($0) }

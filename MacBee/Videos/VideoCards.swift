@@ -58,15 +58,25 @@ struct VideoPosterCard: View {
         }
     }
 
-    /// How far a movie in progress has been watched.
+    /// A bar on movies in progress and on shows with an episode to continue.
     @ViewBuilder
     private var progressBar: some View {
-        if case let .movie(movie) = title, let file = movie.file, app.videos.position(of: file.path) > 0 {
+        if inProgress {
             Capsule()
                 .fill(theme.accent)
                 .frame(height: 4)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
+        }
+    }
+}
+
+extension VideoPosterCard {
+    var inProgress: Bool {
+        switch title {
+        case let .movie(movie): movie.file.map { app.videos.position(of: $0.path) > 0 } ?? false
+        case let .show(show): app.videos.continueItem(for: show) != nil
+        case let .musicVideo(video): app.videos.position(of: video.file.path) > 0
         }
     }
 }

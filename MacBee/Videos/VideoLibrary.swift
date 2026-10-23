@@ -18,6 +18,11 @@ final class VideoLibrary {
     private(set) var lastPlayed: [String: Date] = UserDefaults.standard.dictionary(forKey: "videoLastPlayed") as? [String: Date] ?? [:]
     /// Files watched to the end.
     private(set) var watched: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "watchedVideos") ?? [])
+    /// When each file was last watched, and how long it runs, for Continue Watching (order and time left).
+    private(set) var lastWatched: [String: Date] = UserDefaults.standard.dictionary(forKey: "videoLastWatched") as? [String: Date] ?? [:]
+    private(set) var durations: [String: Double] = UserDefaults.standard.dictionary(forKey: "videoDurations") as? [String: Double] ?? [:]
+    /// Shows whose "Up Next" card was removed, and when; it comes back once the show is watched again.
+    private(set) var upNextDismissed: [String: Date] = UserDefaults.standard.dictionary(forKey: "videoUpNextDismissed") as? [String: Date] ?? [:]
 
     /// Looks through the video folders (movies and shows) and music folders (music videos) again.
     func refresh(videoFolders: [URL], musicFolders: [URL], plex: PlexConnection?) async {
@@ -218,6 +223,14 @@ final class VideoLibrary {
 
     /// Saves where a video was stopped. Near the start counts as not started, near the end as watched.
     func savePosition(_ seconds: Double, duration: Double, for path: String) {
+        if duration > 0 {
+            durations[path] = duration
+            UserDefaults.standard.set(durations, forKey: "videoDurations")
+        }
+        if seconds > 30 {
+            lastWatched[path] = Date()
+            UserDefaults.standard.set(lastWatched, forKey: "videoLastWatched")
+        }
         if duration > 0 && seconds > duration - max(60, duration * 0.05) {
             positions[path] = nil
             watched.insert(path)
@@ -230,15 +243,15 @@ final class VideoLibrary {
         UserDefaults.standard.set(positions, forKey: "videoPositions")
     }
 
-    /// Movies and episodes stopped part-way through, most recently added first.
-    var continueWatching: [VideoTitle] {
-        let started = Set(positions.keys)
-        guard !started.isEmpty else { return [] }
-        let movies = catalog.movies.filter { movie in movie.files.contains { started.contains($0.path) } }.map(VideoTitle.movie)
-        let shows = catalog.shows.filter { show in
-            show.seasons.contains { $0.episodes.contains { started.contains($0.file.path) } }
-        }.map(VideoTitle.show)
-        return movies + shows
+    /// Takes a card off Continue Watching: forgets the position, or hides a show's Up Next until it's watched again.
+    func removeFromContinueWatching(_ item: ContinueItem) {
+        if item.isUpNext, case let .episode(_, show) = item.kind {
+            upNextDismissed[show.id] = Date()
+            UserDefaults.standard.set(upNextDismissed, forKey: "videoUpNextDismissed")
+        } else {
+            positions[item.file.path] = nil
+            UserDefaults.standard.set(positions, forKey: "videoPositions")
+        }
     }
 
     // MARK: - Lists for the pages
@@ -276,6 +289,7 @@ final class VideoLibrary {
     /// Where Play starts a show: the episode in progress, else the first one not yet watched.
     func nextEpisode(in show: Show) -> Episode? {
         let all = show.seasons.flatMap(\.episodes)
+        if let item = continueItem(for: show), case let .episode(episode, _) = item.kind { return episode }
         return all.first { positions[$0.file.path] != nil } ?? all.first { !watched.contains($0.file.path) } ?? all.first
     }
 }
