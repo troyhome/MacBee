@@ -489,7 +489,9 @@ Troy confirms the current one passes its gate (zero compiler errors, all tests p
   sidebar's first item is called **Media** (was Music; code stays `.home`); the Videos page offers Add Video Folder
   when no video folder is set even if music videos were found; exclusive mode takes a break while a video plays
   (`SFBPlaybackEngine.startExclusiveModeBreak` / `endExclusiveModeBreak` in AppModel.playVideo / closeVideo), since
-  the hog-mode device kept mpv's sound out. Music, folders remembered after relaunch and exclusive mode passed. Not done yet: moving Troy's
+  the hog-mode device kept mpv's sound out. Music, folders remembered after relaunch and exclusive mode passed. App Store prep (2026-10-24): `MacBee/PrivacyInfo.xcprivacy` (no tracking/collection;
+  UserDefaults, file timestamps, disk space reasons), ITSAppUsesNonExemptEncryption = false, About credits mpv/FFmpeg
+  (MPVKit LGPL product, all 38 embedded frameworks dynamic, none GPL-only; checked on CMBA). Not done yet: moving Troy's
   existing data into the container (only if he switches his everyday copy), App Store upload/review.
 - Record to MiniDisc (2026-10-22, Troy; for recorders without USB): playlist "…" menu, or the button beside
   an MD Mix's capacity bar, opens `RecordToMiniDiscSheet` (`MacBee/MiniDisc/`). `RecordOutSession`: 3 s lead-in,

@@ -13,7 +13,7 @@ struct AboutCommand: Commands {
         let credits = NSAttributedString(
             string: "A bit-perfect, gapless music player for your own library.\n\n"
                 + "Playback by SFBAudioEngine. Library by GRDB.\n"
-                + "Video playback by mpv and FFmpeg (via MPVKit), used under the GNU LGPL 2.1. "
+                + "Video playback by mpv and FFmpeg (via MPVKit), used under the GNU LGPL v3. "
                 + "Their source code: github.com/mpvkit/MPVKit",
             attributes: [
                 .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
