@@ -1,4 +1,5 @@
 import Foundation
+import MacBeeLibrary
 import MacBeeVideo
 import Observation
 
@@ -30,7 +31,9 @@ final class VideoLibrary {
         isScanning = true
         let roots = videoFolders.map { VideoScanner.Root(url: $0, kind: .moviesAndShows) }
             + musicFolders.map { VideoScanner.Root(url: $0, kind: .musicVideos) }
-        let reachable = roots.filter { FileManager.default.fileExists(atPath: $0.url.path) }
+        let reachable = roots.filter {
+            FileManager.default.fileExists(atPath: $0.url.path) && !VolumeLocation.isLeftoverMountPoint($0.url.path)
+        }
         let previous = catalog
         var found = await Task.detached(priority: .utility) { VideoScanner.scan(reachable) }.value
         // Fresh details from Plex when it can be reached; otherwise the ones saved last time.
@@ -210,6 +213,27 @@ final class VideoLibrary {
         UserDefaults.standard.set(Array(liked).sorted(), forKey: "likedVideos")
         UserDefaults.standard.set(Array(unmatchedLikeKeys).sorted(), forKey: "unmatchedVideoLikes")
         return changes
+    }
+
+    // MARK: - A drive mounted somewhere else
+
+    /// A video or music folder's drive is now mounted at `newRoot` instead of `oldRoot`: likes, places, watched
+    /// marks and removed copies kept by file path follow it.
+    func moveRoot(from oldRoot: String, to newRoot: String) {
+        func moved(_ key: String) -> String {
+            key == oldRoot || key.hasPrefix(oldRoot + "/") ? newRoot + key.dropFirst(oldRoot.count) : key
+        }
+        func movedKeys<V>(_ dict: [String: V]) -> [String: V] {
+            Dictionary(dict.map { (moved($0.key), $0.value) }, uniquingKeysWith: { _, new in new })
+        }
+        liked = Set(liked.map(moved)); UserDefaults.standard.set(Array(liked).sorted(), forKey: "likedVideos")
+        watched = Set(watched.map(moved)); UserDefaults.standard.set(Array(watched), forKey: "watchedVideos")
+        excluded = Set(excluded.map(moved)); UserDefaults.standard.set(Array(excluded).sorted(), forKey: "excludedVideos")
+        positions = movedKeys(positions); UserDefaults.standard.set(positions, forKey: "videoPositions")
+        lastPlayed = movedKeys(lastPlayed); UserDefaults.standard.set(lastPlayed, forKey: "videoLastPlayed")
+        lastWatched = movedKeys(lastWatched); UserDefaults.standard.set(lastWatched, forKey: "videoLastWatched")
+        durations = movedKeys(durations); UserDefaults.standard.set(durations, forKey: "videoDurations")
+        upNextDismissed = movedKeys(upNextDismissed); UserDefaults.standard.set(upNextDismissed, forKey: "videoUpNextDismissed")
     }
 
     // MARK: - Watching

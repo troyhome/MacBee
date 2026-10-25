@@ -544,3 +544,10 @@ Create an Xcode macOS app target named MacBee that uses both local packages. Bui
   (beside Library.sqlite); restored after a scan adds the same songs back. Video likes already match by name.
 - Stale `/Volumes` folders (red no-entry badge) make shares mount as "Name-1", so folders show Not connected.
   Restart the Mac to clear them.
+- Drives mounted somewhere else (`VolumeLocation`): music folders (DB v10 `folder.volumeID`/`pathInVolume`) and
+  video folders (`videoFolderVolumes` pref) remember their drive ("smb://server/share", same share by IP also
+  matches, or "uuid:" for local drives) and follow it to a new mount ("Name-1", ~/MountPoints); folders not yet
+  identified follow a renumbered "/Volumes/Name-N". Song paths are rewritten in place (ids, plays, playlists
+  stay); video likes/positions/watched follow (`VideoLibrary.moveRoot`). An empty leftover /Volumes folder no
+  longer counts as connected (it used to be scanned as empty). Pending DB migrations now back up the DB first
+  (`Library-before-<last>-update.sqlite`). "Open in TagBee" skips missing files and names them.

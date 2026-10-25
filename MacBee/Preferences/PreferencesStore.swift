@@ -1,4 +1,5 @@
 import Foundation
+import MacBeeLibrary
 import Observation
 
 /// App preferences (General, Appearance, Library, Plex, Tag Editor), saved between launches.
@@ -32,6 +33,8 @@ final class PreferencesStore {
     var pausedVideoFolders: [String] { didSet { save(pausedVideoFolders, "pausedVideoFolders") } }
     /// The video folders that are switched on.
     var activeVideoFolders: [String] { videoFolders.filter { !pausedVideoFolders.contains($0) } }
+    /// Which drive each video folder is on: path -> [volumeID, path on the drive] (see `VolumeLocation`).
+    var videoFolderVolumes: [String: [String]] { didSet { save(videoFolderVolumes, "videoFolderVolumes") } }
     /// When a song, album or playlist ends, keep going with a mix made from the last song.
     var continuousPlay: Bool { didSet { save(continuousPlay, "continuousPlay") } }
     /// TV shows: the next episode starts when one ends.
@@ -58,6 +61,7 @@ final class PreferencesStore {
         hideCompilationOnlyArtists = d.object(forKey: "hideCompilationOnlyArtists") as? Bool ?? false
         videoFolders = d.stringArray(forKey: "videoFolders") ?? []
         pausedVideoFolders = d.stringArray(forKey: "pausedVideoFolders") ?? []
+        videoFolderVolumes = d.dictionary(forKey: "videoFolderVolumes") as? [String: [String]] ?? [:]
         continuousPlay = d.object(forKey: "continuousPlay") as? Bool ?? true
         continuousPlayEpisodes = d.object(forKey: "continuousPlayEpisodes") as? Bool ?? true
         useDefaultTagEditorIfNeeded()
@@ -74,6 +78,38 @@ final class PreferencesStore {
 
     func addVideoFolder(_ path: String) {
         if !videoFolders.contains(path) { videoFolders.append(path) }
+        if let location = VolumeLocation.identify(path) {
+            videoFolderVolumes[path] = [location.volumeID, location.pathInVolume]
+        }
+    }
+
+    /// The video folder is there and on its own drive (not an empty leftover in /Volumes).
+    func isVideoFolderConnected(_ path: String) -> Bool {
+        VolumeLocation.isConnected(path, volumeID: videoFolderVolumes[path]?.first)
+    }
+
+    /// Video folders on drives: learns which drive each is on, and follows a drive now mounted somewhere else.
+    /// Returns the folders that moved (old path, new path).
+    func locateVideoFolders() -> [(from: String, to: String)] {
+        var moved: [(from: String, to: String)] = []
+        for path in videoFolders {
+            if isVideoFolderConnected(path) {
+                if videoFolderVolumes[path] == nil, let location = VolumeLocation.identify(path) {
+                    videoFolderVolumes[path] = [location.volumeID, location.pathInVolume]
+                }
+                continue
+            }
+            let saved = videoFolderVolumes[path]
+            let newPath = saved.flatMap { $0.count == 2 ? VolumeLocation.currentPath(volumeID: $0[0], pathInVolume: $0[1]) : nil }
+                ?? (saved == nil ? VolumeLocation.renumberedMountPath(of: path) : nil)
+            guard let newPath, newPath != path, !videoFolders.contains(newPath) else { continue }
+            videoFolders = videoFolders.map { $0 == path ? newPath : $0 }
+            pausedVideoFolders = pausedVideoFolders.map { $0 == path ? newPath : $0 }
+            videoFolderVolumes[newPath] = saved ?? VolumeLocation.identify(newPath).map { [$0.volumeID, $0.pathInVolume] }
+            videoFolderVolumes[path] = nil
+            moved.append((path, newPath))
+        }
+        return moved
     }
 
     /// The page to show at launch.

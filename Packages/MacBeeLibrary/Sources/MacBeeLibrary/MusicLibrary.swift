@@ -58,6 +58,8 @@ public final class MusicLibrary {
     @ObservationIgnored public let database: LibraryDatabase
     @ObservationIgnored public let artwork: ArtworkStore
     @ObservationIgnored public var eventHandler: (@MainActor (LibraryEvent) -> Void)?
+    /// A folder's drive is now mounted somewhere else (old path, new path), so things kept by path can follow.
+    @ObservationIgnored public var onFolderMoved: (@MainActor (String, String) -> Void)?
 
     @ObservationIgnored private let scanner: LibraryScanner
     @ObservationIgnored private let monitor = FolderMonitor()
@@ -132,6 +134,9 @@ public final class MusicLibrary {
         let name = FileManager.default.displayName(atPath: path)
         FolderAccess.shared.remember(url)
         let folder = try await database.insertFolder(path: path, name: name)
+        if let id = folder.id, let location = VolumeLocation.identify(path) {
+            try await database.setFolderVolume(id: id, volumeID: location.volumeID, pathInVolume: location.pathInVolume)
+        }
         await reloadFolders()
         monitor.watch(folders.map(\.folder.path))
         emit(.foldersChanged)
@@ -389,10 +394,46 @@ public final class MusicLibrary {
 
     private func reloadFolders() async {
         do {
+            await locateFolders(try await database.folders())
             let list = try await database.folders()
             folders = list.map { FolderState(folder: $0, isOnline: $0.isReachable, isNetwork: $0.isNetwork) }
         } catch {
             reportError(error)
+        }
+    }
+
+    /// Folders on drives: remembers which drive each one is on, and follows a drive that's now mounted somewhere
+    /// else (e.g. "/Volumes/2 Set Music-1", or the same share mounted by another app).
+    private func locateFolders(_ list: [MusicFolder]) async {
+        for folder in list {
+            guard let id = folder.id else { continue }
+            if folder.isReachable {
+                // Learn the drive of folders added before MacBee remembered drives.
+                if folder.volumeID == nil, let location = VolumeLocation.identify(folder.path) {
+                    try? await database.setFolderVolume(id: id, volumeID: location.volumeID,
+                                                        pathInVolume: location.pathInVolume)
+                }
+                continue
+            }
+            let newPath: String?
+            if let volumeID = folder.volumeID, let inside = folder.pathInVolume {
+                newPath = VolumeLocation.currentPath(volumeID: volumeID, pathInVolume: inside)
+            } else {
+                newPath = VolumeLocation.renumberedMountPath(of: folder.path)
+            }
+            guard let newPath, newPath != folder.path,
+                  // Not if another library folder already covers that place.
+                  !list.contains(where: { $0.id != id && ($0.path == newPath || newPath.hasPrefix($0.path + "/")
+                                                          || $0.path.hasPrefix(newPath + "/")) })
+            else { continue }
+            do {
+                try await database.moveFolder(id: id, to: newPath)
+                FolderAccess.shared.forget(folder.path)
+                FolderAccess.shared.remember(URL(fileURLWithPath: newPath, isDirectory: true))
+                onFolderMoved?(folder.path, newPath)
+            } catch {
+                reportError(error)
+            }
         }
     }
 

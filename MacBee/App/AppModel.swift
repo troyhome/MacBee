@@ -135,6 +135,8 @@ final class AppModel {
             await self?.library?.refreshAfterSync()
             await self?.playlists?.reload()
         }
+        // A drive mounted somewhere else: video likes and places under that music folder follow it.
+        library?.onFolderMoved = { [weak self] old, new in self?.videos.moveRoot(from: old, to: new) }
         networkSync?.likedVideos = { [weak self] in self?.videos.syncedLikeKeys ?? [] }
         networkSync?.setLikedVideos = { [weak self] keys in self?.videos.setSyncedLikes(keys) ?? 0 }
         engine.eventHandler = { [weak self] event in
@@ -372,6 +374,11 @@ final class AppModel {
 
     /// Looks for videos again in the video folders and (for music videos) the music folders.
     func refreshVideos() async {
+        for move in preferences.locateVideoFolders() {
+            FolderAccess.shared.forget(move.from)
+            FolderAccess.shared.remember(URL(fileURLWithPath: move.to, isDirectory: true))
+            videos.moveRoot(from: move.from, to: move.to)
+        }
         await videos.refresh(videoFolders: preferences.activeVideoFolders.map { URL(fileURLWithPath: $0) },
                              musicFolders: library?.folders.filter { $0.isOnline && !$0.folder.isPaused }.map(\.folder.url) ?? [],
                              plex: plex)

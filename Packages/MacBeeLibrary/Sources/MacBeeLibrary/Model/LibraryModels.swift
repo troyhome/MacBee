@@ -12,6 +12,10 @@ public struct MusicFolder: Codable, Identifiable, Hashable, Sendable, FetchableR
     public var priority: Int = 0
     /// Paused folders stay in the list but their songs are left out of the library.
     public var isPaused: Bool = false
+    /// Which drive the folder is on ("smb://server/share" or "uuid:…") and where on it, so MacBee can find it
+    /// again when the drive is mounted somewhere else. Nil on the Mac's own disk. See `VolumeLocation`.
+    public var volumeID: String?
+    public var pathInVolume: String?
 
     public static let databaseTableName = "folder"
 
@@ -21,13 +25,9 @@ public struct MusicFolder: Codable, Identifiable, Hashable, Sendable, FetchableR
 
     public var url: URL { URL(fileURLWithPath: path, isDirectory: true) }
 
-    /// The folder exists and can be read (network drive mounted, external drive plugged in).
-    public var isReachable: Bool {
-        var isDir: ObjCBool = false
-        return FileManager.default.fileExists(atPath: path, isDirectory: &isDir)
-            && isDir.boolValue
-            && FileManager.default.isReadableFile(atPath: path)
-    }
+    /// The folder exists and can be read (network drive mounted, external drive plugged in). An empty folder left
+    /// in /Volumes by a drive that went away, or another drive that took the same name, doesn't count.
+    public var isReachable: Bool { VolumeLocation.isConnected(path, volumeID: volumeID) }
 
     public var isNetwork: Bool {
         (try? url.resourceValues(forKeys: [.volumeIsLocalKey]).volumeIsLocal) == false

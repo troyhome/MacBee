@@ -213,6 +213,29 @@ public extension LibraryDatabase {
         }
     }
 
+    /// Saves which drive a folder is on (see `VolumeLocation`).
+    func setFolderVolume(id: Int64, volumeID: String?, pathInVolume: String?) async throws {
+        try await writer.write { db in
+            try db.execute(sql: "UPDATE folder SET volumeID = ?, pathInVolume = ? WHERE id = ?",
+                           arguments: [volumeID, pathInVolume, id])
+        }
+    }
+
+    /// The folder's drive is now mounted somewhere else: points the folder and its songs at the new place.
+    /// Plays, favorites and playlists stay, since the songs keep their ids.
+    func moveFolder(id: Int64, to newPath: String) async throws {
+        try await writer.write { db in
+            guard let oldPath = try String.fetchOne(db, sql: "SELECT path FROM folder WHERE id = ?", arguments: [id]),
+                  oldPath != newPath else { return }
+            try db.execute(sql: "UPDATE folder SET path = ? WHERE id = ?", arguments: [newPath, id])
+            let prefix = oldPath.unicodeScalars.count + 1          // SQLite's substr counts Unicode characters
+            try db.execute(sql: """
+                UPDATE track SET path = ? || substr(path, ?)
+                WHERE folderId = ? AND substr(path, 1, ?) = ?
+                """, arguments: [newPath, prefix, id, prefix, oldPath + "/"])
+        }
+    }
+
     /// Removes the folder and all its tracks (and their play history).
     func deleteFolder(id: Int64) async throws {
         _ = try await writer.write { db in try MusicFolder.deleteOne(db, key: id) }

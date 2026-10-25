@@ -176,7 +176,7 @@ private struct VideoFolderStatusRow: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let connected = FileManager.default.fileExists(atPath: path)
+        let connected = app.preferences.isVideoFolderConnected(path)
         HStack(spacing: 10) {
             Image(systemName: "line.3.horizontal")
                 .foregroundStyle(.clear) // lines up with the music folders, which can be dragged

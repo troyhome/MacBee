@@ -11,7 +11,15 @@ public final class LibraryDatabase: Sendable {
     public init(fileURL: URL) throws {
         try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
+        let existed = FileManager.default.fileExists(atPath: fileURL.path)
         writer = try DatabasePool(path: fileURL.path)
+        // A safety copy before the database is changed to a newer layout.
+        if existed, try !writer.read({ try Self.migrator.hasCompletedMigrations($0) }) {
+            let applied = try writer.read { try Self.migrator.appliedIdentifiers($0) }
+            let latest = applied.max { $0.localizedStandardCompare($1) == .orderedAscending } ?? "v0"
+            let backup = fileURL.deletingLastPathComponent().appendingPathComponent("Library-before-\(latest)-update.sqlite")
+            try writer.backup(to: DatabaseQueue(path: backup.path))
+        }
         try Self.migrator.migrate(writer)
     }
 
@@ -195,6 +203,14 @@ public final class LibraryDatabase: Sendable {
                     WHERE id = NEW.id;
                 END
                 """)
+        }
+
+        // Folders on drives remember which drive they're on, so they're found when it mounts somewhere else.
+        migrator.registerMigration("v10") { db in
+            try db.alter(table: "folder") { t in
+                t.add(column: "volumeID", .text)
+                t.add(column: "pathInVolume", .text)
+            }
         }
 
         return migrator

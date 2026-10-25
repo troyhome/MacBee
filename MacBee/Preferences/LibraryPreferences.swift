@@ -225,7 +225,7 @@ private struct VideoFoldersSection: View {
         Section("Video folders") {
             ForEach(preferences.videoFolders, id: \.self) { path in
                 let paused = preferences.pausedVideoFolders.contains(path)
-                let connected = FileManager.default.fileExists(atPath: path)
+                let connected = preferences.isVideoFolderConnected(path)
                 HStack(spacing: 10) {
                     Toggle("", isOn: Binding(get: { !paused }, set: { app.setVideoFolder(path, paused: !$0) }))
                         .toggleStyle(.switch)
@@ -249,6 +249,7 @@ private struct VideoFoldersSection: View {
                         preferences.videoFolders.removeAll { $0 == path }
                         FolderAccess.shared.forget(path)
                         preferences.pausedVideoFolders.removeAll { $0 == path }
+                        preferences.videoFolderVolumes[path] = nil
                         Task { await app.refreshVideos() }
                     }
                 }
