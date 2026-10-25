@@ -51,17 +51,20 @@ struct VideosView: View {
             if app.canGoBack {
                 CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
             }
-            Text(shownCategory.title)
-                .font(.system(size: 30, weight: .bold))
-                .foregroundStyle(theme.textPrimary)
-                .lineLimit(1)
-                .fixedSize() // never wraps; the search field gives up room instead
-            Spacer()
-            if app.videos.isScanning {
-                Text("Looking for videos…")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.textTertiary)
+            // Title with the scan status under it, so neither has to squeeze into the row.
+            VStack(alignment: .leading, spacing: 2) {
+                Text(shownCategory.title)
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(theme.textPrimary)
+                if app.videos.isScanning {
+                    Text("Looking for videos…")
+                        .font(.system(size: 12))
+                        .foregroundStyle(theme.textTertiary)
+                }
             }
+            .lineLimit(1)
+            .fixedSize() // never wraps; the search field gives up room instead
+            Spacer()
             Button {
                 Task { await app.refreshVideos() }
             } label: {
