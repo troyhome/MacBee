@@ -1,3 +1,4 @@
+import AppKit
 import CoreAudio
 import Foundation
 
@@ -111,11 +112,26 @@ public final class AudioDeviceManager {
 
     public func ownsHogMode(_ id: AudioObjectID) -> Bool { hogModeOwner(of: id) == getpid() }
 
+    /// Another app holding exclusive mode, checking `preferred` first, then every output device.
+    /// Returns the device's name and the app's name.
+    public func otherAppInExclusiveMode(preferring preferred: AudioDevice?) -> (device: String, app: String)? {
+        let candidates = (preferred.map { [$0] } ?? []) + outputDevices()
+        for device in candidates {
+            let owner = hogModeOwner(of: device.id)
+            guard owner != -1, owner != getpid() else { continue }
+            return (device.name, NSRunningApplication(processIdentifier: owner)?.localizedName ?? "another app")
+        }
+        return nil
+    }
+
     /// Note: writing this property toggles ownership, so always check the owner first.
     public func acquireHogMode(on device: AudioDevice) throws {
         let owner = hogModeOwner(of: device.id)
         if owner == getpid() { return }
-        guard owner == -1 else { throw AudioEngineError.deviceBusy(device.name) }
+        guard owner == -1 else {
+            let app = NSRunningApplication(processIdentifier: owner)?.localizedName ?? "another app"
+            throw AudioEngineError.deviceBusy(device.name, by: app)
+        }
         try HAL.set(device.id, HAL.address(kAudioDevicePropertyHogMode), getpid())
         // The App Store sandbox may accept the request without handing the device over. Say so instead of
         // showing exclusive mode as on.

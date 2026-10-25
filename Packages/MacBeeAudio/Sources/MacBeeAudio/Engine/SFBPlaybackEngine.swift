@@ -242,6 +242,12 @@ public final class SFBPlaybackEngine: PlaybackEngine {
             releaseExclusiveAccess()
             report(AudioEngineError.exclusiveModeBlocked(outputDevice?.name ?? "the output device"))
             try player.play()
+        } catch {
+            // Another player holding exclusive mode makes the device refuse to start; say who, not "error 35".
+            if let busy = devices.otherAppInExclusiveMode(preferring: outputDevice) {
+                throw AudioEngineError.deviceBusy(busy.device, by: busy.app)
+            }
+            throw error
         }
         startProgressUpdates()
     }

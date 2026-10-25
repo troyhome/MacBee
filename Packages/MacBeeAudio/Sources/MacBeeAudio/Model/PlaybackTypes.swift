@@ -38,7 +38,7 @@ public enum AudioEngineError: LocalizedError {
     case unsupportedFile(URL)
     case decoderFailed(URL, String)
     case noOutputDevice
-    case deviceBusy(String)
+    case deviceBusy(String, by: String)
     case exclusiveModeUnavailable(String)
     case exclusiveModeBlocked(String)
     case sampleRateChangeTimedOut(Double)
@@ -49,7 +49,9 @@ public enum AudioEngineError: LocalizedError {
         case let .unsupportedFile(url): return "Unsupported file: \(url.lastPathComponent)"
         case let .decoderFailed(url, reason): return "Couldn't open \(url.lastPathComponent): \(reason)"
         case .noOutputDevice: return "No audio output device found."
-        case let .deviceBusy(name): return "\(name) is in exclusive use by another app."
+        case let .deviceBusy(name, app):
+            return "\(app) has exclusive use of \(name), so no other player can use it. "
+                + "Turn off exclusive mode in \(app) or quit it, then press play again."
         case let .exclusiveModeUnavailable(name):
             return "Exclusive mode isn't available for \(name) in this version of MacBee. Music plays normally (shared)."
         case let .exclusiveModeBlocked(name):
