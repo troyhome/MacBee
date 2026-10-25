@@ -133,6 +133,7 @@ private struct ArtistAlbumHeader: View {
     let onPlay: () -> Void
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
+    @State private var hoveringArtwork = false
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 18) {
@@ -142,6 +143,11 @@ private struct ArtistAlbumHeader: View {
             }
             .buttonStyle(.plain)
             .help("Open album")
+            // Play appears on the artwork under the mouse, like the album grid.
+            .overlay(alignment: .bottomTrailing) {
+                if hoveringArtwork { HoverPlayButton(action: onPlay, help: "Play album") }
+            }
+            .onHover { isHovering in withAnimation(.easeOut(duration: 0.15)) { hoveringArtwork = isHovering } }
             VStack(alignment: .leading, spacing: 5) {
                 Button(action: onOpen) {
                     Text(section.album.title)
@@ -162,7 +168,6 @@ private struct ArtistAlbumHeader: View {
                 player.setFavorite(section.tracks, !isFavorite)
             }
             AlbumMoreMenu(tracks: section.tracks)
-            CircleButton(systemImage: "play.fill", help: "Play album", action: onPlay)
         }
         .padding(14)
         .background {

@@ -16,19 +16,7 @@ struct AlbumTile: View {
                 .scaleEffect(hovering ? 1.02 : 1)
                 .shadow(color: .black.opacity(hovering ? 0.35 : 0), radius: hovering ? 10 : 0, y: hovering ? 4 : 0)
                 .overlay(alignment: .bottomTrailing) {
-                    if hovering {
-                        Button(action: onPlay) {
-                            Image(systemName: "play.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(theme.onAccent)
-                                .frame(width: 36, height: 36)
-                                .background(Circle().fill(theme.accent))
-                                .shadow(radius: 4)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(8)
-                        .help("Play")
-                    }
+                    if hovering { HoverPlayButton(action: onPlay) }
                 }
             Text(album.title)
                 .font(.system(size: 13, weight: .medium))
