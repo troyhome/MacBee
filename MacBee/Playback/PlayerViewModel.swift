@@ -296,6 +296,7 @@ final class PlayerViewModel {
     func setFavorite(_ tracks: [Track], _ isFavorite: Bool) {
         guard let database else { return }
         var ids: [Int64] = []
+        let paths = tracks.map(\.path)
         for var track in tracks {
             guard let id = track.id else { continue }
             favoriteOverrides[id] = isFavorite
@@ -310,6 +311,12 @@ final class PlayerViewModel {
                 errorMessage = error.localizedDescription
             }
             favoritesSaved += 1
+            // Settings > Library: also keep the heart in the files themselves (FLAC and Ogg).
+            if UserDefaults.standard.object(forKey: "saveFavoritesInFiles") as? Bool ?? true {
+                await Task.detached(priority: .utility) {
+                    FavoriteTagWriter.write(isFavorite, toFilesAt: paths)
+                }.value
+            }
         }
     }
 

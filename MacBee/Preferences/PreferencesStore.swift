@@ -39,6 +39,8 @@ final class PreferencesStore {
     var continuousPlay: Bool { didSet { save(continuousPlay, "continuousPlay") } }
     /// TV shows: the next episode starts when one ends.
     var continuousPlayEpisodes: Bool { didSet { save(continuousPlayEpisodes, "continuousPlayEpisodes") } }
+    /// Also save hearts in the song files (FLAC and Ogg), so they travel with the files.
+    var saveFavoritesInFiles: Bool { didSet { save(saveFavoritesInFiles, "saveFavoritesInFiles") } }
 
     static let sidebarWidthRange: ClosedRange<Double> = 170...280
 
@@ -64,6 +66,7 @@ final class PreferencesStore {
         videoFolderVolumes = d.dictionary(forKey: "videoFolderVolumes") as? [String: [String]] ?? [:]
         continuousPlay = d.object(forKey: "continuousPlay") as? Bool ?? true
         continuousPlayEpisodes = d.object(forKey: "continuousPlayEpisodes") as? Bool ?? true
+        saveFavoritesInFiles = d.object(forKey: "saveFavoritesInFiles") as? Bool ?? true
         useDefaultTagEditorIfNeeded()
     }
 

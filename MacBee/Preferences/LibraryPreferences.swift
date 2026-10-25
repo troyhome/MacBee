@@ -27,6 +27,8 @@ private struct LibraryPreferencesForm: View {
     @State private var folderToRemove: MusicLibrary.FolderState?
     @State private var confirmCleanUp = false
     @State private var confirmRescan = false
+    @State private var savingFavorites = false
+    @State private var favoritesMessage: String?
     @State private var message: String?
 
     var body: some View {
@@ -71,6 +73,16 @@ private struct LibraryPreferencesForm: View {
                 }
                 .onChange(of: preferences.routineCheck) { library.periodicCheckInterval = preferences.routineCheck.interval }
                 PreferenceNote("Picks up changes made from another computer. Changes on this Mac are noticed right away. Folders are also checked when a drive is reconnected.")
+            }
+
+            Section("Favorites") {
+                Toggle("Also save hearts in the music files", isOn: $preferences.saveFavoritesInFiles)
+                PreferenceNote("Writes a FAVORITE tag into FLAC and Ogg files when you heart or un-heart a song, so the heart travels with the file to your other Mac, other apps, or a rebuilt library. MP3, AAC, ALAC, WAV, AIFF and DSD files can't hold this tag; their hearts stay in MacBee's library.")
+                HStack {
+                    Button("Save All Hearts to Files Now") { saveAllFavorites() }
+                        .disabled(!preferences.saveFavoritesInFiles || savingFavorites)
+                    if let favoritesMessage { PreferenceNote(favoritesMessage) }
+                }
             }
 
             Section("Missing files") {
@@ -132,6 +144,21 @@ private struct LibraryPreferencesForm: View {
             }
         } message: {
             Text("Their play counts and history are deleted too. This can't be undone.")
+        }
+    }
+
+    /// Writes the FAVORITE tag into every favorite song's file (for hearts given before the setting existed).
+    private func saveAllFavorites() {
+        savingFavorites = true
+        favoritesMessage = "Saving…"
+        Task {
+            let paths = ((try? await library.database.tracks(for: .topRated)) ?? []).map(\.path)
+            let failed = await Task.detached(priority: .utility) {
+                FavoriteTagWriter.write(true, toFilesAt: paths)
+            }.value
+            let stored = paths.filter(FavoriteTagWriter.canStore).count - failed.count
+            favoritesMessage = failed.isEmpty ? "Saved \(stored) hearts." : "Saved \(stored); \(failed.count) files couldn't be written."
+            savingFavorites = false
         }
     }
 

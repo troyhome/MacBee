@@ -48,6 +48,7 @@ struct MetadataReader: Sendable {
             t.isCompilation = value
         }
         t.rating = m.rating
+        t.favoriteInFile = FavoriteTagWriter.value(in: m)
 
         let p = audioFile.properties
         t.duration = p.duration ?? 0

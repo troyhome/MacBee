@@ -89,7 +89,8 @@ extension Track {
         apply(s, folderId: folderId, artworkId: artworkId)
     }
 
-    /// Refreshes file and tag fields from a new scan; keeps play counts, favorites and date added.
+    /// Refreshes file and tag fields from a new scan; keeps play counts, favorites (adding a file's saved heart)
+    /// and date added.
     mutating func apply(_ s: ScannedTrack, folderId: Int64, artworkId: Int64?) {
         self.folderId = folderId
         path = s.path
@@ -114,6 +115,8 @@ extension Track {
         bitrate = s.bitrate
         codec = s.codec
         if let tagRating = s.rating { rating = tagRating }
+        // A heart saved in the file (FAVORITE=1) is brought in; removing hearts stays a library decision.
+        if s.favoriteInFile == true { isFavorite = true }
         self.artworkId = artworkId
         isMissing = false // just read from disk, so it's there (matters for a moved file matched to a missing song)
 
@@ -146,6 +149,8 @@ public struct ScannedTrack: Sendable, Equatable {
     public var discTotal: Int?
     public var isCompilation: Bool = false
     public var rating: Int?
+    /// The heart saved in the file (FAVORITE tag), if it has one.
+    public var favoriteInFile: Bool?
 
     public var duration: Double = 0
     public var sampleRate: Double?
