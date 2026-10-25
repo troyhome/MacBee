@@ -40,6 +40,7 @@ public enum AudioEngineError: LocalizedError {
     case noOutputDevice
     case deviceBusy(String)
     case exclusiveModeUnavailable(String)
+    case exclusiveModeBlocked(String)
     case sampleRateChangeTimedOut(Double)
 
     public var errorDescription: String? {
@@ -51,6 +52,8 @@ public enum AudioEngineError: LocalizedError {
         case let .deviceBusy(name): return "\(name) is in exclusive use by another app."
         case let .exclusiveModeUnavailable(name):
             return "Exclusive mode isn't available for \(name) in this version of MacBee. Music plays normally (shared)."
+        case let .exclusiveModeBlocked(name):
+            return "\(name) wouldn't start in exclusive mode (another app, such as Boom 3D, may be sending sound to it). Playing shared instead."
         case let .sampleRateChangeTimedOut(rate): return "The device didn't switch to \(AudioFormatInfo.formatRate(rate))."
         }
     }

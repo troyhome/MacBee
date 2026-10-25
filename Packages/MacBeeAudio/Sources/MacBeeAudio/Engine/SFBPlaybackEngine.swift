@@ -61,6 +61,8 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     @ObservationIgnored private var progressTask: Task<Void, Never>?
     /// True while a video plays: exclusive mode is let go so the video's sound can reach the device.
     @ObservationIgnored private var exclusiveModeOnBreak = false
+    /// A device that wouldn't start in exclusive mode; it plays shared until the output settings change.
+    @ObservationIgnored private var exclusiveModeBlockedDeviceID: AudioObjectID?
     @ObservationIgnored private var isStarting = false
     /// Next track currently loading into memory in the background.
     @ObservationIgnored private var preloadingURL: URL?
@@ -173,6 +175,9 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     public func apply(_ newSettings: OutputSettings) {
         let old = settings
         settings = newSettings
+        if old.deviceUID != newSettings.deviceUID || old.exclusiveMode != newSettings.exclusiveMode {
+            exclusiveModeBlockedDeviceID = nil
+        }
         decoderFactory.dsdMode = newSettings.dsdMode
         decoderFactory.loadIntoMemory = newSettings.loadIntoMemory
 
@@ -228,7 +233,16 @@ public final class SFBPlaybackEngine: PlaybackEngine {
         guard myGeneration == generation else { return }
 
         userRequestedURL = userInitiated ? url : nil
-        try player.play(decoder)
+        do {
+            try player.play(decoder)
+        } catch where outputDevice.map({ devices.ownsHogMode($0.id) }) == true {
+            // Exclusive mode can keep the device from starting, e.g. when Boom 3D's driver also sends its
+            // sound there. Play shared rather than not at all; the decoder is already queued.
+            exclusiveModeBlockedDeviceID = outputDevice?.id
+            releaseExclusiveAccess()
+            report(AudioEngineError.exclusiveModeBlocked(outputDevice?.name ?? "the output device"))
+            try player.play()
+        }
         startProgressUpdates()
     }
 
@@ -469,7 +483,7 @@ public final class SFBPlaybackEngine: PlaybackEngine {
     }
 
     private func acquireExclusiveAccess() {
-        guard !exclusiveModeOnBreak, let device = outputDevice else { return }
+        guard !exclusiveModeOnBreak, let device = outputDevice, device.id != exclusiveModeBlockedDeviceID else { return }
         do { try devices.acquireHogMode(on: device) } catch { report(error) }
         updateSignalPath()
     }
