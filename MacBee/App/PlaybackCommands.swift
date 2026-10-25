@@ -38,13 +38,14 @@ struct PlaybackCommands: Commands {
     }
 }
 
-/// The "Sync" menu: Copy To (playlists onto a player, card or folder: Track Studio > Copy To) and
+/// In the File menu: Copy To (playlists onto a player, card or folder: Track Studio > Copy To) and
 /// Device Sync (MacBee on your other Mac: Settings > Sync).
 struct SyncCommands: Commands {
     let app: AppModel
 
     var body: some Commands {
-        CommandMenu("Sync") {
+        CommandGroup(after: .importExport) {
+            Divider()
             Button("Copy To…") {
                 UserDefaults.standard.set(TagsSection.sync.rawValue, forKey: "tagsSection")
                 if !app.isInTrackStudio { app.go(to: .tags) }

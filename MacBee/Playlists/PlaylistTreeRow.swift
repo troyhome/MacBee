@@ -62,12 +62,14 @@ struct PlaylistTreeRow: View {
             Text(playlist.name)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? theme.textPrimary : theme.textSecondary)
-                .lineLimit(1)
+                .lineLimit(2) // long names wrap instead of cutting off early
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
         .padding(.leading, 10 + CGFloat(depth) * 12)
         .padding(.trailing, 8)
-        .frame(height: 30)
+        .frame(minHeight: 30)
+        .padding(.vertical, 1)
         .background(RoundedRectangle(cornerRadius: 6).fill(background))
         .contentShape(Rectangle())
         .padding(.horizontal, 8)
