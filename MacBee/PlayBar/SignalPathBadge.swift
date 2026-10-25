@@ -69,26 +69,28 @@ private struct EqualizerTag: View {
     }
 }
 
-/// "PLEX" when the song comes from Plex; "Getting from Plex…" while a song downloads. No animation.
+/// "PLEX" or "NAVIDROME" when the song comes from a server; "Getting from Plex…" while a song downloads. No animation.
 private struct PlexSourceTag: View {
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
 
     var body: some View {
         if let fetching = player.router.fetchingTitle {
-            Text("Getting from Plex…")
+            let server = player.router.fetchingSource?.title ?? "the server"
+            Text("Getting from \(server)…")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(theme.textSecondary)
-                .help("Fetching “\(fetching)” from your Plex server")
-        } else if player.isPlayingFromPlex {
-            Text("PLEX")
+                .help("Fetching “\(fetching)” from \(server)")
+        } else if let source = player.playingFromServer {
+            let color = source == .plex ? Color(hex: 0xE5A00D) : Color(hex: 0x0084FF)
+            Text(source.title.uppercased())
                 .font(.mbLabel)
                 .tracking(0.6)
-                .foregroundStyle(Color(hex: 0xE5A00D))
+                .foregroundStyle(color)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 2)
-                .overlay(Capsule().stroke(Color(hex: 0xE5A00D).opacity(0.8), lineWidth: 1))
-                .help("Playing the original file from your Plex server (the network drive isn't reachable or Plex is chosen in Preferences)")
+                .overlay(Capsule().stroke(color.opacity(0.8), lineWidth: 1))
+                .help("Playing the original file from \(source.title) (the network drive isn't reachable, or \(source.title) is chosen in Settings)")
         }
     }
 }

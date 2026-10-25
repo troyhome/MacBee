@@ -30,9 +30,10 @@ struct PlaybackCommands: Commands {
             Divider()
             Picker("Play Songs From", selection: Binding(get: { preferences.playbackSource },
                                                          set: { preferences.playbackSource = $0 })) {
-                Text("Automatic (drive at home, Plex when away)").tag(PlaybackSourcePreference.automatic)
+                Text("Automatic (drive at home, Plex or Navidrome when away)").tag(PlaybackSourcePreference.automatic)
                 Text("Always the Network Drive").tag(PlaybackSourcePreference.drive)
                 Text("Always Plex").tag(PlaybackSourcePreference.plex)
+                Text("Always Navidrome").tag(PlaybackSourcePreference.navidrome)
             }
         }
     }

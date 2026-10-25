@@ -557,3 +557,9 @@ Create an Xcode macOS app target named MacBee that uses both local packages. Bui
   MiniDisc dialogs on the main window via PlaylistStore.pending*); menus in one order (play, mix, favorite/playlist,
   go to, files); "Edit in TagBee"; Media page shows `LibraryNotice` + `LibrarySummaryRow` instead of the folder panel;
   Collections no longer has a Playlists tab; Copy To / Device Sync moved to the File menu; Settings tidied.
+- Navidrome / Subsonic (2026-10-25): `MacBee/Subsonic/` (SubsonicAPI: salted-token auth, search3 paging, download.view
+  originals; NavidromeConnection: address+username in UserDefaults, password in Keychain account "navidrome", links in
+  Application Support/MacBee/Navidrome-Links.json). `SubsonicMatcher` (package): path first, then artist|title|album
+  within 2 s. PlaybackRouter serves Plex or Navidrome (`RemoteSource`), caches in Caches/MacBee/{Plex,Navidrome}.
+  "Play songs from" gained "Always Navidrome"; Automatic tries Plex then Navidrome. ATS: NSAllowsLocalNetworking (http on
+  the home network); servers outside the home network need https.

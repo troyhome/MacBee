@@ -58,7 +58,8 @@ final class PlayerViewModel {
 
     var currentTrack: Track? { queue.current }
     /// The current song is playing from a copy fetched from Plex.
-    var isPlayingFromPlex: Bool { router.isFromPlex(engine.currentTrack) }
+    /// The server the playing song was fetched from (Plex or Navidrome), if any.
+    var playingFromServer: RemoteSource? { router.source(of: engine.currentTrack) }
     var isPlaying: Bool { engine.state == .playing }
 
     // MARK: - Starting playback

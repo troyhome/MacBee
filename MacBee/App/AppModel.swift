@@ -20,6 +20,7 @@ final class AppModel {
     let networkSync: NetworkSync?
     /// Plex sign-in and the away-from-home route to the same songs.
     let plex: PlexConnection?
+    let navidrome: NavidromeConnection?
     let themeStore = ThemeStore()
     /// The 16-band equalizer (off by default).
     let equalizer: EqualizerStore
@@ -128,8 +129,10 @@ final class AppModel {
         equalizer = EqualizerStore(engine: engine)
         let plex = library.map { PlexConnection(library: $0) }
         self.plex = plex
+        let navidrome = library.map { NavidromeConnection(library: $0) }
+        self.navidrome = navidrome
         player = PlayerViewModel(engine: engine, queue: queue, database: library?.database, preferences: preferences,
-                                 router: PlaybackRouter(plex: plex, preferences: preferences))
+                                 router: PlaybackRouter(plex: plex, navidrome: navidrome, preferences: preferences))
         nowPlaying = NowPlayingService(player: player, library: library)
         networkSync?.onMerged = { [weak self] in
             await self?.library?.refreshAfterSync()

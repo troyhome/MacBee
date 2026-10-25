@@ -9,7 +9,7 @@ struct LibraryPreferences: View {
 
     var body: some View {
         if let library = app.library {
-            LibraryPreferencesForm(library: library, plex: app.plex, preferences: preferences)
+            LibraryPreferencesForm(library: library, plex: app.plex, navidrome: app.navidrome, preferences: preferences)
         } else {
             ContentUnavailableView("The music library couldn't be opened", systemImage: "exclamationmark.triangle",
                                    description: Text(app.libraryError ?? ""))
@@ -20,6 +20,7 @@ struct LibraryPreferences: View {
 private struct LibraryPreferencesForm: View {
     let library: MusicLibrary
     let plex: PlexConnection?
+    let navidrome: NavidromeConnection?
     @Bindable var preferences: PreferencesStore
 
     @AppStorage("showMissingFiles") private var showMissingFiles = false
@@ -112,8 +113,21 @@ private struct LibraryPreferencesForm: View {
                 }
             }
 
+            Section {
+                Picker("Play songs from", selection: $preferences.playbackSource) {
+                    ForEach(PlaybackSourcePreference.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.radioGroup)
+                PreferenceNote("Also in the menu bar: Controls → Play Songs From. Away from home, each song is fetched from Plex or Navidrome as the original file before it plays, so it stays bit-perfect. Fetched songs are kept on this Mac (up to 3 GB each) so they replay instantly.")
+            } header: {
+                Text("Where songs play from")
+            }
+
             if let plex {
                 PlexPreferenceSections(plex: plex, preferences: preferences)
+            }
+            if let navidrome {
+                NavidromePreferenceSections(navidrome: navidrome)
             }
         }
         .formStyle(.grouped)

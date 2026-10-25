@@ -3,12 +3,13 @@ import SwiftUI
 
 /// Where songs are coming from right now.
 enum LibrarySource {
-    case local, plex, unavailable
+    case local, plex, navidrome, unavailable
 
     var title: String {
         switch self {
         case .local: "Local library"
         case .plex: "Plex"
+        case .navidrome: "Navidrome"
         case .unavailable: "Library offline"
         }
     }
@@ -16,7 +17,7 @@ enum LibrarySource {
     var systemImage: String {
         switch self {
         case .local: "externaldrive"
-        case .plex: "server.rack"
+        case .plex, .navidrome: "server.rack"
         case .unavailable: "exclamationmark.triangle"
         }
     }
@@ -24,16 +25,18 @@ enum LibrarySource {
     /// Follows the same rules as `PlaybackRouter`: the playing song wins, then the "Play songs from" choice,
     /// then (on Automatic) whether a music folder can be reached.
     @MainActor
-    static func current(library: MusicLibrary, preferences: PreferencesStore, plex: PlexConnection?,
+    static func current(library: MusicLibrary, preferences: PreferencesStore, app: AppModel,
                         player: PlayerViewModel) -> LibrarySource {
-        if player.isPlayingFromPlex { return .plex }
-        let plexReady = plex?.isSignedIn == true
+        if let server = player.playingFromServer { return server == .plex ? .plex : .navidrome }
+        let plexReady = app.plex?.isSignedIn == true
+        let navidromeReady = app.navidrome?.isSetUp == true
         switch preferences.playbackSource {
         case .drive: return .local
         case .plex: return plexReady ? .plex : .local
+        case .navidrome: return navidromeReady ? .navidrome : .local
         case .automatic:
             if library.folders.contains(where: \.isOnline) { return .local }
-            return plexReady ? .plex : .unavailable
+            return plexReady ? .plex : navidromeReady ? .navidrome : .unavailable
         }
     }
 }
@@ -49,7 +52,7 @@ struct LibrarySourceStatus: View {
     @State private var confirmRescan = false
 
     var body: some View {
-        let source = LibrarySource.current(library: library, preferences: preferences, plex: app.plex, player: player)
+        let source = LibrarySource.current(library: library, preferences: preferences, app: app, player: player)
         Group {
             if collapsed {
                 Image(systemName: source.systemImage)
@@ -94,6 +97,7 @@ struct LibrarySourceStatus: View {
         switch source {
         case .local: theme.good
         case .plex: Color(hex: 0xE5A00D)
+        case .navidrome: Color(hex: 0x0084FF)
         case .unavailable: theme.warning
         }
     }

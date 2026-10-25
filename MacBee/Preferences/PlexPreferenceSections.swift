@@ -1,23 +1,13 @@
 import SwiftUI
 
 /// Plex settings, shown in the Library tab of Preferences: sign in, pick the server and music library,
-/// match songs, and choose where songs play from. These are Form sections; the Library tab's Form holds them.
+/// and match songs. These are Form sections; the Library tab's Form holds them.
 struct PlexPreferenceSections: View {
     @Bindable var plex: PlexConnection
     @Bindable var preferences: PreferencesStore
     @Environment(\.theme) private var theme
 
     var body: some View {
-        Section {
-            Picker("Play songs from", selection: $preferences.playbackSource) {
-                ForEach(PlaybackSourcePreference.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.radioGroup)
-            PreferenceNote("Also in the menu bar: Controls → Play Songs From. Away from home, each song is fetched from Plex as the original file before it plays, so it stays bit-perfect. Fetched songs are kept on this Mac (up to 3 GB) so they replay instantly.")
-        } header: {
-            Text("Where songs play from")
-        }
-
         Section("Plex account") {
             switch plex.status {
             case .signedOut:

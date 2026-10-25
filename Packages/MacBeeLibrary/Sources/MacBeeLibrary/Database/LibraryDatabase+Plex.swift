@@ -18,6 +18,24 @@ public extension LibraryDatabase {
         }
     }
 
+    /// Every song with its path inside its library folder and its tags, for matching with a Subsonic server.
+    func localSongsForSubsonicMatching() async throws -> [SubsonicMatcher.LocalSong] {
+        try await writer.read { db in
+            try Row.fetchAll(db, sql: """
+                SELECT track.id AS id, track.path AS path, folder.path AS folderPath, track.artist AS artist,
+                       track.title AS title, track.displayAlbum AS album, track.duration AS duration
+                FROM track JOIN folder ON folder.id = track.folderId
+                """).map { row in
+                let path: String = row["path"], folderPath: String = row["folderPath"]
+                let relative = path.hasPrefix(folderPath + "/") ? String(path.dropFirst(folderPath.count + 1))
+                    : (path as NSString).lastPathComponent
+                return SubsonicMatcher.LocalSong(trackId: row["id"], relativePath: relative,
+                                                 artist: row["artist"] ?? "", title: row["title"] ?? "",
+                                                 album: row["album"] ?? "", duration: row["duration"] ?? 0)
+            }
+        }
+    }
+
     /// Replaces all Plex links (after signing in or re-matching).
     func replacePlexLinks(_ links: [Int64: String]) async throws {
         try await writer.write { db in
