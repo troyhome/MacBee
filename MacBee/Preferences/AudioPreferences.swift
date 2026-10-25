@@ -4,6 +4,7 @@ import SwiftUI
 /// Output device, exclusive mode, volume, DSD and memory loading.
 struct AudioPreferences: View {
     @Environment(PlayerViewModel.self) private var player
+    @Environment(\.theme) private var theme
 
     var body: some View {
         let settings = player.engine.settings
@@ -16,7 +17,7 @@ struct AudioPreferences: View {
                     }
                 }
                 Toggle("Exclusive mode", isOn: binding(\.exclusiveMode))
-                PreferenceNote("Stops other apps from playing through the same device while MacBee plays, so nothing mixes into your music.")
+                PreferenceNote("Stops other apps from playing through the same device while MacBee plays, so nothing mixes into your music. If another player already has the device to itself, MacBee names it; if the device won't start this way, MacBee plays shared instead.")
                 Toggle("Use the highest bit depth the device supports", isOn: binding(\.preferHighestBitDepth))
                 PreferenceNote("Keeps 24-bit music from being cut down to 16-bit. Leave on unless a DAC misbehaves.")
             }
@@ -42,7 +43,7 @@ struct AudioPreferences: View {
                     Label("Only use DoP with a DAC that supports it. Otherwise you'll hear loud noise.",
                           systemImage: "exclamationmark.triangle.fill")
                         .font(.mbCaption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(theme.warning)
                 } else {
                     PreferenceNote("Conversion handles DSD64. DSD128 and higher need DoP.")
                 }

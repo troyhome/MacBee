@@ -23,7 +23,7 @@ struct PreferencesView: View {
                 .tabItem { Label("Tag Editor", systemImage: "tag") }
                 .tag("tagEditor")
             SyncPreferences()
-                .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+                .tabItem { Label("Device Sync", systemImage: "arrow.triangle.2.circlepath") }
                 .tag("sync")
         }
         .frame(width: 620)

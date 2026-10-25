@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Choose the external tag editor app. Phase 8 will open selected songs in it.
+/// Choose the external tag editor app (TagBee) that songs open in.
 struct TagEditorPreferences: View {
     @Environment(PreferencesStore.self) private var preferences
 
@@ -36,7 +36,7 @@ struct TagEditorPreferences: View {
                     }
                     Spacer()
                 }
-                PreferenceNote("Right-click songs or albums and choose Edit Tags, or use the Tag Editor box in Playlist Studio. MacBee re-reads the songs as soon as you save them in this app.")
+                PreferenceNote("Right-click songs or albums and choose Edit in TagBee, or use Track Studio. MacBee re-reads the songs as soon as you save them in this app.")
             }
         }
         .formStyle(.grouped)

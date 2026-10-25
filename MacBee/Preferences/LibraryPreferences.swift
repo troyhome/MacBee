@@ -26,6 +26,7 @@ private struct LibraryPreferencesForm: View {
     @State private var missing: [Track] = []
     @State private var folderToRemove: MusicLibrary.FolderState?
     @State private var confirmCleanUp = false
+    @State private var confirmRescan = false
     @State private var message: String?
 
     var body: some View {
@@ -53,15 +54,13 @@ private struct LibraryPreferencesForm: View {
                         .foregroundStyle(.secondary)
                     Button("Scan Now") { library.scanAll() }
                         .disabled(library.isScanning || library.folders.isEmpty)
+                    Button("Force Rescan…") { confirmRescan = true }
+                        .disabled(library.isScanning || library.folders.isEmpty)
+                        .help("Read every song's tags again, even ones that look unchanged")
                 }
                 if let message {
                     PreferenceNote(message)
                 }
-            }
-
-            Section("Artists") {
-                Toggle("Hide compilation-only artists from Artists view", isOn: $preferences.hideCompilationOnlyArtists)
-                PreferenceNote("Leaves out artists who only appear on compilations, unless they also have an album of their own.")
             }
 
             VideoFoldersSection(preferences: preferences)
@@ -114,6 +113,11 @@ private struct LibraryPreferencesForm: View {
             }
         } message: {
             Text("Its songs leave MacBee; the music files themselves are not touched. Favorites, play counts and playlist and mix places are kept and come back if the same songs are added again from any folder.")
+        }
+        .confirmationDialog("Force a full rescan?", isPresented: $confirmRescan) {
+            Button("Rescan Everything") { library.forceRescanAll() }
+        } message: {
+            Text("MacBee reads every song's tags again, even ones that look unchanged. On a network drive this can take a while. Play counts and favorites are kept.")
         }
         .confirmationDialog("Remove \(missing.count) missing files from the library?", isPresented: $confirmCleanUp) {
             Button("Remove", role: .destructive) {
@@ -202,9 +206,7 @@ private struct FolderPreferenceRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text(state.folder.isPaused ? "Paused" : (state.isOnline ? "Connected" : "Not connected"))
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(state.folder.isPaused ? Color.secondary : (state.isOnline ? Color.green : Color.orange))
+            ConnectionStatusLabel(paused: state.folder.isPaused, connected: state.isOnline)
             Button("Remove…", action: onRemove)
         }
     }
@@ -242,9 +244,7 @@ private struct VideoFoldersSection: View {
                         .help(path)
                         .foregroundStyle(paused ? .secondary : .primary)
                     Spacer()
-                    Text(paused ? "Paused" : connected ? "Connected" : "Not connected")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(paused ? Color.secondary : connected ? .green : .orange)
+                    ConnectionStatusLabel(paused: paused, connected: connected)
                     Button("Remove") {
                         preferences.videoFolders.removeAll { $0 == path }
                         FolderAccess.shared.forget(path)
@@ -286,5 +286,18 @@ private struct VideoFoldersSection: View {
         FolderAccess.shared.remember(url)
         preferences.addVideoFolder(url.path)
         Task { await app.refreshVideos() }
+    }
+}
+
+/// "Connected", "Not connected" or "Paused", in the theme's colors.
+private struct ConnectionStatusLabel: View {
+    let paused: Bool
+    let connected: Bool
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Text(paused ? "Paused" : connected ? "Connected" : "Not connected")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(paused ? theme.textSecondary : connected ? theme.good : theme.warning)
     }
 }

@@ -5,6 +5,7 @@ import SwiftUI
 struct PlexPreferenceSections: View {
     @Bindable var plex: PlexConnection
     @Bindable var preferences: PreferencesStore
+    @Environment(\.theme) private var theme
 
     var body: some View {
         Section {
@@ -55,7 +56,7 @@ struct PlexPreferenceSections: View {
                 }
                 HStack {
                     Text(plex.route.title)
-                        .foregroundStyle(plex.route == .unreachable ? .orange : .secondary)
+                        .foregroundStyle(plex.route == .unreachable ? theme.warning : theme.textSecondary)
                     Spacer()
                     Button("Check Connection") { Task { await plex.connect() } }
                 }

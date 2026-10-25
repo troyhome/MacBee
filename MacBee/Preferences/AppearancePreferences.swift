@@ -35,6 +35,11 @@ struct AppearancePreferences: View {
                 }
                 PreferenceNote("Used for buttons, highlights and the playing song.")
             }
+            Section("Library display") {
+                Toggle("Show quality badges (e.g. FLAC 24/96)", isOn: $preferences.showQualityBadges)
+                Toggle("Hide compilation-only artists from Artists", isOn: $preferences.hideCompilationOnlyArtists)
+                PreferenceNote("Leaves out artists who only appear on compilations, unless they also have an album of their own.")
+            }
             Section("Sidebar") {
                 Slider(value: $preferences.sidebarWidth, in: PreferencesStore.sidebarWidthRange, step: 2) {
                     Text("Width")
