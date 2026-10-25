@@ -54,6 +54,8 @@ struct VideosView: View {
             Text(shownCategory.title)
                 .font(.system(size: 30, weight: .bold))
                 .foregroundStyle(theme.textPrimary)
+                .lineLimit(1)
+                .fixedSize() // never wraps; the search field gives up room instead
             Spacer()
             if app.videos.isScanning {
                 Text("Looking for videos…")
@@ -73,13 +75,14 @@ struct VideosView: View {
                 Toggle("Continuous Play", isOn: $preferences.continuousPlayEpisodes)
                     .toggleStyle(.switch)
                     .controlSize(.small)
+                    .fixedSize()
                     .help("Play the next episode automatically when one ends")
             }
             if Self.sortable.contains(shownCategory) {
                 VideoSortMenu(category: shownCategory, sort: $sort)
             }
             FilterField(prompt: "Search videos", text: $searchText)
-                .frame(width: 220)
+                .frame(minWidth: 120, maxWidth: 220)
         }
         .padding(.horizontal, 28)
         .padding(.top, 24)
