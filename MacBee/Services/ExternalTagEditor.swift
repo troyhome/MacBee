@@ -11,6 +11,19 @@ final class ExternalTagEditor: TagEditorService {
         var errorDescription: String? { "Choose your tag editor in Preferences → Tag Editor." }
     }
 
+    /// The songs' files aren't where the library says (drive not connected, or moved/renamed).
+    struct SongsNotFound: LocalizedError {
+        let missing: [URL]
+        let sentOthers: Bool
+        var errorDescription: String? {
+            let first = missing[0]
+            let what = missing.count == 1 ? "“\(first.lastPathComponent)” isn't" : "\(missing.count) songs aren't"
+            let opened = sentOthers ? " The other songs were opened." : ""
+            return "\(what) where MacBee expects, in \(first.deletingLastPathComponent().path). "
+                + "Check that the drive is connected, or rescan the folder in Settings → Library.\(opened)"
+        }
+    }
+
     /// Shown as an alert.
     var problem: String?
 
@@ -59,10 +72,16 @@ final class ExternalTagEditor: TagEditorService {
         let urls = Array(Set(tracks.map(\.url))).sorted { $0.path < $1.path }
         guard !urls.isEmpty else { return }
         let dates = await Self.modificationDates(urls.map(\.path))
-        for url in urls { watched[url.path] = dates[url.path] ?? .distantPast }
-        watchUntil = Date().addingTimeInterval(Self.watchDuration)
-        _ = try await NSWorkspace.shared.open(urls, withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
-        startWatching()
+        // One missing file makes macOS refuse the whole open with a misleading "TagBee.app not found".
+        let found = urls.filter { dates[$0.path] != nil }
+        let missing = urls.filter { dates[$0.path] == nil }
+        if !found.isEmpty {
+            for url in found { watched[url.path] = dates[url.path] }
+            watchUntil = Date().addingTimeInterval(Self.watchDuration)
+            _ = try await NSWorkspace.shared.open(found, withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
+            startWatching()
+        }
+        if !missing.isEmpty { throw SongsNotFound(missing: missing, sentOthers: !found.isEmpty) }
     }
 
     /// For menus and buttons: opens the songs and shows any problem as an alert.
