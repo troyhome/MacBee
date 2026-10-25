@@ -47,24 +47,9 @@ struct VideosView: View {
     // MARK: - Header and lists
 
     private var header: some View {
-        HStack(spacing: 14) {
-            if app.canGoBack {
-                CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
-            }
-            // Title with the scan status under it, so neither has to squeeze into the row.
-            VStack(alignment: .leading, spacing: 2) {
-                Text(shownCategory.title)
-                    .font(.mbPageTitle)
-                    .foregroundStyle(theme.textPrimary)
-                if app.videos.isScanning {
-                    Text("Looking for videos…")
-                        .font(.mbSecondary)
-                        .foregroundStyle(theme.textTertiary)
-                }
-            }
-            .lineLimit(1)
-            .fixedSize() // never wraps; the search field gives up room instead
-            Spacer()
+        PageHeader(title: shownCategory.title,
+                   subtitle: app.videos.isScanning ? "Looking for videos…" : nil,
+                   showsDivider: true) {
             Button {
                 Task { await app.refreshVideos() }
             } label: {
@@ -81,15 +66,13 @@ struct VideosView: View {
                     .fixedSize()
                     .help("Play the next episode automatically when one ends")
             }
+            HeaderDivider()
             if Self.sortable.contains(shownCategory) {
                 VideoSortMenu(category: shownCategory, sort: $sort)
             }
             FilterField(prompt: "Search videos", text: $searchText)
                 .frame(minWidth: 120, maxWidth: 220)
         }
-        .padding(.horizontal, 28)
-        .padding(.top, 24)
-        .padding(.bottom, 10)
     }
 
     private var shownCategory: VideoCategory {

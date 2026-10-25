@@ -6,7 +6,8 @@ enum CollectionSection: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// The tabs before the liked group, and the liked group.
-    static let general: [CollectionSection] = [.playlists, .variousArtists, .savedMixes]
+    /// Playlists have their own page (sidebar > Playlists); the case stays so an old saved choice still reads.
+    static let general: [CollectionSection] = [.variousArtists, .savedMixes]
     static let liked: [CollectionSection] = [.albums, .tracks, .videos]
 
     var systemImage: String {

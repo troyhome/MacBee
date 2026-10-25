@@ -13,20 +13,15 @@ struct AllPlaylistsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                HStack {
-                    if !embedded {
-                        Text("Playlists")
-                            .font(.mbPageTitle)
-                            .foregroundStyle(theme.textPrimary)
-                    }
-                    Spacer()
+                PageHeader(title: "Playlists", subtitle: "\(store.playlists.filter { !$0.isFolder }.count) playlists") {
                     Button("New Playlist") { Task { await store.newPlaylist() } }
                 }
+                .padding(.horizontal, -PageLayout.margin)
                 ForEach(groups, id: \.title) { group in
                     VStack(alignment: .leading, spacing: 12) {
                         if !group.title.isEmpty {
                             Text(group.title)
-                                .font(.system(size: 17, weight: .bold))
+                                .font(.mbSection)
                                 .foregroundStyle(theme.textSecondary)
                         }
                         LazyVGrid(columns: columns, alignment: .leading, spacing: 24) {
@@ -35,7 +30,7 @@ struct AllPlaylistsView: View {
                     }
                 }
             }
-            .padding(28)
+            .padding([.horizontal, .bottom], PageLayout.margin)
         }
         .overlay {
             if store.allPlaylists.isEmpty {

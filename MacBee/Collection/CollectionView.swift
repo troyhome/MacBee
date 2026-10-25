@@ -8,7 +8,7 @@ struct CollectionView: View {
     @Environment(MusicLibrary.self) private var library
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
-    @AppStorage("collectionSection") private var section: CollectionSection = .playlists
+    @AppStorage("collectionSection") private var section: CollectionSection = .albums
     @State private var model = CollectionViewModel()
 
     var body: some View {
@@ -24,27 +24,20 @@ struct CollectionView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 14) {
-                if app.canGoBack {
-                    CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
-                }
-                Text("Collections")
-                    .font(.mbPageTitle)
-                    .foregroundStyle(theme.textPrimary)
-            }
+        VStack(alignment: .leading, spacing: 6) {
+            PageHeader(title: "Collections", subtitle: "What you've liked and kept")
             CollectionTabs(section: $section)
+                .padding(.horizontal, PageLayout.margin)
         }
-        .padding(.horizontal, 28)
-        .padding(.top, 24)
         .padding(.bottom, 8)
+        .onAppear { if section == .playlists { section = .albums } }
     }
 
     @ViewBuilder
     private var content: some View {
         switch section {
         case .playlists:
-            AllPlaylistsView(embedded: true)
+            EmptyView()
         case .variousArtists:
             AlbumGrid(albums: model.compilations, indexName: { $0.title })
                 .overlay {

@@ -51,19 +51,15 @@ struct PlaylistStudioView: View {
 
     private var libraryBrowser: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Playlist Studio")
-                    .font(.mbSection)
+                    .font(.mbPageTitle)
                     .foregroundStyle(theme.textPrimary)
-                Text("STUDIO MODE")
-                    .font(.mbLabel)
-                    .tracking(0.8)
-                    .foregroundStyle(theme.accent)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .overlay(Capsule().stroke(theme.accent.opacity(0.7), lineWidth: 1))
-                    .help("Click Playlist Studio in the sidebar to leave")
+                Text("Studio mode: click Playlist Studio in the sidebar to leave")
+                    .font(.mbSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
+            .lineLimit(1)
             StudioFilterBar(filter: $model.filter, genres: model.genres)
             if let playlist = sourcePlaylist {
                 sourceBanner(title: playlist.name) { PlaylistArtwork(playlist: playlist, size: 32, cornerRadius: 4) }
@@ -77,7 +73,7 @@ struct PlaylistStudioView: View {
                     .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
                 Spacer()
-                Button("Add Selected →") { addSelected() }
+                Button("Add Selected to Playlist") { addSelected() }
                     .disabled(selection.isEmpty || targetBinding.wrappedValue == nil)
                     .keyboardShortcut(.return, modifiers: .command)
                     .help("Add the selected songs to the playlist on the right (⌘Return)")
@@ -145,12 +141,11 @@ struct PlaylistStudioView: View {
 
             picture()
             VStack(alignment: .leading, spacing: 1) {
-                Text("SHOWING A PLAYLIST")
-                    .font(.mbLabel)
-                    .tracking(0.8)
-                    .foregroundStyle(theme.accent)
+                Text("Showing playlist")
+                    .font(.mbCaption)
+                    .foregroundStyle(theme.textSecondary)
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mbRowTitle)
                     .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
             }

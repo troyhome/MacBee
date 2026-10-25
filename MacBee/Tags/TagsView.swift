@@ -12,29 +12,10 @@ struct TagsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 18) {
-                if app.canGoBack {
-                    CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
-                }
-                Text("Track Studio")
-                    .font(.mbPageTitle)
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .layoutPriority(1)
-                Text("STUDIO MODE")
-                    .font(.mbLabel)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .tracking(0.8)
-                    .foregroundStyle(theme.accent)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .overlay(Capsule().stroke(theme.accent.opacity(0.7), lineWidth: 1))
-                    .help("Click Track Studio in the sidebar to leave. Click a playlist in the sidebar to work on its songs.")
+            PageHeader(title: "Track Studio", subtitle: "Studio mode: click Track Studio in the sidebar to leave") {
                 PillTabs(items: TagsSection.allCases, selection: $section, title: \.title, systemImage: \.systemImage)
-                Spacer()
                 if let browse = app.trackStudioBrowse {
+                    HeaderDivider()
                     Button {
                         app.trackStudioBrowse = nil
                     } label: {
@@ -45,9 +26,6 @@ struct TagsView: View {
                     .help("Hide \(browse.title) and give Track Studio the whole window")
                 }
             }
-            .padding(.horizontal, 28)
-            .padding(.top, 24)
-            .padding(.bottom, 8)
 
             switch section {
             case .duplicates: DuplicatesContainer()
@@ -139,12 +117,11 @@ private struct TagBeePanel: View {
                             .background(Capsule().fill(theme.accent))
                     }
                     .buttonStyle(.plain)
-                    Text(missingArtwork ? "SHOWING" : "SHOWING A PLAYLIST")
-                        .font(.mbLabel)
-                        .tracking(0.8)
-                        .foregroundStyle(theme.accent)
+                    Text(missingArtwork ? "Showing" : "Showing playlist")
+                        .font(.mbSecondary)
+                        .foregroundStyle(theme.textSecondary)
                     Text(name)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.mbRowTitle)
                         .foregroundStyle(theme.textPrimary)
                 }
             }
@@ -152,19 +129,11 @@ private struct TagBeePanel: View {
                             : missingArtwork ? "Search the songs without artwork" : "Search this playlist",
                         text: $query)
                 .frame(maxWidth: 420)
-            // The TagBee actions, as buttons in a row under the search box.
+            // The TagBee actions: the main one stands out, the rest are grouped in two menus.
             HStack(spacing: 8) {
-                Button("Select All") { selection = Set(results.map(\.path)) }
-                    .disabled(results.isEmpty)
-                Button("Open \(selection.count) in TagBee") { send(results.filter { selection.contains($0.path) }) }
+                Button("Edit \(selection.count) in TagBee") { send(results.filter { selection.contains($0.path) }) }
                     .buttonStyle(.borderedProminent)
                     .disabled(selection.isEmpty || !hasEditor)
-                Button("Song Playing") { if let track = player.currentTrack { send([track]) } }
-                    .disabled(player.currentTrack == nil || !hasEditor)
-                    .help("Open the song that's playing in TagBee")
-                Button("Album Playing") { Task { await sendPlayingAlbum() } }
-                    .disabled(player.currentTrack == nil || !hasEditor)
-                    .help("Open every song of the album that's playing in TagBee")
                 Button {
                     showingWand = true
                 } label: {
@@ -172,17 +141,30 @@ private struct TagBeePanel: View {
                 }
                 .disabled(results.isEmpty || app.tagEditor == nil)
                 .help("Look up covers online for every album in this list and choose one for each")
-                Button("Missing Artwork") { showMissingArtwork() }
-                    .help("List every song in the library that has no cover, grouped by album, to fix in TagBee")
-                Button("Open TagBee") {
-                    if let path = preferences.tagEditorPath { NSWorkspace.shared.open(URL(fileURLWithPath: path)) }
+                Menu("Load") {
+                    Button("Song Playing") { if let track = player.currentTrack { send([track]) } }
+                        .disabled(player.currentTrack == nil || !hasEditor)
+                    Button("Album Playing") { Task { await sendPlayingAlbum() } }
+                        .disabled(player.currentTrack == nil || !hasEditor)
+                    Divider()
+                    Button("Songs Missing Artwork") { showMissingArtwork() }
                 }
-                .disabled(!hasEditor)
+                .fixedSize()
+                .help("Open the song or album that's playing in TagBee, or list every song without a cover")
                 Spacer()
-                Button("Clear List") { clearList() }
-                    .keyboardShortcut(.delete, modifiers: .command)
-                    .disabled(results.isEmpty)
-                    .help("Empty the list (⌘⌫)")
+                Menu("Selection") {
+                    Button("Select All") { selection = Set(results.map(\.path)) }
+                        .disabled(results.isEmpty)
+                    Button("Clear List") { clearList() }
+                        .keyboardShortcut(.delete, modifiers: .command)
+                        .disabled(results.isEmpty)
+                    Divider()
+                    Button("Open TagBee") {
+                        if let path = preferences.tagEditorPath { NSWorkspace.shared.open(URL(fileURLWithPath: path)) }
+                    }
+                    .disabled(!hasEditor)
+                }
+                .fixedSize()
             }
             // Organize the results: plain list, or sections by album or artist.
             PillTabs(items: ResultGrouping.allCases, selection: $grouping, title: \.title, systemImage: \.systemImage)
@@ -247,7 +229,7 @@ private struct TagBeePanel: View {
                 }
             }
         }
-        .padding(.horizontal, 28)
+        .padding(.horizontal, PageLayout.margin)
         .padding(.vertical, 10)
         .sheet(isPresented: $showingWand) { CoverWandSheet(tracks: results) }
         .onChange(of: app.trackStudioSourcePlaylistId) { _, id in

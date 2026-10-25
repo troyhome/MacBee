@@ -13,6 +13,13 @@ struct SearchView: View {
     @State private var selection = Set<String>()
 
     var body: some View {
+        VStack(spacing: 0) {
+            PageHeader(title: "Search", subtitle: model.searchedText.isEmpty ? nil : "Results for “\(model.searchedText)”")
+            results
+        }
+    }
+
+    private var results: some View {
         List(selection: $selection) {
             if !model.artists.isEmpty {
                 sectionTitle("Artists")
