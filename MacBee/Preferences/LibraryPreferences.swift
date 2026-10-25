@@ -67,6 +67,11 @@ private struct LibraryPreferencesForm: View {
 
             VideoFoldersSection(preferences: preferences)
 
+            Section("Artists") {
+                Toggle("Hide compilation-only artists from Artists", isOn: $preferences.hideCompilationOnlyArtists)
+                PreferenceNote("Leaves out artists who only appear on compilations, unless they also have an album of their own.")
+            }
+
             Section("Routine check") {
                 Picker("Check network folders for changes", selection: $preferences.routineCheck) {
                     ForEach(RoutineCheck.allCases) { Text($0.title).tag($0) }
