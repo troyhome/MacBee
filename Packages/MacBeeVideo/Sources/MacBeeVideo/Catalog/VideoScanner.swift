@@ -18,7 +18,9 @@ public enum VideoScanner {
     static let skippedFolders: Set<String> = ["extras", "featurettes", "behind the scenes", "deleted scenes",
                                               "trailers", "samples", "sample", "interviews", "shorts"]
 
-    public static func scan(_ roots: [Root]) -> VideoCatalog {
+    /// `cache` keeps each folder's file list between scans; with `refreshing`, only those folders (paths as given in
+    /// `roots`) are walked again and the others reuse their last list. Without a cache every folder is walked.
+    public static func scan(_ roots: [Root], cache: VideoFileCache? = nil, refreshing: Set<String>? = nil) -> VideoCatalog {
         var movies: [String: Movie] = [:]
         var shows: [String: Show] = [:]
         var musicVideos: [MusicVideo] = []
@@ -30,7 +32,9 @@ public enum VideoScanner {
         for (index, root) in roots.enumerated() {
             // Resolved, so paths from the walk line up with it (/var vs /private/var, symlinked drives).
             let rootURL = root.url.resolvingSymlinksInPath()
-            for found in videoFiles(in: rootURL) {
+            let walkAgain = refreshing.map { $0.contains(root.url.path) } ?? true
+            let files = cache?.files(in: rootURL, walkAgain: walkAgain) ?? videoFiles(in: rootURL)
+            for found in files {
                 rank[found.file.path] = index
                 switch root.kind {
                 case .musicVideos:
@@ -260,5 +264,20 @@ public enum VideoScanner {
             if !found.isEmpty { return Array(NSOrderedSet(array: found)) as? [String] ?? found }
         }
         return []
+    }
+}
+
+/// Each video folder's file list from its last walk, so one folder can be looked through again on its own.
+public final class VideoFileCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var lists: [String: [VideoScanner.FoundFile]] = [:]
+
+    public init() {}
+
+    func files(in root: URL, walkAgain: Bool) -> [VideoScanner.FoundFile] {
+        if !walkAgain, let cached = lock.withLock({ lists[root.path] }) { return cached }
+        let found = VideoScanner.videoFiles(in: root)
+        lock.withLock { lists[root.path] = found }
+        return found
     }
 }

@@ -244,6 +244,15 @@ public final class MusicLibrary {
         requestScan(ids)
     }
 
+    /// Scans one folder: a quick check for changes, or (`readAll`) every file's tags read again.
+    public func scan(folderId id: Int64, readAll: Bool = false) {
+        if readAll { forcedFolderIds.insert(id) }
+        requestScan([id])
+    }
+
+    /// The folder being scanned right now, if any.
+    public var scanningFolderName: String? { scanProgress?.folderName }
+
     public func cancelScan() {
         pendingFolderIds.removeAll()
         forcedFolderIds.removeAll()

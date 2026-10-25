@@ -373,7 +373,8 @@ final class AppModel {
     }
 
     /// Looks for videos again in the video folders and (for music videos) the music folders.
-    func refreshVideos() async {
+    /// `only`: scan just this video folder again (the Rescan button beside it).
+    func refreshVideos(only folder: String? = nil) async {
         for move in preferences.locateVideoFolders() {
             FolderAccess.shared.forget(move.from)
             FolderAccess.shared.remember(URL(fileURLWithPath: move.to, isDirectory: true))
@@ -381,7 +382,7 @@ final class AppModel {
         }
         await videos.refresh(videoFolders: preferences.activeVideoFolders.map { URL(fileURLWithPath: $0) },
                              musicFolders: library?.folders.filter { $0.isOnline && !$0.folder.isPaused }.map(\.folder.url) ?? [],
-                             plex: plex)
+                             plex: plex, only: folder.map { URL(fileURLWithPath: $0) })
     }
 
     /// Switches a video folder on or off, then looks for videos again.

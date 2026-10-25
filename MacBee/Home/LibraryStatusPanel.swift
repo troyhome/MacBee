@@ -43,22 +43,42 @@ struct LibrarySummaryRow: View {
     @Environment(MusicLibrary.self) private var library
     @Environment(\.theme) private var theme
 
+    @Environment(PreferencesStore.self) private var preferences
+
     var body: some View {
-        HStack(spacing: 12) {
-            Text(statusText)
-                .font(.mbSecondary)
-                .foregroundStyle(theme.textSecondary)
-            Spacer(minLength: 8)
-            Button {
-                library.scanAll()
-            } label: {
-                Label("Scan Library", systemImage: "arrow.clockwise")
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
+                Text(statusText)
+                    .font(.mbSecondary)
+                    .foregroundStyle(theme.textSecondary)
+                Spacer(minLength: 8)
+                Button {
+                    library.scanAll()
+                } label: {
+                    Label("Scan Library", systemImage: "arrow.clockwise")
+                }
+                .disabled(library.isScanning)
+                LibrarySettingsButton()
             }
-            .disabled(library.isScanning)
-            LibrarySettingsButton()
+            .padding(.vertical, 10)
+            ForEach(library.folders) { state in
+                Divider()
+                FolderLine(systemImage: state.isNetwork ? "externaldrive.connected.to.line.below" : "folder",
+                           path: state.folder.path, paused: state.folder.isPaused, connected: state.isOnline) {
+                    MusicFolderRescanMenu(library: library, folder: state)
+                }
+            }
+            ForEach(preferences.videoFolders, id: \.self) { path in
+                Divider()
+                FolderLine(systemImage: "film.stack", path: path,
+                           paused: preferences.pausedVideoFolders.contains(path),
+                           connected: preferences.isVideoFolderConnected(path)) {
+                    VideoFolderRescanButton(path: path)
+                }
+            }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.bottom, 4)
         .background(RoundedRectangle(cornerRadius: 10).fill(theme.surface))
         .frame(maxWidth: 780, alignment: .leading)
     }
@@ -105,5 +125,34 @@ struct LibrarySettingsButton: View {
             UserDefaults.standard.set("library", forKey: "preferencesTab")
             openSettings()
         }
+    }
+}
+
+/// One folder on the Media page: icon, path, whether it's connected, and its Rescan button.
+private struct FolderLine<Action: View>: View {
+    let systemImage: String
+    let path: String
+    let paused: Bool
+    let connected: Bool
+    @ViewBuilder let action: () -> Action
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .foregroundStyle(theme.textSecondary)
+                .frame(width: 18)
+            Text(path)
+                .font(.mbRowTitle)
+                .foregroundStyle(paused ? theme.textSecondary : theme.textPrimary)
+                .lineLimit(2)
+                .help(path)
+            Spacer(minLength: 8)
+            Text(paused ? "Paused" : connected ? "Connected" : "Not connected")
+                .font(.mbCaption)
+                .foregroundStyle(paused ? theme.textSecondary : connected ? theme.good : theme.warning)
+            action()
+        }
+        .padding(.vertical, 8)
     }
 }

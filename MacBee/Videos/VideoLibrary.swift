@@ -25,8 +25,12 @@ final class VideoLibrary {
     /// Shows whose "Up Next" card was removed, and when; it comes back once the show is watched again.
     private(set) var upNextDismissed: [String: Date] = UserDefaults.standard.dictionary(forKey: "videoUpNextDismissed") as? [String: Date] ?? [:]
 
+    /// Each folder's file list from its last walk, so a single folder can be scanned again on its own.
+    @ObservationIgnored private let fileCache = VideoFileCache()
+
     /// Looks through the video folders (movies and shows) and music folders (music videos) again.
-    func refresh(videoFolders: [URL], musicFolders: [URL], plex: PlexConnection?) async {
+    /// With `only`, just that folder is walked again; the others reuse what was found last time.
+    func refresh(videoFolders: [URL], musicFolders: [URL], plex: PlexConnection?, only: URL? = nil) async {
         guard !isScanning else { return }
         isScanning = true
         let roots = videoFolders.map { VideoScanner.Root(url: $0, kind: .moviesAndShows) }
@@ -35,7 +39,11 @@ final class VideoLibrary {
             FileManager.default.fileExists(atPath: $0.url.path) && !VolumeLocation.isLeftoverMountPoint($0.url.path)
         }
         let previous = catalog
-        var found = await Task.detached(priority: .utility) { VideoScanner.scan(reachable) }.value
+        let cache = fileCache
+        let refreshing = only.map { Set([$0.path]) }
+        var found = await Task.detached(priority: .utility) {
+            VideoScanner.scan(reachable, cache: cache, refreshing: refreshing)
+        }.value
         // Fresh details from Plex when it can be reached; otherwise the ones saved last time.
         var index = PlexVideoIndex.loadSaved()
         if let plex, let fresh = await plex.videoIndex() {

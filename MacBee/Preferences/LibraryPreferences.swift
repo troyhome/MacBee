@@ -207,6 +207,7 @@ private struct FolderPreferenceRow: View {
             }
             Spacer()
             ConnectionStatusLabel(paused: state.folder.isPaused, connected: state.isOnline)
+            MusicFolderRescanMenu(library: library, folder: state)
             Button("Remove…", action: onRemove)
         }
     }
@@ -229,6 +230,9 @@ private struct VideoFoldersSection: View {
                 let paused = preferences.pausedVideoFolders.contains(path)
                 let connected = preferences.isVideoFolderConnected(path)
                 HStack(spacing: 10) {
+                    Image(systemName: "line.3.horizontal")
+                        .foregroundStyle(.tertiary)
+                        .help("Drag to change priority")
                     Toggle("", isOn: Binding(get: { !paused }, set: { app.setVideoFolder(path, paused: !$0) }))
                         .toggleStyle(.switch)
                         .controlSize(.mini)
@@ -245,6 +249,7 @@ private struct VideoFoldersSection: View {
                         .foregroundStyle(paused ? .secondary : .primary)
                     Spacer()
                     ConnectionStatusLabel(paused: paused, connected: connected)
+                    VideoFolderRescanButton(path: path)
                     Button("Remove") {
                         preferences.videoFolders.removeAll { $0 == path }
                         FolderAccess.shared.forget(path)
@@ -253,6 +258,15 @@ private struct VideoFoldersSection: View {
                         Task { await app.refreshVideos() }
                     }
                 }
+                .draggable("video:" + path)
+                .dropDestination(for: String.self) { items, _ in
+                    guard let moved = items.first, moved.hasPrefix("video:") else { return false }
+                    moveVideoFolder(String(moved.dropFirst(6)), to: path)
+                    return true
+                }
+            }
+            if preferences.videoFolders.count > 1 {
+                PreferenceNote("Drag folders to set their priority: when the same movie or episode is in more than one folder, MacBee shows the copy from the folder highest in the list.")
             }
             if preferences.videoFolders.isEmpty {
                 PreferenceNote("No video folders yet. Add the folder or drive with your movies and TV shows.")
@@ -268,6 +282,16 @@ private struct VideoFoldersSection: View {
             }
             PreferenceNote("MacBee plays MKV, MP4, MOV, AVI and more, including 4K and HDR. Posters and genres come from picture and .nfo files next to the videos.")
         }
+    }
+
+    /// Puts a dragged video folder where the one it was dropped on is, then looks again so the order applies.
+    private func moveVideoFolder(_ path: String, to target: String) {
+        var folders = preferences.videoFolders
+        guard path != target, let from = folders.firstIndex(of: path), let to = folders.firstIndex(of: target) else { return }
+        folders.remove(at: from)
+        folders.insert(path, at: to)
+        preferences.videoFolders = folders
+        Task { await app.refreshVideos() }
     }
 
     private var status: String {
