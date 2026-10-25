@@ -551,3 +551,9 @@ Create an Xcode macOS app target named MacBee that uses both local packages. Bui
   stay); video likes/positions/watched follow (`VideoLibrary.moveRoot`). An empty leftover /Volumes folder no
   longer counts as connected (it used to be scanned as empty). Pending DB migrations now back up the DB first
   (`Library-before-<last>-update.sqlite`). "Open in TagBee" skips missing files and names them.
+- UI polish (2026-10-25, from the UI review and mockups): `Theme/Typography.swift` text styles (.mbPageTitle etc.,
+  PageLayout.margin 28); `Common/PlayControls.swift` (PlayButton, MoreMenuButton, FavoriteTracksButton, PlayControls,
+  PageHeader, DetailHero) used by every page; one `PlaylistContextMenu` + `PlaylistActionsModifier` (rename/delete/
+  MiniDisc dialogs on the main window via PlaylistStore.pending*); menus in one order (play, mix, favorite/playlist,
+  go to, files); "Edit in TagBee"; Media page shows `LibraryNotice` + `LibrarySummaryRow` instead of the folder panel;
+  Collections no longer has a Playlists tab; Copy To / Device Sync moved to the File menu; Settings tidied.
