@@ -534,3 +534,13 @@ Create an Xcode macOS app target named MacBee that uses both local packages. Bui
 7. (done) Playlists, playlist folders, Playlist Studio.
 8. (done) Plex and tag-editor hooks.
 9. (done) Release: About window, version 1.0, .dmg, performance pass.
+
+## 2026-10-25 fixes
+- App icon "Vinyl Bee" (`Tools/make-icon.swift`). Honeycomb Wave variants offered, not chosen yet.
+- Exclusive mode: if the device won't start while hogged (avfaudio error 35, e.g. Boom 3D also using it), play
+  shared and remember that device until output settings change. If another app (e.g. Playa) holds hog mode, the
+  error names it (`AudioEngineError.deviceBusy(_, by:)`). Same change made in Playa.
+- Removing a music folder keeps favorites, ratings, plays and playlist/mix places in `RememberedSongs.json`
+  (beside Library.sqlite); restored after a scan adds the same songs back. Video likes already match by name.
+- Stale `/Volumes` folders (red no-entry badge) make shares mount as "Name-1", so folders show Not connected.
+  Restart the Mac to clear them.
