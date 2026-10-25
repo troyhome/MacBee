@@ -17,13 +17,13 @@ struct TagsView: View {
                     CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
                 }
                 Text("Track Studio")
-                    .font(.system(size: 30, weight: .bold))
+                    .font(.mbPageTitle)
                     .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .layoutPriority(1)
                 Text("STUDIO MODE")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.mbLabel)
                     .lineLimit(1)
                     .fixedSize()
                     .tracking(0.8)
@@ -140,7 +140,7 @@ private struct TagBeePanel: View {
                     }
                     .buttonStyle(.plain)
                     Text(missingArtwork ? "SHOWING" : "SHOWING A PLAYLIST")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.mbLabel)
                         .tracking(0.8)
                         .foregroundStyle(theme.accent)
                     Text(name)
@@ -327,7 +327,7 @@ private struct TagBeePanel: View {
                 Text(group.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.textPrimary)
                 Text([group.subtitle, "\(group.tracks.count) song\(group.tracks.count == 1 ? "" : "s")"]
                         .filter { !$0.isEmpty }.joined(separator: " · "))
-                    .font(.system(size: 11)).foregroundStyle(theme.textSecondary)
+                    .font(.mbCaption).foregroundStyle(theme.textSecondary)
             }
             .lineLimit(1)
             Spacer()

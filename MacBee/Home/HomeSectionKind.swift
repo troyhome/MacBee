@@ -21,7 +21,7 @@ enum HomeSectionKind: String, CaseIterable, Identifiable {
         case .stats: "number.square"
         case .recentlyPlayed: "clock.arrow.circlepath"
         case .suggestedMixes: "square.stack.3d.up"
-        case .recentlyAdded: "clock.badge.plus"
+        case .recentlyAdded: "clock.arrow.circlepath"
         case .forgottenGems: "sparkles"
         case .playHistory: "list.bullet.rectangle"
         case .library: "externaldrive"

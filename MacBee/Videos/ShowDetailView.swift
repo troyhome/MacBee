@@ -22,7 +22,7 @@ struct ShowDetailView: View {
                         .shadow(color: .black.opacity(0.5), radius: 16, y: 8)
                     VStack(alignment: .leading, spacing: 10) {
                         Text(show.title)
-                            .font(.system(size: 34, weight: .bold))
+                            .font(.mbDetailTitle)
                             .foregroundStyle(theme.textPrimary)
                         Text(details)
                             .font(.system(size: 14, weight: .medium))
@@ -124,13 +124,13 @@ private struct EpisodeRow: View {
                     .foregroundStyle(theme.textTertiary)
                     .opacity(hovering ? 0 : 1)
                 Image(systemName: "play.fill")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.accent)
                     .opacity(hovering ? 1 : 0)
             }
             .frame(width: 30)
             Text(episode.title ?? "Episode \(episode.number)")
-                .font(.system(size: 13, weight: .medium))
+                .font(.mbRowTitle)
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
             Spacer()
@@ -140,7 +140,7 @@ private struct EpisodeRow: View {
                     .help("Watched")
             } else if app.videos.position(of: episode.file.path) > 0 {
                 Text("In progress")
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(theme.accent)
             }
             if episode.file.is4K { VideoBadge(text: "4K") }

@@ -18,7 +18,7 @@ struct QueueRow: View {
                 .overlay {
                     if isCurrent {
                         Image(systemName: isPlaying ? "speaker.wave.2.fill" : "speaker.fill")
-                            .font(.system(size: 12))
+                            .font(.mbSecondary)
                             .foregroundStyle(theme.accent)
                             .frame(width: 36, height: 36)
                             .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 4))
@@ -29,7 +29,7 @@ struct QueueRow: View {
                     .font(.system(size: 13, weight: isCurrent ? .semibold : .regular))
                     .foregroundStyle(isCurrent ? theme.accent : theme.textPrimary)
                 Text(track.displayArtist)
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(theme.textSecondary)
             }
             .lineLimit(1)

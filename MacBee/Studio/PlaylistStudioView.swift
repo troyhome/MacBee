@@ -53,10 +53,10 @@ struct PlaylistStudioView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Text("Playlist Studio")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.mbSection)
                     .foregroundStyle(theme.textPrimary)
                 Text("STUDIO MODE")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.mbLabel)
                     .tracking(0.8)
                     .foregroundStyle(theme.accent)
                     .padding(.horizontal, 6)
@@ -74,7 +74,7 @@ struct PlaylistStudioView: View {
             }
             HStack {
                 Text(countText)
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
                 Spacer()
                 Button("Add Selected →") { addSelected() }
@@ -146,7 +146,7 @@ struct PlaylistStudioView: View {
             picture()
             VStack(alignment: .leading, spacing: 1) {
                 Text("SHOWING A PLAYLIST")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.mbLabel)
                     .tracking(0.8)
                     .foregroundStyle(theme.accent)
                 Text(title)

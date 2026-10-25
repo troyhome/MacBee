@@ -53,7 +53,7 @@ struct LibrarySourceStatus: View {
         Group {
             if collapsed {
                 Image(systemName: source.systemImage)
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(color(source))
                     .frame(maxWidth: .infinity)
                     .help("Playing from: \(source.title)")
@@ -63,7 +63,7 @@ struct LibrarySourceStatus: View {
                         .fill(color(source))
                         .frame(width: 6, height: 6)
                     Text(source.title)
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(theme.textTertiary)
                         .lineLimit(1)
                     Spacer(minLength: 4)

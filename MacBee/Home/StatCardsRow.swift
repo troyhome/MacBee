@@ -28,7 +28,7 @@ private struct StatCard: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textSecondary)
         }
         .frame(maxWidth: 190, alignment: .leading)

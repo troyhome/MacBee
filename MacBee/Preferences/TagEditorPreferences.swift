@@ -18,7 +18,7 @@ struct TagEditorPreferences: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(FileManager.default.displayName(atPath: path))
                             Text(path)
-                                .font(.system(size: 11))
+                                .font(.mbCaption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)

@@ -92,11 +92,11 @@ private struct AlbumListRow: View {
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text(album.title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.mbRowTitle)
                     .foregroundStyle(theme.textPrimary)
                 if showsArtist {
                     Text(album.artist)
-                        .font(.system(size: 12))
+                        .font(.mbSecondary)
                         .foregroundStyle(theme.textSecondary)
                 }
             }

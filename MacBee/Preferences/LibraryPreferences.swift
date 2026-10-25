@@ -49,7 +49,7 @@ private struct LibraryPreferencesForm: View {
                     Button("Add Folder…", action: addFolder)
                     Spacer()
                     Text(scanStatus)
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(.secondary)
                     Button("Scan Now") { library.scanAll() }
                         .disabled(library.isScanning || library.folders.isEmpty)
@@ -83,7 +83,7 @@ private struct LibraryPreferencesForm: View {
                     } else {
                         ForEach(missing.prefix(200), id: \.path) { track in
                             Text(track.path)
-                                .font(.system(size: 11))
+                                .font(.mbCaption)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                                 .help(track.path)
@@ -198,7 +198,7 @@ private struct FolderPreferenceRow: View {
                     .textSelection(.enabled)
                     .help(state.folder.path)
                 Text(details)
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -261,7 +261,7 @@ private struct VideoFoldersSection: View {
                 Button("Add Video Folder…", action: add)
                 Spacer()
                 Text(status)
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(.secondary)
                 Button("Scan Videos Now") { Task { await app.refreshVideos() } }
                     .disabled(app.videos.isScanning)

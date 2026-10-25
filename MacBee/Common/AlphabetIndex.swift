@@ -25,7 +25,7 @@ struct AlphabetIndex: View {
             VStack(spacing: 0) {
                 ForEach(Self.letters, id: \.self) { letter in
                     Text(letter)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.mbLabel)
                         .foregroundStyle(available.contains(letter) ? theme.accent : theme.textTertiary.opacity(0.5))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }

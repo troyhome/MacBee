@@ -41,7 +41,7 @@ struct AudioPreferences: View {
                 if settings.dsdMode == .dop {
                     Label("Only use DoP with a DAC that supports it. Otherwise you'll hear loud noise.",
                           systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(.orange)
                 } else {
                     PreferenceNote("Conversion handles DSD64. DSD128 and higher need DoP.")

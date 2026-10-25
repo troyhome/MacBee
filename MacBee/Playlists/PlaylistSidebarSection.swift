@@ -19,7 +19,7 @@ struct PlaylistSidebarSection: View {
                         .padding(.bottom, 4)
                     if store.tree.isEmpty {
                         Text("No playlists yet")
-                            .font(.system(size: 12))
+                            .font(.mbSecondary)
                             .foregroundStyle(theme.textTertiary)
                             .padding(.horizontal, 18)
                     }
@@ -35,7 +35,7 @@ struct PlaylistSidebarSection: View {
     private var header: some View {
         HStack {
             Text("PLAYLISTS")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.mbLabel)
                 .tracking(0.8)
                 .foregroundStyle(theme.textTertiary)
             Spacer()

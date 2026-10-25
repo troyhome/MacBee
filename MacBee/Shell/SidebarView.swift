@@ -83,7 +83,7 @@ struct SidebarView: View {
                 Rectangle().fill(theme.separator).frame(height: 1).padding(.horizontal, 12).padding(.vertical, 6)
             } else {
                 Text("STUDIOS")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.mbLabel)
                     .tracking(0.8)
                     .foregroundStyle(theme.textTertiary)
                     .padding(.horizontal, 18)

@@ -32,7 +32,7 @@ struct LyricsPanel: View {
                     Text(app.lyrics.searchingPath == track.path ? "Looking for lyrics online…"
                          : loadedPath == track.path ? "No lyrics for this song." : "")
                 }
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(.white.opacity(0.45))
             }
         }

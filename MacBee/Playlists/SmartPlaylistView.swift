@@ -29,12 +29,20 @@ struct SmartPlaylistView: View {
     var body: some View {
         let shown = shown
         VStack(alignment: .leading, spacing: 0) {
-            header
-                .padding(.horizontal, 28)
-                .padding(.top, 26)
-            FilterField(prompt: "Filter tracks", text: $filter)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 18)
+            PageHeader(title: smart.title,
+                       subtitle: "\(smart.subtitle) · \(tracks.count) songs, \(Format.minutes(tracks.map(\.duration).reduce(0, +)))") {
+                PlayControls(onPlay: { player.play(shown) }, onShuffle: { player.playShuffled(shown) }, large: false) {
+                    Button("Play Next") { player.playNext(shown) }
+                    Button("Add to Queue") { player.addToQueue(shown) }
+                    Divider()
+                    Button("Save as Playlist") { Task { _ = await store.newPlaylist(with: shown) } }
+                }
+                .disabled(tracks.isEmpty)
+                HeaderDivider()
+                FilterField(prompt: "Filter songs", text: $filter)
+                    .frame(minWidth: 120, maxWidth: 220)
+            }
+            .padding(.bottom, 8)
             TrackTable(tracks: shown, sort: $sort, dateAdded: dateAdded) { index in
                 player.play(shown, startAt: index)
             }
@@ -59,63 +67,12 @@ struct SmartPlaylistView: View {
         return track.dateAdded
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(smart.title)
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(theme.textPrimary)
-                Text("\(smart.subtitle) · \(tracks.count) songs, \(Format.minutes(tracks.map(\.duration).reduce(0, +)))")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.textSecondary)
-            }
-            HStack(spacing: 12) {
-                PillButton(title: "Play", systemImage: "play.fill", prominent: true) { player.play(shown) }
-                    .disabled(tracks.isEmpty)
-                PillButton(title: "Shuffle", systemImage: "shuffle", prominent: false) { player.playShuffled(shown) }
-                    .disabled(tracks.isEmpty)
-                Spacer()
-                Button("Save as Playlist") {
-                    Task { _ = await store.newPlaylist(with: shown) }
-                }
-                .disabled(tracks.isEmpty)
-                .help("Make an ordinary playlist with these songs as they are now")
-            }
-        }
-    }
-
     private var emptyText: String {
         switch smart {
         case .recentlyAdded: "Songs you add show up here."
         case .mostPlayed: "Songs you play show up here."
         case .topRated: "Heart songs to see them here."
         }
-    }
-}
-
-/// A large rounded Play or Shuffle button (TIDAL style): white for the main action, dark for the other.
-struct PillButton: View {
-    let title: String
-    let systemImage: String
-    let prominent: Bool
-    let action: () -> Void
-
-    @Environment(\.theme) private var theme
-    @Environment(\.isEnabled) private var isEnabled
-    @State private var hovering = false
-
-    var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(prominent ? Color.black : theme.textPrimary)
-                .frame(width: 140, height: 44)
-                .background(Capsule().fill(prominent ? Color.white.opacity(hovering ? 0.85 : 1) : (hovering ? theme.elevated : theme.surface)))
-                .contentShape(Capsule())
-                .opacity(isEnabled ? 1 : 0.4)
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
     }
 }
 
@@ -132,11 +89,12 @@ struct SmartPlaylistRows: View {
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: smart.systemImage)
-                        .font(.system(size: 12))
+                        .font(.mbSecondary)
                         .foregroundStyle(theme.accent)
                         .frame(width: 22)
                     Text(smart.title)
                         .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                        .lineLimit(1)
                         .foregroundStyle(selected ? theme.textPrimary : theme.textSecondary)
                     Spacer()
                 }

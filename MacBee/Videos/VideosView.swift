@@ -54,11 +54,11 @@ struct VideosView: View {
             // Title with the scan status under it, so neither has to squeeze into the row.
             VStack(alignment: .leading, spacing: 2) {
                 Text(shownCategory.title)
-                    .font(.system(size: 30, weight: .bold))
+                    .font(.mbPageTitle)
                     .foregroundStyle(theme.textPrimary)
                 if app.videos.isScanning {
                     Text("Looking for videos…")
-                        .font(.system(size: 12))
+                        .font(.mbSecondary)
                         .foregroundStyle(theme.textTertiary)
                 }
             }
@@ -143,7 +143,7 @@ struct VideosView: View {
 
     private func rowTitle(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 20, weight: .bold))
+            .font(.mbSection)
             .foregroundStyle(theme.textPrimary)
     }
 
@@ -242,7 +242,7 @@ private struct VideoSidebar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("LIBRARY")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.mbLabel)
                 .tracking(0.8)
                 .foregroundStyle(theme.textTertiary)
                 .padding(.horizontal, 12)

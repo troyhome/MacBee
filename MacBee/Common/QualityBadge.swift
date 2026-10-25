@@ -14,7 +14,7 @@ struct QualityBadge: View {
     private var badge: some View {
         let color = isHiRes ? theme.accent : theme.textTertiary
         return Text(isHiRes ? "HI-RES  \(track.formatSummary)" : track.formatSummary)
-            .font(.system(size: 9, weight: .semibold))
+            .font(.mbLabel)
             .foregroundStyle(color)
             .padding(.horizontal, 5)
             .padding(.vertical, 1)

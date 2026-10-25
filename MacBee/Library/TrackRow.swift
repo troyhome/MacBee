@@ -38,7 +38,7 @@ struct TrackRow: View {
                     .foregroundStyle(isCurrent ? theme.accent : theme.textPrimary)
                 if showsArtist {
                     Text(track.displayArtist)
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
             }
@@ -53,7 +53,7 @@ struct TrackRow: View {
             }
             if preferences.showQualityBadges {
                 Text(track.formatSummary)
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(theme.textTertiary)
             }
             Text(Format.time(track.duration))

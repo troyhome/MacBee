@@ -22,7 +22,6 @@ struct ArtistOverviewView: View {
             ArtistPageHeader(artist: artist, layout: $layout,
                              onPlay: { player.play(model.allTracks) },
                              onShuffle: { player.playShuffled(model.allTracks) })
-                .padding(.horizontal, 20)
             rows
         }
         .task(id: "\(artist.artistKey)-\(library.revision)") {
@@ -57,7 +56,7 @@ struct ArtistOverviewView: View {
     private func row<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 20, weight: .bold))
+                .font(.mbSection)
                 .foregroundStyle(theme.textPrimary)
                 .padding(.horizontal, 20)
             content()
@@ -74,7 +73,7 @@ struct ArtistOverviewView: View {
                             .contextMenu { AlbumContextMenu(album: album) }
                         Text([album.year.map(String.init), ArtistOverviewViewModel.kind(album)].compactMap { $0 }
                             .joined(separator: " · "))
-                            .font(.system(size: 11))
+                            .font(.mbCaption)
                             .foregroundStyle(theme.textTertiary)
                     }
                     .frame(width: 160)

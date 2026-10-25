@@ -37,7 +37,6 @@ private struct ArtistAlbumsWithSongsView: View {
             ArtistPageHeader(artist: artist, layout: $layout,
                              onPlay: { player.play(model.allTracks) },
                              onShuffle: { player.playShuffled(model.allTracks) })
-                .padding(.horizontal, 20)
             albumList
         }
     }
@@ -98,32 +97,25 @@ struct ArtistPageHeader: View {
     @Binding var layout: ArtistLayout
     let onPlay: () -> Void
     let onShuffle: () -> Void
-    @Environment(\.theme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center, spacing: 12) {
-                Text(artist.name)
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
-                Spacer()
-                Picker("Layout", selection: $layout) {
-                    ForEach(ArtistLayout.allCases) { Image(systemName: $0.systemImage).help($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-                .help("Show albums with their songs, or a TIDAL-style overview")
-                CircleButton(systemImage: "play.fill", help: "Play", action: onPlay)
-                CircleButton(systemImage: "shuffle", help: "Shuffle", action: onShuffle)
+        PageHeader(title: artist.name, subtitle: counts, showsDivider: true) {
+            PlayControls(onPlay: onPlay, onShuffle: onShuffle, large: false) {
+                ArtistContextMenu(artist: artist, showsGoTo: false)
             }
-            Text("\(artist.albumCount) \(artist.albumCount == 1 ? "album" : "albums"), \(artist.trackCount) \(artist.trackCount == 1 ? "song" : "songs")")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(theme.textSecondary)
-            Rectangle().fill(theme.separator).frame(height: 1).padding(.top, 6)
+            HeaderDivider()
+            Picker("Layout", selection: $layout) {
+                ForEach(ArtistLayout.allCases) { Image(systemName: $0.systemImage).help($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .help("Show albums with their songs, or a TIDAL-style overview")
         }
-        .padding(.top, 18)
+    }
+
+    private var counts: String {
+        "\(artist.albumCount) \(artist.albumCount == 1 ? "album" : "albums") · \(artist.trackCount) \(artist.trackCount == 1 ? "song" : "songs")"
     }
 }
 
@@ -151,7 +143,7 @@ private struct ArtistAlbumHeader: View {
             VStack(alignment: .leading, spacing: 5) {
                 Button(action: onOpen) {
                     Text(section.album.title)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.mbSection)
                         .foregroundStyle(theme.textPrimary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
@@ -159,14 +151,11 @@ private struct ArtistAlbumHeader: View {
                 .buttonStyle(.plain)
                 .help("Open album")
                 Text(details)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
             }
             Spacer()
-            CircleButton(systemImage: isFavorite ? "heart.fill" : "heart",
-                         help: isFavorite ? "Remove album from Favorites" : "Add album to Favorites") {
-                player.setFavorite(section.tracks, !isFavorite)
-            }
+            FavoriteTracksButton(tracks: section.tracks, diameter: 34)
             AlbumMoreMenu(tracks: section.tracks)
         }
         .padding(14)
@@ -178,10 +167,6 @@ private struct ArtistAlbumHeader: View {
                 .overlay(theme.background.opacity(0.4))
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    private var isFavorite: Bool {
-        !section.tracks.isEmpty && section.tracks.allSatisfy(player.isFavorite)
     }
 
     private var details: String {

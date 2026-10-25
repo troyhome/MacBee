@@ -12,14 +12,14 @@ struct ScanStatusView: View {
             // No moving parts: just text, plus a plain bar once there's a count to show.
             if collapsed {
                 Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textTertiary)
                     .frame(maxWidth: .infinity)
                     .help(text(for: progress))
             } else {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(text(for: progress))
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(theme.textSecondary)
                         .lineLimit(1)
                     if progress.total > 0 {

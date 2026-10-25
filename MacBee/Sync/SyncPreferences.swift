@@ -104,7 +104,7 @@ private struct SyncChoiceSheet: View {
             if mode != .combine {
                 Label("Before anything is replaced, MacBee saves a copy of the library on the Mac being changed, in its Application Support > MacBee folder.",
                       systemImage: "externaldrive.badge.timemachine")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -116,7 +116,7 @@ private struct SyncChoiceSheet: View {
                     TextField("6-digit code", text: $code)
                         .frame(width: 140)
                     Text("On “\(peer.name)”: MacBee > Settings > Sync. Needed only the first time.")
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -149,7 +149,7 @@ private struct SyncChoiceSheet: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title).font(.system(size: 13, weight: .semibold))
             Text(detail)
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

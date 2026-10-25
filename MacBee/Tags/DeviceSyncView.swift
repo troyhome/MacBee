@@ -131,7 +131,7 @@ struct DeviceSyncView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(deviceDetails)
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(theme.textSecondary)
             }
             Spacer()
@@ -225,7 +225,7 @@ private struct PreferenceText: View {
     @Environment(\.theme) private var theme
     var body: some View {
         Text(text)
-            .font(.system(size: 11))
+            .font(.mbCaption)
             .foregroundStyle(theme.textTertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -293,12 +293,12 @@ private struct CopyToScanReport: View {
                 .buttonStyle(.borderedProminent)
                 Button("Cancel") { runner.forgetScan() }
                 Text("\(bytes(willCopy)) to copy" + (freeSpace.map { " · \(bytes($0)) free on the device" } ?? ""))
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(tooBig ? theme.warning : theme.textSecondary)
             }
             if tooBig {
                 Text("That's more than the free space on the device. The copy pauses when it's full.")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.warning)
             }
             PreferenceText("You can pause or stop at any time, and come back to a paused copy later, even after unplugging the device.")
@@ -327,7 +327,7 @@ private struct CopyToScanReport: View {
                     .foregroundStyle(theme.textPrimary)
                 if let detail {
                     Text(detail)
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(theme.textTertiary)
                 }
             }
@@ -366,14 +366,14 @@ private struct CopyToProgress: View {
                 .foregroundStyle(theme.textSecondary)
             if let file = runner.currentFile, runner.phase == .running {
                 Text(file)
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(theme.textTertiary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
             if case let .paused(reason) = runner.phase {
                 Text(reason)
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.warning)
             }
             PreferenceText("Copying carries on while you use the rest of MacBee.")
@@ -401,14 +401,14 @@ private struct CopyToFinishedReport: View {
             if report.keptBoth > 0 { line("doc.on.doc", "\(songs(report.keptBoth)) copied next to the versions already there") }
             line("trash", "\(songs(report.removed)) removed")
             Text(summary)
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textSecondary)
             if !report.failed.isEmpty {
                 DisclosureGroup("\(report.failed.count) couldn't be done", isExpanded: $showFailures) {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(report.failed, id: \.path) { failure in
                             Text("\(failure.path): \(failure.reason)")
-                                .font(.system(size: 11))
+                                .font(.mbCaption)
                                 .foregroundStyle(theme.textSecondary)
                                 .textSelection(.enabled)
                         }

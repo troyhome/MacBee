@@ -21,7 +21,7 @@ struct LyricsDrawer: View {
             .padding(.bottom, 8)
             if let track = player.currentTrack {
                 Text("\(track.displayTitle) · \(track.displayArtist)")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
                     .lineLimit(1)
                     .padding(.horizontal, 16)
@@ -30,7 +30,7 @@ struct LyricsDrawer: View {
                     .frame(maxHeight: .infinity, alignment: .top)
             } else {
                 Text("Nothing is playing.")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textTertiary)
                     .padding(16)
                 Spacer()

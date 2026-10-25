@@ -18,7 +18,7 @@ struct AlbumCardRow: View {
                         .contextMenu { AlbumContextMenu(album: album) }
                 }
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, PageLayout.margin)
             .padding(.vertical, 6) // room for the hover shadow
         }
     }

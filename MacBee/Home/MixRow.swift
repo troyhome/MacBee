@@ -11,7 +11,7 @@ struct MixRow: View {
             HStack(alignment: .top, spacing: 18) {
                 ForEach(mixes) { MixCard(mix: $0) }
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, PageLayout.margin)
             .padding(.vertical, 6)
         }
     }
@@ -66,11 +66,11 @@ struct MixCard: View {
                 }
                 .shadow(color: .black.opacity(hovering ? 0.35 : 0), radius: 10, y: 4)
             Text(mix.subtitle)
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textSecondary)
                 .lineLimit(1)
             Text("\(mix.tracks.count) songs")
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textTertiary)
         }
         .frame(width: 180, alignment: .leading)

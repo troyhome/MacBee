@@ -75,7 +75,7 @@ struct NowPlayingView: View {
     private func details(for track: Track) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(track.displayTitle)
-                .font(.system(size: 34, weight: .bold))
+                .font(.mbDetailTitle)
                 .foregroundStyle(.white)
                 .lineLimit(3)
             Text(track.displayArtist)

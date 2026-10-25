@@ -30,7 +30,7 @@ struct CollectionView: View {
                     CircleButton(systemImage: "chevron.left", help: "Back", tinted: false) { app.goBack() }
                 }
                 Text("Collections")
-                    .font(.system(size: 30, weight: .bold))
+                    .font(.mbPageTitle)
                     .foregroundStyle(theme.textPrimary)
             }
             CollectionTabs(section: $section)

@@ -38,7 +38,7 @@ public enum SmartPlaylist: Int, CaseIterable, Identifiable, Sendable {
 
     public var systemImage: String {
         switch self {
-        case .recentlyAdded: "clock.badge.plus"
+        case .recentlyAdded: "clock.arrow.circlepath"
         case .mostPlayed: "flame"
         case .topRated: "heart.fill"
         }

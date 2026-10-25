@@ -106,7 +106,7 @@ private struct NowPlayingSection: View {
                 QueueRow(track: current, isCurrent: true, isPlaying: player.isPlaying)
             } else {
                 Text("Nothing is playing")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textTertiary)
             }
         }
@@ -135,7 +135,7 @@ private struct UpNextSection: View {
                         player.clearUpNext()
                     }
                     .buttonStyle(.link)
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                 }
             }
             .padding(.horizontal, 16)
@@ -143,7 +143,7 @@ private struct UpNextSection: View {
 
             if upNext.isEmpty {
                 Text("Nothing up next. Right-click songs and choose Play Next or Add to Queue.")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textTertiary)
                     .padding(16)
                 Spacer()

@@ -35,20 +35,20 @@ struct HomeView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 34) {
-                HStack {
-                    Text("Media")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(theme.textPrimary)
-                    Spacer()
-                    SourceBadge()
+                VStack(alignment: .leading, spacing: 14) {
+                    PageHeader(title: "Media", subtitle: "Where you left off") {
+                        SourceBadge()
+                    }
+                    .padding(.horizontal, -PageLayout.margin) // the page already has its margin
+                    LibraryNotice()
                 }
-                .padding(.horizontal, 32)
+                .padding(.horizontal, PageLayout.margin)
 
                 ForEach(preferences.homeOrder.filter { !preferences.homeHidden.contains($0) }) { kind in
                     section(kind)
                 }
             }
-            .padding(.vertical, 28)
+            .padding(.bottom, 28)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -61,7 +61,7 @@ extension HomeView {
         switch kind {
         case .stats:
             StatCardsRow(stats: library.stats)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, PageLayout.margin)
         case .recentlyPlayed:
             HomeSection(title: "Recently Played",
                         action: ("Clear", "xmark.circle", { model.clearRecentlyPlayed() })) {
@@ -110,13 +110,13 @@ extension HomeView {
                     }
                     .frame(maxWidth: 780, alignment: .leading)
                     .frame(height: 500)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, PageLayout.margin)
                 }
             }
         case .library:
             HomeSection(title: "Library") {
-                LibraryStatusPanel()
-                    .padding(.horizontal, 32)
+                LibrarySummaryRow()
+                    .padding(.horizontal, PageLayout.margin)
             }
         }
     }
@@ -130,8 +130,8 @@ private struct EmptyRowMessage: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 13))
+            .font(.mbRowTitle)
             .foregroundStyle(theme.textTertiary)
-            .padding(.horizontal, 32)
+            .padding(.horizontal, PageLayout.margin)
     }
 }

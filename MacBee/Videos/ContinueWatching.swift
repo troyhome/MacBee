@@ -94,7 +94,7 @@ struct ContinueWatchingRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Continue Watching")
-                .font(.system(size: 20, weight: .bold))
+                .font(.mbSection)
                 .foregroundStyle(theme.textPrimary)
             HorizontalCarousel {
                 HStack(alignment: .top, spacing: 18) {
@@ -132,11 +132,11 @@ private struct ContinueCard: View {
                 }
                 .shadow(color: .black.opacity(hovering ? 0.4 : 0.15), radius: hovering ? 10 : 4, y: 3)
             Text(item.title)
-                .font(.system(size: 13, weight: .medium))
+                .font(.mbRowTitle)
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
             Text(item.subtitle)
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textSecondary)
                 .lineLimit(1)
         }

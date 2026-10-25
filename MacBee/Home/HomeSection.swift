@@ -23,11 +23,11 @@ struct HomeSection<Content: View>: View {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.mbSection)
                         .foregroundStyle(theme.textPrimary)
                     if let subtitle {
                         Text(subtitle)
-                            .font(.system(size: 12))
+                            .font(.mbSecondary)
                             .foregroundStyle(theme.textSecondary)
                     }
                 }
@@ -38,7 +38,7 @@ struct HomeSection<Content: View>: View {
                         .font(.system(size: 12, weight: .medium))
                 }
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, PageLayout.margin)
             content
         }
     }

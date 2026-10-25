@@ -40,7 +40,7 @@ struct SongDuplicatesView: View {
                 .padding(.bottom, 8)
             if let message {
                 Text(message)
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
                     .padding(.horizontal, 28)
                     .padding(.bottom, 6)
@@ -136,7 +136,7 @@ struct SongDuplicatesView: View {
                 .help(showingAccepted ? "List these songs' copies again"
                                       : "Keep both copies of the ticked songs on purpose: they stop being listed here")
             Text(selected.isEmpty ? "" : "\(selected.count) selected")
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textTertiary)
             Spacer()
             Toggle(showingAccepted ? "Showing accepted" : "Show accepted (\(acceptedCount))", isOn: $showingAccepted)
@@ -338,7 +338,7 @@ private struct DuplicateGroupCard: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(theme.textPrimary)
                     Text("\(group.shown.displayArtist) · \(group.shown.displayAlbum)")
-                        .font(.system(size: 12))
+                        .font(.mbSecondary)
                         .foregroundStyle(theme.textSecondary)
                 }
                 .lineLimit(1)
@@ -397,7 +397,7 @@ private struct CopyRow: View {
     private var label: some View {
         HStack(spacing: 10) {
             Text(isShown ? "SHOWN" : "COPY")
-                .font(.system(size: 9, weight: .bold))
+                .font(.mbLabel)
                 .foregroundStyle(isShown ? theme.accent : theme.textTertiary)
                 .frame(width: 44, alignment: .leading)
             Text(copy.folderName)
@@ -411,7 +411,7 @@ private struct CopyRow: View {
     /// One line normally; the whole path while the mouse is over the row.
     private var pathText: some View {
         Text(copy.track.path)
-            .font(.system(size: 11))
+            .font(.mbCaption)
             .foregroundStyle(hovering ? theme.textPrimary : theme.textSecondary)
             .lineLimit(hovering ? nil : 1)
             .truncationMode(.middle)

@@ -68,10 +68,10 @@ struct TrackInfoText: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
             Text(track.displayArtist)
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textSecondary)
             Text(track.displayAlbum)
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textTertiary)
         }
         .lineLimit(fullText ? nil : 1)

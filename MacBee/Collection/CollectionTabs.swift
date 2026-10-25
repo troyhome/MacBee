@@ -15,7 +15,7 @@ struct CollectionTabs: View {
             .background(Capsule().fill(theme.surface))
             HStack(spacing: 2) {
                 Image(systemName: "heart.fill")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.accent)
                     .padding(.leading, 10)
                     .padding(.trailing, 4)

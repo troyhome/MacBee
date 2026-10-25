@@ -50,9 +50,9 @@ struct RecordToMiniDiscSheet: View {
                 .font(.system(size: 22))
                 .foregroundStyle(theme.accent)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Record to MiniDisc").font(.system(size: 18, weight: .bold))
+                Text("Record to MiniDisc").font(.mbSection)
                 Text("\(title) · \(session.tracks.count) songs")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
             }
             Spacer()
@@ -116,7 +116,7 @@ struct RecordToMiniDiscSheet: View {
             }
             if player.engine.equalizer.isActive {
                 Label("The equalizer is on and will be recorded.", systemImage: "slider.vertical.3")
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(theme.warning)
             }
         }
@@ -129,7 +129,7 @@ struct RecordToMiniDiscSheet: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
             content()
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -162,7 +162,7 @@ struct RecordToMiniDiscSheet: View {
                     .font(.system(size: 13, weight: isCurrent ? .semibold : .regular))
                     .foregroundStyle(isCurrent ? theme.accent : theme.textPrimary)
                 Text(track.displayArtist)
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(theme.textSecondary)
             }
             .lineLimit(1)

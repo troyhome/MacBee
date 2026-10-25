@@ -83,7 +83,7 @@ struct StudioFilterBar: View {
                 }
             }
         }
-        .font(.system(size: 12))
+        .font(.mbSecondary)
         .controlSize(.small)
     }
 

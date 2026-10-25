@@ -108,11 +108,11 @@ struct EqualizerView: View {
                  : eq.settings.isEnabled
                     ? "All sliders are at 0 dB, so the equalizer is bypassed. Playback stays bit-perfect."
                     : "The equalizer is off and bypassed. Playback stays bit-perfect.")
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textSecondary)
             Spacer()
             Text("Lower the preamp if boosted songs distort.")
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textTertiary)
         }
     }

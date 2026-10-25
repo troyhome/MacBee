@@ -27,7 +27,7 @@ struct TagEditorSlot: View {
             }
             .foregroundStyle(theme.textSecondary)
             Text(message(editorName: name))
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }

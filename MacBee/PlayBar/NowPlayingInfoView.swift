@@ -27,7 +27,7 @@ struct NowPlayingInfoView: View {
                 TrackInfoText(track: track)
             } else {
                 Text("Not playing")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textTertiary)
             }
         }

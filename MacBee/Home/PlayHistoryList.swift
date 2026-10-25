@@ -49,7 +49,7 @@ private struct PlayHistoryRow: View {
                     .font(.system(size: 13))
                     .foregroundStyle(theme.textPrimary)
                 Text("\(entry.track.displayArtist) — \(entry.track.displayAlbum)")
-                    .font(.system(size: 11))
+                    .font(.mbCaption)
                     .foregroundStyle(theme.textSecondary)
             }
             .lineLimit(1)

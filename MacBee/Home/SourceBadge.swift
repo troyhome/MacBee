@@ -25,7 +25,7 @@ struct SourceBadge: View {
                 .toggleStyle(.switch)
                 .controlSize(.mini)
                 .disabled(!plexReady)
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textSecondary)
         }
         .padding(.horizontal, 12)

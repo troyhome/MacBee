@@ -77,7 +77,7 @@ struct StudioPlaylistPanel: View {
                 .overlay {
                     if entries.isEmpty {
                         Text("Drag songs here from the left, or select them and click Add Selected.")
-                            .font(.system(size: 12))
+                            .font(.mbSecondary)
                             .foregroundStyle(theme.textTertiary)
                     }
                 }
@@ -103,7 +103,7 @@ struct StudioPlaylistPanel: View {
             } else {
                 Spacer()
                 Text("Pick a playlist above, or make a new one, then add songs from the left.")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textTertiary)
                     .frame(maxWidth: .infinity)
                 Spacer()
@@ -152,7 +152,7 @@ private struct StudioPlaylistHeader: View {
                 .help("Drop an image here to use it as the playlist's picture")
             VStack(alignment: .leading, spacing: 6) {
                 Text("\(entries.count) \(entries.count == 1 ? "song" : "songs"), \(Format.minutes(entries.map(\.track.duration).reduce(0, +)))")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
                 HStack(spacing: 8) {
                     Button("Choose Picture…") { store.chooseArtwork(for: playlist) }
@@ -192,7 +192,7 @@ private struct StudioPlaylistHeader: View {
                         .disabled(candidates.isEmpty || total >= Double(capacity) - 60)
                         .help("Adds songs from the list on the left (your filters there are the criteria) until the disc is full")
                     Text("Uses the songs your filters show on the left")
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(theme.textTertiary)
                 }
                 .controlSize(.small)

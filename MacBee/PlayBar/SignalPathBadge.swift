@@ -21,7 +21,7 @@ struct SignalPathBadge: View {
             let color = status.isBitPerfect ? theme.good : theme.warning
             VStack(alignment: .trailing, spacing: 3) {
                 Text(status.isBitPerfect ? "BIT-PERFECT" : "NOT BIT-PERFECT")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.mbLabel)
                     .tracking(0.6)
                     .foregroundStyle(color)
                     .padding(.horizontal, 6)
@@ -58,7 +58,7 @@ private struct EqualizerTag: View {
     var body: some View {
         if eq.isActive {
             Text("EQ")
-                .font(.system(size: 9, weight: .bold))
+                .font(.mbLabel)
                 .tracking(0.6)
                 .foregroundStyle(theme.warning)
                 .padding(.horizontal, 5)
@@ -82,7 +82,7 @@ private struct PlexSourceTag: View {
                 .help("Fetching “\(fetching)” from your Plex server")
         } else if player.isPlayingFromPlex {
             Text("PLEX")
-                .font(.system(size: 9, weight: .bold))
+                .font(.mbLabel)
                 .tracking(0.6)
                 .foregroundStyle(Color(hex: 0xE5A00D))
                 .padding(.horizontal, 5)

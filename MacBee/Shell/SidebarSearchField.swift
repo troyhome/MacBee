@@ -37,7 +37,7 @@ struct SidebarSearchField: View {
     private var field: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textTertiary)
             TextField("Search", text: Binding(get: { model.searchText }, set: { model.searchText = $0 }))
                 .textFieldStyle(.plain)
@@ -51,7 +51,7 @@ struct SidebarSearchField: View {
                     model.searchText = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
+                        .font(.mbSecondary)
                         .foregroundStyle(theme.textTertiary)
                 }
                 .buttonStyle(.plain)

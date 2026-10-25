@@ -21,8 +21,8 @@ struct CoverWandSheet: View {
             HStack(spacing: 10) {
                 Image(systemName: "wand.and.stars").font(.system(size: 20)).foregroundStyle(theme.accent)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Find Covers Online").font(.system(size: 18, weight: .bold))
-                    Text(subtitle).font(.system(size: 12)).foregroundStyle(theme.textSecondary)
+                    Text("Find Covers Online").font(.mbSection)
+                    Text(subtitle).font(.mbSecondary).foregroundStyle(theme.textSecondary)
                 }
                 Spacer()
                 if searching || saving { ProgressView().controlSize(.small) }
@@ -41,7 +41,7 @@ struct CoverWandSheet: View {
             HStack {
                 if !problems.isEmpty {
                     Label(problems.joined(separator: "  "), systemImage: "exclamationmark.triangle")
-                        .font(.system(size: 11)).foregroundStyle(theme.textSecondary).lineLimit(2)
+                        .font(.mbCaption).foregroundStyle(theme.textSecondary).lineLimit(2)
                 }
                 Spacer()
                 Button(savedCount == nil ? "Cancel" : "Done") { dismiss() }
@@ -162,9 +162,9 @@ private struct AlbumCoverRow: View {
                 ArtworkView(artworkId: album.artworkId, pixelSize: 160, cornerRadius: 4)
                     .frame(width: 64, height: 64)
                 Text(album.title).font(.system(size: 13, weight: .semibold)).lineLimit(2)
-                Text(album.artist).font(.system(size: 11)).foregroundStyle(theme.textSecondary).lineLimit(1)
+                Text(album.artist).font(.mbCaption).foregroundStyle(theme.textSecondary).lineLimit(1)
                 Text("\(album.tracks.count) song\(album.tracks.count == 1 ? "" : "s")")
-                    .font(.system(size: 11)).foregroundStyle(theme.textTertiary)
+                    .font(.mbCaption).foregroundStyle(theme.textTertiary)
                 if album.saved {
                     Label("Saved", systemImage: "checkmark.circle.fill")
                         .font(.system(size: 11, weight: .semibold)).foregroundStyle(theme.accent)
@@ -173,7 +173,7 @@ private struct AlbumCoverRow: View {
             .frame(width: 170, alignment: .leading)
 
             if !album.searched {
-                Text("Searching…").font(.system(size: 12)).foregroundStyle(theme.textTertiary)
+                Text("Searching…").font(.mbSecondary).foregroundStyle(theme.textTertiary)
                     .frame(height: 120)
             } else {
                 ScrollView(.horizontal) {
@@ -185,7 +185,7 @@ private struct AlbumCoverRow: View {
                 }
                 if album.candidates.isEmpty {
                     Text("No covers found online for this album.")
-                        .font(.system(size: 12)).foregroundStyle(theme.textTertiary)
+                        .font(.mbSecondary).foregroundStyle(theme.textTertiary)
                 }
             }
         }

@@ -20,7 +20,7 @@ struct MiniPlayerView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(theme.textPrimary)
                     Text(player.currentTrack?.displayArtist ?? "")
-                        .font(.system(size: 12))
+                        .font(.mbSecondary)
                         .foregroundStyle(theme.textSecondary)
                 }
                 .lineLimit(1)

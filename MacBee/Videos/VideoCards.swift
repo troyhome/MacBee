@@ -27,11 +27,11 @@ struct VideoPosterCard: View {
                 .overlay(alignment: .bottom) { progressBar }
                 .shadow(color: .black.opacity(hovering ? 0.4 : 0.15), radius: hovering ? 10 : 4, y: 3)
             Text(title.title)
-                .font(.system(size: 13, weight: .medium))
+                .font(.mbRowTitle)
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
             Text(title.subtitle)
-                .font(.system(size: 11))
+                .font(.mbCaption)
                 .foregroundStyle(theme.textSecondary)
                 .lineLimit(1)
         }
@@ -85,7 +85,7 @@ struct VideoBadge: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 9, weight: .heavy))
+            .font(.mbLabel)
             .foregroundStyle(.white)
             .padding(.horizontal, 5)
             .padding(.vertical, 2)

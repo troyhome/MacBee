@@ -90,7 +90,7 @@ struct SearchView: View {
 
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 18, weight: .bold))
+            .font(.mbSection)
             .foregroundStyle(theme.textPrimary)
             .padding(.top, 14)
             .listRowSeparator(.hidden)

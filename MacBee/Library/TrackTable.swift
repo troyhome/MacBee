@@ -156,7 +156,7 @@ private struct TrackTableHeader: View {
                 Text(title)
                 if sort.column == column {
                     Image(systemName: sort.ascending ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.mbLabel)
                         .foregroundStyle(theme.accent)
                 }
             }
@@ -200,7 +200,7 @@ private struct TrackTableRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.displayTitle)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.mbRowTitle)
                     .foregroundStyle(isCurrent ? theme.accent : theme.textPrimary)
                 if preferences.showQualityBadges {
                     Text(track.formatSummary)

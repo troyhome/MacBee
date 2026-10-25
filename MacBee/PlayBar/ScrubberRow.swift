@@ -42,7 +42,7 @@ struct ScrubberRow: View {
                 }
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
             }
             .menuStyle(.borderlessButton)

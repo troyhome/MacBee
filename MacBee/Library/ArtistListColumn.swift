@@ -79,7 +79,7 @@ private struct ArtistRow: View {
             ArtworkView(artworkId: artist.artworkId, pixelSize: 120, cornerRadius: 22)
                 .frame(width: 44, height: 44)
             Text(artist.name)
-                .font(.system(size: 13, weight: .medium))
+                .font(.mbRowTitle)
                 .foregroundStyle(isSelected ? theme.onAccent : theme.textPrimary)
                 .lineLimit(1)
             Spacer()

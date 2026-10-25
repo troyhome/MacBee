@@ -9,7 +9,7 @@ struct FilterField: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textTertiary)
             TextField(prompt, text: $text)
                 .textFieldStyle(.plain)
@@ -18,7 +18,7 @@ struct FilterField: View {
             if !text.isEmpty {
                 Button { text = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
+                        .font(.mbSecondary)
                         .foregroundStyle(theme.textTertiary)
                 }
                 .buttonStyle(.plain)

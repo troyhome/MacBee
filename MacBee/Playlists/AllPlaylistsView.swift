@@ -16,7 +16,7 @@ struct AllPlaylistsView: View {
                 HStack {
                     if !embedded {
                         Text("Playlists")
-                            .font(.system(size: 30, weight: .bold))
+                            .font(.mbPageTitle)
                             .foregroundStyle(theme.textPrimary)
                     }
                     Spacer()
@@ -80,11 +80,11 @@ private struct PlaylistCard: View {
             PlaylistArtwork(playlist: playlist, size: 170)
                 .shadow(color: .black.opacity(hovering ? 0.35 : 0), radius: 10, y: 4)
             Text(playlist.name)
-                .font(.system(size: 13, weight: .medium))
+                .font(.mbRowTitle)
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
             Text("\(summary.trackCount) \(summary.trackCount == 1 ? "song" : "songs")")
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textSecondary)
         }
         .frame(width: 170, alignment: .leading)

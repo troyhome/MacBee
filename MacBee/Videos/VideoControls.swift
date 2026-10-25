@@ -21,12 +21,12 @@ struct VideoControls: View {
             Spacer()
             if player.isBuffering {
                 Text("Loading…")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.mbRowTitle)
                     .foregroundStyle(.white.opacity(0.8))
             }
             if let error = player.errorMessage {
                 Text(error)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.mbRowTitle)
                     .foregroundStyle(.white)
                     .padding(12)
                     .background(RoundedRectangle(cornerRadius: 8).fill(.black.opacity(0.7)))
@@ -46,7 +46,7 @@ struct VideoControls: View {
                     .font(.system(size: 16, weight: .semibold))
                 if !playback.subtitle.isEmpty {
                     Text(playback.subtitle)
-                        .font(.system(size: 12))
+                        .font(.mbSecondary)
                         .foregroundStyle(.white.opacity(0.7))
                 }
             }

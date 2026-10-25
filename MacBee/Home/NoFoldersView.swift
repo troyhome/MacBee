@@ -24,7 +24,7 @@ struct NoFoldersView: View {
                 .padding(.top, 6)
             if let error {
                 Text(error)
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.warning)
             }
         }

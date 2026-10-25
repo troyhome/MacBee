@@ -18,11 +18,11 @@ struct AlbumTile: View {
                     if hovering { HoverPlayButton(action: onPlay) }
                 }
             Text(album.title)
-                .font(.system(size: 13, weight: .medium))
+                .font(.mbRowTitle)
                 .foregroundStyle(theme.textPrimary)
                 .lineLimit(1)
             Text(subtitle)
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textSecondary)
                 .lineLimit(1)
         }

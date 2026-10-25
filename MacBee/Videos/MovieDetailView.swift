@@ -20,7 +20,7 @@ struct MovieDetailView: View {
                     .shadow(color: .black.opacity(0.5), radius: 18, y: 8)
                 VStack(alignment: .leading, spacing: 10) {
                     Text(movie.title)
-                        .font(.system(size: 34, weight: .bold))
+                        .font(.mbDetailTitle)
                         .foregroundStyle(theme.textPrimary)
                     HStack(spacing: 8) {
                         if let year = movie.year {

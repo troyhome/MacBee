@@ -10,7 +10,7 @@ struct VolumeControl: View {
         let enabled = engine.settings.volumeMode == .software || engine.hardwareVolumeAvailable
         HStack(spacing: 4) {
             Image(systemName: icon(for: engine.volume))
-                .font(.system(size: 12))
+                .font(.mbSecondary)
                 .foregroundStyle(theme.textSecondary)
                 .frame(width: 18)
             Slider(value: Binding(get: { Double(engine.volume) }, set: { player.setVolume(Float($0)) }), in: 0...1)

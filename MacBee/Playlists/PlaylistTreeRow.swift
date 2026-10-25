@@ -32,7 +32,7 @@ struct PlaylistTreeRow: View {
                 }
                 if node.children.isEmpty {
                     Text("Empty folder")
-                        .font(.system(size: 11))
+                        .font(.mbCaption)
                         .foregroundStyle(theme.textTertiary)
                         .padding(.leading, 46 + CGFloat(depth + 1) * 12)
                 }
@@ -44,7 +44,7 @@ struct PlaylistTreeRow: View {
         HStack(spacing: 6) {
             if isFolder {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.mbLabel)
                     .foregroundStyle(theme.textTertiary)
                     .rotationEffect(.degrees(isOpen ? 90 : 0))
                     .frame(width: 10)
@@ -53,7 +53,7 @@ struct PlaylistTreeRow: View {
             }
             if isFolder {
                 Image(systemName: "folder")
-                    .font(.system(size: 12))
+                    .font(.mbSecondary)
                     .foregroundStyle(theme.textSecondary)
                     .frame(width: 22)
             } else {
