@@ -119,7 +119,7 @@ private struct ContinueCard: View {
         VStack(alignment: .leading, spacing: 6) {
             Color.clear
                 .aspectRatio(16 / 9, contentMode: .fit)
-                .overlay { PosterImage(path: nil, title: item.title, previewFile: item.file) }
+                .overlay { PosterImage(path: nil, title: item.title, previewFile: item.file, titlesStill: false) }
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(alignment: .bottom) { footer }
                 .overlay {

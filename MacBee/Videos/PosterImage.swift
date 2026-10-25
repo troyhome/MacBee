@@ -11,6 +11,8 @@ struct PosterImage: View {
     let title: String
     var maxPixels = 600
     var previewFile: VideoFile?
+    /// Posters put the title on a video still; wide thumbnails (Continue Watching) show the still alone.
+    var titlesStill = true
 
     @Environment(\.theme) private var theme
     @State private var image: NSImage?
@@ -23,15 +25,21 @@ struct PosterImage: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             } else if let frame {
+                // No poster: a still from the video, cropped like a poster, with the title on it so it reads
+                // as a cover rather than a blurry picture.
                 Image(nsImage: frame)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .blur(radius: 18)
-                    .overlay(Color.black.opacity(0.25))
-                Image(nsImage: frame)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .shadow(color: .black.opacity(0.5), radius: 8)
+                if titlesStill {
+                LinearGradient(colors: [.clear, .black.opacity(0.75)], startPoint: .center, endPoint: .bottom)
+                Text(title)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .shadow(color: .black.opacity(0.6), radius: 4)
+                    .padding(12)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                }
             } else {
                 LinearGradient(colors: [tint.opacity(0.85), tint.opacity(0.35)], startPoint: .topLeading, endPoint: .bottomTrailing)
                 Text(title)
