@@ -1,4 +1,4 @@
-// Draws the MacBee app icon (1024 x 1024 PNG): "Vinyl Bee", a record with a bee on its amber label.
+// Draws the MacBee app icon (1024 x 1024 PNG): "Vinyl Bee", a black record with a bee on its amber label, on honey yellow.
 // Usage: swift Tools/make-icon.swift <output.png>
 import AppKit
 import CoreGraphics
@@ -40,7 +40,7 @@ func glassWing(_ c: CGPoint, _ angle: CGFloat, _ w: CGFloat, _ h: CGFloat) {
 }
 
 // Vinyl record with an amber label and a small bee in the middle.
-ctx.drawLinearGradient(gradient([color(0x23272D), color(0x08090B)], [0, 1]),
+ctx.drawLinearGradient(gradient([color(0xFFD84A), color(0xF5A623)], [0, 1]), // honey yellow
                        start: CGPoint(x: 512, y: 924), end: CGPoint(x: 512, y: 100), options: [])
 let c = CGPoint(x: 512, y: 512)
 ctx.saveGState()
