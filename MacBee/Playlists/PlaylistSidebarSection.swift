@@ -8,9 +8,6 @@ import UniformTypeIdentifiers
 struct PlaylistSidebarSection: View {
     @Environment(PlaylistStore.self) private var store
     @Environment(\.theme) private var theme
-    @State private var renaming: Playlist?
-    @State private var newName = ""
-    @State private var deleting: Playlist?
     @State private var headerTargeted = false
 
     var body: some View {
@@ -27,38 +24,11 @@ struct PlaylistSidebarSection: View {
                             .padding(.horizontal, 18)
                     }
                     ForEach(store.tree) { node in
-                        PlaylistTreeRow(node: node, depth: 0, onRename: startRename, onDelete: { deleting = $0 })
+                        PlaylistTreeRow(node: node, depth: 0)
                     }
                 }
                 .padding(.bottom, 8)
             }
-        }
-        .onChange(of: store.pendingRename) {
-            if let playlist = store.pendingRename {
-                startRename(playlist)
-                store.pendingRename = nil
-            }
-        }
-        .alert("Rename", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-            TextField("Name", text: $newName)
-            Button("Rename") {
-                if let playlist = renaming { Task { await store.rename(playlist, to: newName) } }
-            }
-            Button("Cancel", role: .cancel) {}
-        }
-        .confirmationDialog(deleteTitle, isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
-            Button("Delete", role: .destructive) {
-                if let playlist = deleting { Task { await store.delete(playlist) } }
-            }
-        } message: {
-            Text(deleting?.isFolder == true
-                 ? "Everything inside the folder is deleted too. Your songs stay in the library."
-                 : "Your songs stay in the library.")
-        }
-        .alert("Playlists", isPresented: Binding(get: { store.message != nil }, set: { if !$0 { store.message = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(store.message ?? "")
         }
     }
 
@@ -94,16 +64,6 @@ struct PlaylistSidebarSection: View {
             Task { await store.move(id, toFolder: nil, at: Int.max) }
             return true
         } isTargeted: { headerTargeted = $0 }
-    }
-
-    private var deleteTitle: String {
-        guard let deleting else { return "" }
-        return deleting.isFolder ? "Delete the folder “\(deleting.name)”?" : "Delete the playlist “\(deleting.name)”?"
-    }
-
-    private func startRename(_ playlist: Playlist) {
-        newName = playlist.name
-        renaming = playlist
     }
 
     private func importPlaylist() {

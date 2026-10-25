@@ -34,18 +34,11 @@ struct NowPlayingInfoView: View {
     }
 }
 
-/// Right-click on the play bar's cover: things to do with the song that's playing.
+/// Right-click on the play bar's cover: the song menu, without Play (it's already playing).
 private struct PlayingSongMenu: View {
     let track: Track
-    @Environment(AppModel.self) private var app
 
     var body: some View {
-        AddToPlaylistMenu { [track] }
-        Divider()
-        Button("Go to Album") { Task { await app.openAlbum(key: track.albumKey) } }
-        Button("Go to Artist") { app.openArtist(key: track.artistKey) }
-        Divider()
-        EditTagsButton(tracks: [track])
-        Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([track.url]) }
+        TrackContextMenu(tracks: [track], onPlay: nil)
     }
 }

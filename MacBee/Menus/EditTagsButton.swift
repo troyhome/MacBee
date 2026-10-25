@@ -1,7 +1,7 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// "Edit Tags in TagBee…" for menus. Disabled, with a hint, when no tag editor is chosen.
+/// "Edit in TagBee" for menus. Disabled, with a hint, when no tag editor is chosen.
 struct EditTagsButton: View {
     /// The songs to edit (loaded when clicked, so albums don't load up front).
     let tracks: () async -> [Track]
@@ -17,11 +17,11 @@ struct EditTagsButton: View {
 
     var body: some View {
         if let editor = app.tagEditor, let name = editor.editorName {
-            Button("Send to \(name)") {
+            Button("Edit in \(name)") {
                 Task { editor.editShowingProblems(await tracks()) }
             }
         } else {
-            Button("Send to TagBee (choose the editor in Settings)") {}
+            Button("Edit in TagBee (choose the editor in Settings)") {}
                 .disabled(true)
         }
     }

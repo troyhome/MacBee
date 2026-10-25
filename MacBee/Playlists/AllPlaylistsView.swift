@@ -78,7 +78,6 @@ private struct PlaylistCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             PlaylistArtwork(playlist: playlist, size: 170)
-                .scaleEffect(hovering ? 1.02 : 1)
                 .shadow(color: .black.opacity(hovering ? 0.35 : 0), radius: 10, y: 4)
             Text(playlist.name)
                 .font(.system(size: 13, weight: .medium))
@@ -93,12 +92,7 @@ private struct PlaylistCard: View {
         .onHover { isHovering in withAnimation(.easeOut(duration: 0.15)) { hovering = isHovering } }
         .onTapGesture(count: 2) { Task { await play(shuffled: false) } }
         .onTapGesture { if let id = playlist.id { app.openPlaylist(id) } }
-        .contextMenu {
-            Button("Play") { Task { await play(shuffled: false) } }
-            Button("Shuffle") { Task { await play(shuffled: true) } }
-            Divider()
-            Button("Export Playlist…") { store.exportWithPanel(playlist) }
-        }
+        .contextMenu { PlaylistContextMenu(playlist: playlist) }
         .draggable(DragPayload.playlist(playlist.id ?? -1).string)
         .task(id: store.contentRevision) {
             if let id = playlist.id, let loaded = try? await store.database.playlistSummary(playlistId: id) { summary = loaded }

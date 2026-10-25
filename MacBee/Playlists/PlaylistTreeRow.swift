@@ -5,8 +5,6 @@ import SwiftUI
 struct PlaylistTreeRow: View {
     let node: PlaylistNode
     let depth: Int
-    let onRename: (Playlist) -> Void
-    let onDelete: (Playlist) -> Void
 
     @Environment(AppModel.self) private var app
     @Environment(PlaylistStore.self) private var store
@@ -30,7 +28,7 @@ struct PlaylistTreeRow: View {
             row
             if isFolder && isOpen {
                 ForEach(node.children) { child in
-                    PlaylistTreeRow(node: child, depth: depth + 1, onRename: onRename, onDelete: onDelete)
+                    PlaylistTreeRow(node: child, depth: depth + 1)
                 }
                 if node.children.isEmpty {
                     Text("Empty folder")
@@ -93,27 +91,8 @@ struct PlaylistTreeRow: View {
         return hovering ? theme.surface : .clear
     }
 
-    @ViewBuilder
     private var menu: some View {
-        if isFolder {
-            Button("New Playlist in Folder") { open(); Task { await store.newPlaylist(inFolder: node.id) } }
-            Button("New Folder Inside") { open(); Task { await store.newFolder(inFolder: node.id) } }
-        } else {
-            Button("Play") { Task { await playAll(shuffled: false) } }
-            Button("Shuffle") { Task { await playAll(shuffled: true) } }
-            Button("Choose Picture…") { store.chooseArtwork(for: playlist) }
-            if playlist.artworkId != nil {
-                Button("Use Album Covers") { Task { await store.removeArtwork(from: playlist) } }
-            }
-            Button("Edit in Playlist Studio") {
-                UserDefaults.standard.set(Int(node.id), forKey: "studioPlaylistId")
-                app.go(to: .playlistStudio)
-            }
-            Button("Export Playlist…") { store.exportWithPanel(playlist) }
-        }
-        Divider()
-        Button("Rename…") { onRename(playlist) }
-        Button("Delete…") { onDelete(playlist) }
+        PlaylistContextMenu(playlist: playlist, openFolder: open)
     }
 
     /// Playlists dropped on a folder go inside it; dropped on a playlist they go just above it.

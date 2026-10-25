@@ -204,7 +204,7 @@ private struct TagBeePanel: View {
             }
             .contextMenu(forSelectionType: String.self) { paths in
                 let tracks = results.filter { paths.contains($0.path) }
-                Button("Open in TagBee") { send(tracks) }
+                Button("Edit in TagBee") { send(tracks) }
                 Divider()
                 Button("Show in Library") { if let first = tracks.first { Task { await app.showInLibrary(first) } } }
                     .help("Open the song's album next to Track Studio")
@@ -335,7 +335,7 @@ private struct TagBeePanel: View {
                 if allSelected { selection.subtract(paths) } else { selection.formUnion(paths) }
             }
             .controlSize(.small)
-            Button("Open in TagBee") { send(group.tracks) }
+            Button("Edit in TagBee") { send(group.tracks) }
                 .controlSize(.small)
                 .disabled(!hasEditor)
         }

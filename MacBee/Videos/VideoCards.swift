@@ -25,7 +25,6 @@ struct VideoPosterCard: View {
                     }
                 }
                 .overlay(alignment: .bottom) { progressBar }
-                .scaleEffect(hovering ? 1.02 : 1)
                 .shadow(color: .black.opacity(hovering ? 0.4 : 0.15), radius: hovering ? 10 : 4, y: 3)
             Text(title.title)
                 .font(.system(size: 13, weight: .medium))

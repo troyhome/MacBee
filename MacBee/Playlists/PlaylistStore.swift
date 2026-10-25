@@ -14,6 +14,10 @@ final class PlaylistStore {
     private(set) var contentRevision = 0
     /// A playlist just created from a menu; the sidebar asks for its name.
     var pendingRename: Playlist?
+    /// Asked for from a playlist menu anywhere; `PlaylistActionsModifier` (on the main window) shows the dialog.
+    var pendingDelete: Playlist?
+    /// A playlist to record to MiniDisc, from a playlist menu anywhere.
+    var pendingMiniDisc: Playlist?
     /// Shown as an alert (import results, problems).
     var message: String?
 

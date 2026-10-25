@@ -77,7 +77,7 @@ private struct QueueHistorySection: View {
                                     .id(index)
                                     .onTapGesture(count: 2) { player.playNow(track) }
                                     .contextMenu {
-                                        Button("Play Now") { player.playNow(track) }
+                                        Button("Play") { player.playNow(track) }
                                         Button("Play Next") { player.playNext([track]) }
                                         Button("Add to Queue") { player.addToQueue([track]) }
                                     }
@@ -157,7 +157,7 @@ private struct UpNextSection: View {
                 }
                 .contextMenu(forSelectionType: UUID.self) { ids in
                     if !ids.isEmpty {
-                        Button("Play Now") { if let id = ids.first { player.playQueueItem(id) } }
+                        Button("Play") { if let id = ids.first { player.playQueueItem(id) } }
                         Button("Remove from Queue") {
                             player.removeFromUpNext(ids)
                             selection.subtract(ids)

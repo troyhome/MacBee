@@ -1,38 +1,14 @@
-import AppKit
 import MacBeeLibrary
 import SwiftUI
 
-/// Round "…" button for a whole album: Play Next, Add to Queue, Add to Playlist, Send to TagBee, Show in Finder.
-/// Used on album cards on artist pages and on the album page, so both offer the same things.
+/// Round "…" button for a whole album, with the same items as the album page's "…" menu.
 struct AlbumMoreMenu: View {
     let tracks: [Track]
-    @Environment(PlayerViewModel.self) private var player
-    @Environment(\.theme) private var theme
-    @State private var hovering = false
+    var diameter: CGFloat = 34
 
     var body: some View {
-        Menu {
-            Button("Play Next") { player.playNext(tracks) }
-            Button("Add to Queue") { player.addToQueue(tracks) }
-            AddToPlaylistMenu { tracks }
-            Divider()
-            EditTagsButton(tracks: tracks)
-            Button("Show in Finder") {
-                NSWorkspace.shared.activateFileViewerSelecting(tracks.prefix(1).map(\.url))
-            }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(theme.accent)
-                .frame(width: 34, height: 34)
-                .background(Circle().fill(hovering ? theme.elevated : theme.surface))
-                .contentShape(Circle())
+        MoreMenuButton(help: "Play Next, Add to Queue, Add to Playlist, Edit in TagBee, Show in Finder", diameter: diameter) {
+            AlbumActionsMenu(tracks: tracks)
         }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .onHover { hovering = $0 }
-        .help("Play Next, Add to Queue, Add to Playlist, Send to TagBee, Show in Finder")
     }
 }

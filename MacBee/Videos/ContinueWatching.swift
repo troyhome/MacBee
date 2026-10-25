@@ -130,7 +130,6 @@ private struct ContinueCard: View {
                             .shadow(radius: 6)
                     }
                 }
-                .scaleEffect(hovering ? 1.02 : 1)
                 .shadow(color: .black.opacity(hovering ? 0.4 : 0.15), radius: hovering ? 10 : 4, y: 3)
             Text(item.title)
                 .font(.system(size: 13, weight: .medium))

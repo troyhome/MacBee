@@ -64,7 +64,6 @@ struct MixCard: View {
                             .padding(8)
                     }
                 }
-                .scaleEffect(hovering ? 1.02 : 1)
                 .shadow(color: .black.opacity(hovering ? 0.35 : 0), radius: 10, y: 4)
             Text(mix.subtitle)
                 .font(.system(size: 12))
@@ -79,9 +78,12 @@ struct MixCard: View {
         .onHover { isHovering in withAnimation(.easeOut(duration: 0.15)) { hovering = isHovering } }
         .onTapGesture { player.playShuffled(mix.tracks) }
         .contextMenu {
+            Button("Play") { player.play(mix.tracks) }
             Button("Shuffle") { player.playShuffled(mix.tracks) }
-            Button("Play in Order") { player.play(mix.tracks) }
+            Button("Play Next") { player.playNext(mix.tracks) }
             Button("Add to Queue") { player.addToQueue(mix.tracks) }
+            Divider()
+            AddToPlaylistMenu { mix.tracks }
             Divider()
             if let onDelete {
                 Button("Remove from Saved Mixes", action: onDelete)

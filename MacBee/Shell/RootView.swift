@@ -53,6 +53,7 @@ struct RootView: View {
                 guard model.preferences.findLyricsOnline, let track = player.currentTrack else { return }
                 await model.lyrics.fill(track)
             }
+            .modifier(PlaylistActionsModifier())
             .alert("Tag editor", isPresented: Binding(
                 get: { model.tagEditor?.problem != nil },
                 set: { if !$0 { model.tagEditor?.problem = nil } })) {

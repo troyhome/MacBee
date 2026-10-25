@@ -36,21 +36,21 @@ struct Theme {
                          background: Color(hex: 0x0E0E10), sidebar: Color(hex: 0x09090B), bar: Color(hex: 0x141417),
                          surface: Color(hex: 0x1C1C20), elevated: Color(hex: 0x26262B),
                          separator: .white.opacity(0.07),
-                         textPrimary: .white, textSecondary: .white.opacity(0.62), textTertiary: .white.opacity(0.38),
+                         textPrimary: .white, textSecondary: .white.opacity(0.62), textTertiary: .white.opacity(0.55),
                          good: Color(hex: 0x3DDC84), warning: Color(hex: 0xFFB340))
         case .mediumGray:
             return Theme(kind: kind, accent: accent, onAccent: onAccent,
                          background: Color(hex: 0x2B2B2F), sidebar: Color(hex: 0x232327), bar: Color(hex: 0x323237),
                          surface: Color(hex: 0x38383E), elevated: Color(hex: 0x44444B),
                          separator: .white.opacity(0.08),
-                         textPrimary: .white, textSecondary: .white.opacity(0.66), textTertiary: .white.opacity(0.42),
+                         textPrimary: .white, textSecondary: .white.opacity(0.66), textTertiary: .white.opacity(0.58),
                          good: Color(hex: 0x3DDC84), warning: Color(hex: 0xFFB340))
         case .light:
             return Theme(kind: kind, accent: accent, onAccent: onAccent,
                          background: Color(hex: 0xF7F7F8), sidebar: Color(hex: 0xEDEDF0), bar: .white,
                          surface: Color(hex: 0xE9E9EC), elevated: Color(hex: 0xDEDEE3),
                          separator: .black.opacity(0.08),
-                         textPrimary: .black.opacity(0.88), textSecondary: .black.opacity(0.58), textTertiary: .black.opacity(0.38),
+                         textPrimary: .black.opacity(0.88), textSecondary: .black.opacity(0.58), textTertiary: .black.opacity(0.52),
                          good: Color(hex: 0x1E9E5A), warning: Color(hex: 0xC77700))
         }
     }
