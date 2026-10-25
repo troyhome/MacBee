@@ -65,9 +65,12 @@ public final class MusicLibrary {
     @ObservationIgnored private var pendingFolderIds: [Int64] = []
     /// Folders whose next scan re-reads every file (Force Rescan).
     @ObservationIgnored private var forcedFolderIds: Set<Int64> = []
+    /// Favorites, plays and playlist places of removed folders' songs, until those songs are added again.
+    @ObservationIgnored private let rememberedURL: URL
 
     public init(location: LibraryLocation = .default) throws {
         database = try LibraryDatabase(fileURL: location.databaseURL)
+        rememberedURL = location.databaseURL.deletingLastPathComponent().appendingPathComponent("RememberedSongs.json")
         artwork = ArtworkStore(directory: location.artworkDirectory)
         scanner = LibraryScanner(database: database, artwork: artwork)
         monitor.onFolderChanged = { [weak self] root in self?.folderChanged(root) }
@@ -195,6 +198,10 @@ public final class MusicLibrary {
     public func removeFolder(id: Int64) async throws {
         pendingFolderIds.removeAll { $0 == id }
         let path = folders.first { $0.folder.id == id }?.folder.path
+        // Keep favorites, plays and playlist places so they come back if these songs are added again.
+        var remembered = RememberedSongs.load(from: rememberedURL)
+        remembered.append(try await database.rememberSongs(inFolder: id))
+        try remembered.save(to: rememberedURL)
         try await database.deleteFolder(id: id)
         if let path { FolderAccess.shared.forget(path) }
         await reloadFolders()
@@ -202,6 +209,19 @@ public final class MusicLibrary {
         await refreshStats()
         revision += 1
         emit(.foldersChanged)
+    }
+
+    /// Gives songs added again what they had before their folder was removed.
+    private func restoreRememberedSongs() async {
+        let remembered = RememberedSongs.load(from: rememberedURL)
+        guard !remembered.isEmpty else { return }
+        do {
+            let result = try await database.restoreRemembered(remembered)
+            if result.left != remembered { try result.left.save(to: rememberedURL) }
+            if result.restored > 0 { revision += 1 }
+        } catch {
+            reportError(error)
+        }
     }
 
     // MARK: - Scanning
@@ -265,7 +285,10 @@ public final class MusicLibrary {
         }
         await reloadFolders()
         // New or changed songs may be duplicates of others (or no longer be).
-        if reports.contains(where: \.changedAnything) { await applyVisibility() }
+        if reports.contains(where: \.changedAnything) {
+            await restoreRememberedSongs()
+            await applyVisibility()
+        }
         scanProgress = nil
         scanTask = nil
         lastReports = reports

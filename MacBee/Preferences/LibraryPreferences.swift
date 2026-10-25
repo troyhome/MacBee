@@ -113,7 +113,7 @@ private struct LibraryPreferencesForm: View {
                 }
             }
         } message: {
-            Text("Its songs, play counts and favorites are removed from MacBee. The music files themselves are not touched.")
+            Text("Its songs leave MacBee; the music files themselves are not touched. Favorites, play counts and playlist and mix places are kept and come back if the same songs are added again from any folder.")
         }
         .confirmationDialog("Remove \(missing.count) missing files from the library?", isPresented: $confirmCleanUp) {
             Button("Remove", role: .destructive) {
