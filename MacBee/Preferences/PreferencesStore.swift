@@ -42,7 +42,9 @@ final class PreferencesStore {
     /// Also save hearts in the song files (FLAC and Ogg), so they travel with the files.
     var saveFavoritesInFiles: Bool { didSet { save(saveFavoritesInFiles, "saveFavoritesInFiles") } }
 
-    static let sidebarWidthRange: ClosedRange<Double> = 170...280
+    static let sidebarWidthRange: ClosedRange<Double> = 180...360
+    /// About Apple Music's sidebar width.
+    static let defaultSidebarWidth: Double = 232
 
     init() {
         let d = UserDefaults.standard
@@ -52,7 +54,9 @@ final class PreferencesStore {
         showQualityBadges = d.object(forKey: "showQualityBadges") as? Bool ?? true
         findLyricsOnline = d.object(forKey: "findLyricsOnline") as? Bool ?? true
         playCountRule = d.string(forKey: "playCountRule").flatMap(PlayCountRule.init) ?? .halfOrFourMinutes
-        sidebarWidth = d.object(forKey: "sidebarWidth") as? Double ?? 196
+        // 196 was the old default: move it to the new one (about Apple Music's width).
+        let savedWidth = d.object(forKey: "sidebarWidth") as? Double
+        sidebarWidth = savedWidth == nil || savedWidth == 196 ? Self.defaultSidebarWidth : savedWidth!
         routineCheck = (d.object(forKey: "routineCheck") as? Int).flatMap(RoutineCheck.init) ?? .every30
         playbackSource = d.string(forKey: "playbackSource").flatMap(PlaybackSourcePreference.init) ?? .automatic
         tagEditorPath = d.string(forKey: "tagEditorPath")

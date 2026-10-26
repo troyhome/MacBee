@@ -48,7 +48,7 @@ struct AppearancePreferences: View {
                 } maximumValueLabel: {
                     Text("Wide")
                 }
-                PreferenceNote("The width when the sidebar is expanded. Collapsed, it always shows icons only.")
+                PreferenceNote("The width when the sidebar is expanded. You can also drag the line beside the sidebar; double-click it for the default width. Collapsed, it always shows icons only.")
             }
         }
         .formStyle(.grouped)

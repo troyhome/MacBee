@@ -26,8 +26,7 @@ struct PreferencesView: View {
                 .tabItem { Label("Device Sync", systemImage: "arrow.triangle.2.circlepath") }
                 .tag("sync")
         }
-        .frame(width: 640)
-        .frame(minHeight: 460, idealHeight: 720, maxHeight: .infinity)
+        .frame(minWidth: 640, idealWidth: 680, maxWidth: .infinity, minHeight: 460, idealHeight: 720, maxHeight: .infinity)
         // Tighter rows, so more fits without scrolling.
         .environment(\.defaultMinListRowHeight, 24)
     }

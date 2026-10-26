@@ -7,12 +7,21 @@ struct RootView: View {
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
 
+    @AppStorage("sidebarCollapsed") private var sidebarCollapsed = false
+
     var body: some View {
         if let library = model.library {
             VStack(spacing: 0) {
                 HStack(spacing: 0) {
                     SidebarView(selection: Binding(get: { model.selection }, set: { model.selection = $0 }))
-                    Rectangle().fill(theme.separator).frame(width: 1)
+                    if sidebarCollapsed {
+                        Rectangle().fill(theme.separator).frame(width: 1)
+                    } else {
+                        // Drag to resize the sidebar, like Apple Music; double-click for the default width.
+                        @Bindable var preferences = model.preferences
+                        ColumnResizer(width: $preferences.sidebarWidth, range: PreferencesStore.sidebarWidthRange,
+                                      defaultWidth: PreferencesStore.defaultSidebarWidth)
+                    }
                     ContentRouter(selection: model.selection)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(theme.background)
