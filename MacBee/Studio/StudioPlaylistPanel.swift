@@ -136,6 +136,20 @@ private struct StudioPlaylistHeader: View {
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
     @State private var imageTargeted = false
+    /// Waiting for "Clear" or "Refill" to be confirmed.
+    @State private var pendingRefill: Refill?
+
+    enum Refill: Identifiable {
+        case clear, fromFilters, random
+        var id: Self { self }
+        var title: String {
+            switch self {
+            case .clear: "Remove all songs from this mix?"
+            case .fromFilters: "Replace this mix's songs with new ones from your filters?"
+            case .random: "Replace this mix's songs with new random ones?"
+            }
+        }
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -195,6 +209,24 @@ private struct StudioPlaylistHeader: View {
                         .disabled(total >= Double(capacity) - 60)
                         .help("Adds random songs from your whole library until the disc is full")
                     Spacer(minLength: 0)
+                    Menu("Start Over") {
+                        Button("Refill from Filters…") { pendingRefill = .fromFilters }
+                            .disabled(candidates.isEmpty)
+                        Button("Refill with Random Songs…") { pendingRefill = .random }
+                        Divider()
+                        Button("Clear All Songs…") { pendingRefill = .clear }
+                    }
+                    .fixedSize()
+                    .disabled(entries.isEmpty)
+                    .help("Empty the mix, or swap all its songs for a fresh set")
+                }
+                .confirmationDialog(pendingRefill?.title ?? "", isPresented: Binding(
+                    get: { pendingRefill != nil }, set: { if !$0 { pendingRefill = nil } })) {
+                    Button(pendingRefill == .clear ? "Clear" : "Refill", role: .destructive) {
+                        if let refill = pendingRefill { startOver(refill, capacity: Double(capacity)) }
+                    }
+                } message: {
+                    Text("The songs stay in your library; only this mix changes.")
                 }
                 Text("Auto-fill uses the songs your filters show on the left; random uses your whole library.")
                     .font(.mbCaption)
@@ -217,6 +249,24 @@ private struct StudioPlaylistHeader: View {
             guard let id = playlist.id else { return }
             Task { await store.setCapacity(seconds, for: id) }
         })
+    }
+
+    /// Empties the mix, then (for a refill) fills it again with a different set of songs.
+    private func startOver(_ refill: Refill, capacity: Double) {
+        guard let id = playlist.id else { return }
+        let itemIds = entries.map(\.itemId)
+        let pool = candidates.shuffled()
+        Task {
+            await store.remove(itemIds, from: id)
+            switch refill {
+            case .clear: break
+            case .fromFilters:
+                await store.add(CapacityFiller.fill(existing: [], candidates: pool, capacity: capacity), to: id)
+            case .random:
+                let random = (try? await store.database.randomTracks()) ?? []
+                await store.add(CapacityFiller.fill(existing: [], candidates: random, capacity: capacity), to: id)
+            }
+        }
     }
 
     private func fillRandomly(capacity: Double) {
