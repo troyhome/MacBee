@@ -7,6 +7,7 @@ struct ProfilesSection: View {
     @Environment(AppModel.self) private var app
     @State private var profiles = Profiles.all
     @State private var newName = ""
+    @State private var adding = false
     @State private var renaming: Profiles.Profile?
     @State private var renameText = ""
     @State private var deleting: Profiles.Profile?
@@ -34,12 +35,19 @@ struct ProfilesSection: View {
                 }
             }
             HStack {
-                TextField("New profile name", text: $newName)
-                Button(busy ? "Adding…" : "Add Profile") { add() }
-                    .disabled(busy || newName.trimmingCharacters(in: .whitespaces).isEmpty || app.library == nil)
+                Spacer()
+                Button(busy ? "Adding…" : "Add Profile…") { newName = ""; adding = true }
+                    .disabled(busy || app.library == nil)
             }
             PreferenceNote("A profile per person: each has their own favorites, ratings, plays, playlists, saved mixes, and video progress and likes, over the same music and video folders. Switching restarts MacBee. Device Sync only syncs a profile with the profile of the same name on your other Mac.")
             if let message { PreferenceNote(message) }
+        }
+        .alert("Add Profile", isPresented: $adding) {
+            TextField("Name", text: $newName)
+            Button("Add") { add() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The new person starts with the same music and nothing of their own yet.")
         }
         .alert("Rename Profile", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Name", text: $renameText)
@@ -61,6 +69,7 @@ struct ProfilesSection: View {
     private func add() {
         guard let library = app.library else { return }
         let name = newName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
         busy = true
         Task {
             do {
