@@ -65,6 +65,14 @@ public extension LibraryDatabase {
 
     // MARK: - Saved mixes
 
+    /// Songs picked at random from the whole library (for filling a MiniDisc with random songs).
+    func randomTracks(limit: Int = 400) async throws -> [Track] {
+        try await writer.read { db in
+            try Track.fetchAll(db, sql: "SELECT * FROM track WHERE \(Self.visible()) AND duration > 0 ORDER BY RANDOM() LIMIT ?",
+                               arguments: [limit])
+        }
+    }
+
     func saveMix(title: String, subtitle: String, trackIds: [Int64], now: Date = Date()) async throws {
         try await writer.write { db in
             try db.execute(sql: "INSERT INTO savedMix (title, subtitle, createdAt) VALUES (?, ?, ?)",

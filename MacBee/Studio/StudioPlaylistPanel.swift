@@ -43,7 +43,7 @@ struct StudioPlaylistPanel: View {
                     }
                 }
                 .fixedSize()
-                .help("New playlist, or a MiniDisc mix limited to 74 or 80 minutes")
+                .help("New playlist, or a MiniDisc mix limited to 60, 74 or 80 minutes")
             }
 
             if let id = playlistId, let playlist = store.playlist(id: id) {
@@ -191,10 +191,14 @@ private struct StudioPlaylistHeader: View {
                     Button("Auto-fill") { autoFill(capacity: Double(capacity)) }
                         .disabled(candidates.isEmpty || total >= Double(capacity) - 60)
                         .help("Adds songs from the list on the left (your filters there are the criteria) until the disc is full")
-                    Text("Uses the songs your filters show on the left")
-                        .font(.mbCaption)
-                        .foregroundStyle(theme.textTertiary)
+                    Button("Fill with Random Songs") { fillRandomly(capacity: Double(capacity)) }
+                        .disabled(total >= Double(capacity) - 60)
+                        .help("Adds random songs from your whole library until the disc is full")
+                    Spacer(minLength: 0)
                 }
+                Text("Auto-fill uses the songs your filters show on the left; random uses your whole library.")
+                    .font(.mbCaption)
+                    .foregroundStyle(theme.textTertiary)
                 .controlSize(.small)
             }
         }
@@ -213,6 +217,15 @@ private struct StudioPlaylistHeader: View {
             guard let id = playlist.id else { return }
             Task { await store.setCapacity(seconds, for: id) }
         })
+    }
+
+    private func fillRandomly(capacity: Double) {
+        guard let id = playlist.id else { return }
+        let existing = entries.map(\.track)
+        Task {
+            let random = (try? await store.database.randomTracks()) ?? []
+            await store.add(CapacityFiller.fill(existing: existing, candidates: random, capacity: capacity), to: id)
+        }
     }
 
     private func autoFill(capacity: Double) {

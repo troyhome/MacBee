@@ -66,7 +66,7 @@ final class PlaylistStore {
         await reload()
     }
 
-    /// A MiniDisc mix: a playlist with a running-time limit (74 or 80 minutes).
+    /// A MiniDisc mix: a playlist with a running-time limit (60, 74 or 80 minutes).
     func newCapacityPlaylist(title: String, seconds: Int) async -> Playlist? {
         let date = Date().formatted(.iso8601.year().month().day())
         guard let playlist = await create(name: uniqueName("\(title) \(date)")), let id = playlist.id else { return nil }

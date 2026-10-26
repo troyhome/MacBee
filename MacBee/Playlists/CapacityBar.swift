@@ -1,7 +1,7 @@
 import MacBeeLibrary
 import SwiftUI
 
-/// For MiniDisc mixes: how much of the disc (74:00 or 80:00) the songs use, with an Overtime warning when
+/// For MiniDisc mixes: how much of the disc (60:00, 74:00 or 80:00) the songs use, with an Overtime warning when
 /// they don't fit and an Underfill warning when more than 7 minutes are left.
 struct CapacityBar: View {
     let total: Double

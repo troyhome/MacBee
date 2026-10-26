@@ -1,6 +1,6 @@
 import Foundation
 
-/// MiniDisc mixes (roadmap Phase 3): fills a playlist up to a running time (74:00 or 80:00) and says whether
+/// MiniDisc mixes (roadmap Phase 3): fills a playlist up to a running time (60:00, 74:00 or 80:00) and says whether
 /// it's over time or has too much room left. Pure logic, unit-tested.
 public enum CapacityFiller {
     public enum Status: Equatable, Sendable {
@@ -11,8 +11,9 @@ public enum CapacityFiller {
         case underfill(Double)
     }
 
-    /// The disc sizes offered: 74 and 80 minutes.
-    public static let templates: [(title: String, seconds: Int)] = [("74min MD Mix", 74 * 60), ("80min MD Mix", 80 * 60)]
+    /// The disc sizes offered: 60, 74 and 80 minutes.
+    public static let templates: [(title: String, seconds: Int)] = [("60min MD Mix", 60 * 60), ("74min MD Mix", 74 * 60),
+                                                                     ("80min MD Mix", 80 * 60)]
     /// More free time than this is flagged as underfilled.
     public static let underfillLimit: Double = 7 * 60
 
