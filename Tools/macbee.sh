@@ -18,6 +18,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$HOME/Library/Developer/MacBee"
+# Installing some tools (Homebrew, command line tools) can point the Mac at the command line tools instead of Xcode,
+# which can't build apps. Use Xcode anyway when it's there.
+if [[ -z "${DEVELOPER_DIR:-}" && "$(xcode-select -p 2>/dev/null)" == /Library/Developer/CommandLineTools* \
+      && -d /Applications/Xcode.app ]]; then
+    export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+fi
 
 case "${1:-build}" in
     build)

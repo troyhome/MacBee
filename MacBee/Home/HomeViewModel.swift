@@ -16,13 +16,11 @@ final class HomeViewModel {
     private(set) var isLoaded = false
 
     private static let historyPageSize = 60
-    /// Bumped by Refresh Suggestions: a different shuffle than today's.
-    private var shuffleOffset = 0
 
     func load(from database: LibraryDatabase) async {
         async let played = database.albums(sortedBy: .recentlyPlayed, limit: 20)
         async let added = database.albums(sortedBy: .recentlyAdded, limit: 20)
-        async let mixes = database.suggestedMixes(day: LibraryDatabase.dayNumber() + shuffleOffset * 7919)
+        async let mixes = database.suggestedMixes(day: SuggestedMixes.day)
         async let gems = database.forgottenGems()
         async let history = database.playHistory(limit: Self.historyPageSize)
 
@@ -57,8 +55,8 @@ final class HomeViewModel {
 
     /// Rebuilds the suggested mixes with new songs.
     func refreshMixes(from database: LibraryDatabase) async {
-        shuffleOffset += 1
-        mixes = (try? await database.suggestedMixes(day: LibraryDatabase.dayNumber() + shuffleOffset * 7919)) ?? mixes
+        SuggestedMixes.reshuffle()
+        mixes = (try? await database.suggestedMixes(day: SuggestedMixes.day)) ?? mixes
     }
 
     func loadMoreHistory(from database: LibraryDatabase) async {
@@ -71,5 +69,25 @@ final class HomeViewModel {
         history = entries
         historyDays = PlayHistory.groupByDay(entries)
         canLoadMoreHistory = (lastPageCount ?? entries.count) == Self.historyPageSize
+    }
+}
+
+/// Which shuffle of today's suggested mixes is showing, so the Media page and Playlist Studio show the same mixes.
+enum SuggestedMixes {
+    private static let key = "suggestedMixesShuffle"
+
+    /// Today's mixes, moved on by each Refresh Suggestions (back to the plain day's shuffle tomorrow).
+    static var day: Int {
+        let today = LibraryDatabase.dayNumber()
+        let saved = UserDefaults.standard.dictionary(forKey: key)
+        let offset = (saved?["day"] as? Int) == today ? (saved?["offset"] as? Int ?? 0) : 0
+        return today + offset * 7919
+    }
+
+    static func reshuffle() {
+        let today = LibraryDatabase.dayNumber()
+        let saved = UserDefaults.standard.dictionary(forKey: key)
+        let offset = (saved?["day"] as? Int) == today ? (saved?["offset"] as? Int ?? 0) : 0
+        UserDefaults.standard.set(["day": today, "offset": offset + 1], forKey: key)
     }
 }
