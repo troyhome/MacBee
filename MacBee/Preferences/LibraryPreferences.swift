@@ -34,7 +34,17 @@ private struct LibraryPreferencesForm: View {
 
     var body: some View {
         Form {
-            Section("Music folders") {
+            Section {
+                Picker("Play songs from", selection: $preferences.playbackSource) {
+                    ForEach(PlaybackSourcePreference.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.radioGroup)
+                PreferenceNote("Also in the menu bar: Controls → Play Songs From. Away from home, each song is fetched from Plex or Navidrome as the original file before it plays, so it stays bit-perfect. Fetched songs are kept on this Mac (up to 3 GB each) so they replay instantly.")
+            } header: {
+                Text("Music sources")
+            }
+
+            Section("Local network and Mac folders") {
                 ForEach(library.folders) { state in
                     FolderPreferenceRow(state: state, library: library) { folderToRemove = state }
                         .draggable(String(state.id))
@@ -64,6 +74,13 @@ private struct LibraryPreferencesForm: View {
                 if let message {
                     PreferenceNote(message)
                 }
+            }
+
+            if let plex {
+                PlexPreferenceSections(plex: plex, preferences: preferences)
+            }
+            if let navidrome {
+                NavidromePreferenceSections(navidrome: navidrome)
             }
 
             VideoFoldersSection(preferences: preferences)
@@ -113,22 +130,6 @@ private struct LibraryPreferencesForm: View {
                 }
             }
 
-            Section {
-                Picker("Play songs from", selection: $preferences.playbackSource) {
-                    ForEach(PlaybackSourcePreference.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.radioGroup)
-                PreferenceNote("Also in the menu bar: Controls → Play Songs From. Away from home, each song is fetched from Plex or Navidrome as the original file before it plays, so it stays bit-perfect. Fetched songs are kept on this Mac (up to 3 GB each) so they replay instantly.")
-            } header: {
-                Text("Where songs play from")
-            }
-
-            if let plex {
-                PlexPreferenceSections(plex: plex, preferences: preferences)
-            }
-            if let navidrome {
-                NavidromePreferenceSections(navidrome: navidrome)
-            }
         }
         .formStyle(.grouped)
         .task(id: "\(showMissingFiles)-\(library.revision)") {

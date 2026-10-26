@@ -28,7 +28,8 @@ struct MiniPlayerView: View {
                 Spacer(minLength: 0)
                 VStack(spacing: 2) {
                     BarIconButton(systemImage: onTop ? "pin.fill" : "pin",
-                                  help: onTop ? "Stays on top of other windows. Click to turn off." : "Keep on top of other windows",
+                                  help: onTop ? "Keeps the mini player above other windows. Click to let other windows cover it."
+                                              : "Keep the mini player above other windows",
                                   isActive: onTop, size: 12) { onTop.toggle() }
                     BarIconButton(systemImage: "arrow.up.left.and.arrow.down.right",
                                   help: "Back to the full window", size: 12) {
@@ -40,11 +41,14 @@ struct MiniPlayerView: View {
             ScrubberRow()
         }
         .padding(.horizontal, 16)
-        .padding(.top, 30) // room for the window's close button
+        .padding(.top, 6) // the window's buttons sit in the strip above
         .padding(.bottom, 14)
         .frame(width: 400)
-        .background(theme.bar)
-        .background(WindowLevelSetter(floating: onTop))
+        .background(theme.bar.ignoresSafeArea())
+        .background(WindowLevelSetter(floating: onTop) {
+            // The green button goes back to the full window, like the expand button.
+            dismissWindow(id: MacBeeApp.miniPlayerWindowID)
+        })
         .onDisappear {
             // Closing the mini player brings back the main window.
             openWindow(id: MacBeeApp.mainWindowID)
