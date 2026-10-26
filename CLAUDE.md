@@ -38,8 +38,11 @@ Design system and original plan: `MACBEE_PLAN.md` (only needed for UI/design wor
 - Per Mac (not synced): music database and play history in `~/Library/Application Support/MacBee/`.
 - Releases: `Tools/macbee.sh release` needs `gh` (`~/.local/bin/gh`, signed in once per Mac).
 
-## Status (2026-10-24)
-- Done: library, player, playlists/Studios, Plex, TagBee hook, videos (mpv), duplicates, Copy To, Mac-to-Mac sync, equalizer, mixes, lyrics, Record to MiniDisc, media-keys rule (tested OK 2026-10-23).
-- In progress: Mac App Store build (`appstore` configuration). Sandbox, folder bookmarks (`FolderAccess`), in-app cover embedding and exclusive-mode break during video are done; folders and exclusive mode passed Troy's first test.
-- App Store prep done (2026-10-24): privacy manifest, encryption answer, LGPL credit for mpv/FFmpeg in About.
+## Status (2026-10-26)
+- Done: library, player, playlists/Studios, Plex, Navidrome/Subsonic, TagBee hook, videos (mpv), duplicates, Copy To,
+  Mac-to-Mac sync, equalizer, mixes (also in Playlist Studio), lyrics, Record to MiniDisc (60/74/80 min), media keys.
+- 2026-10-25/26: new icon (Vinyl Bee on honey yellow), UI polish pass (shared header/fonts/menus), favorites saved in
+  FLAC/Ogg tags, per-folder rescans, video folder order. Details in `docs/CLAUDE-history.md`.
+- Mac App Store build (`appstore`): sandbox, folder bookmarks, cover embedding, privacy manifest, encryption answer done.
 - Not done: moving Troy's existing data into the container (only if he switches his everyday copy), App Store upload and review.
+- If `xcode-select` points at the command line tools, `macbee.sh` uses /Applications/Xcode.app by itself.
