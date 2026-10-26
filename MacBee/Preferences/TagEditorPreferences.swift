@@ -8,7 +8,7 @@ struct TagEditorPreferences: View {
 
     var body: some View {
         Form {
-            Section("Tag editor") {
+            Section(header: PreferenceHeader("Tag editor")) {
                 if let path = preferences.tagEditorPath {
                     let url = URL(fileURLWithPath: path)
                     HStack(spacing: 10) {

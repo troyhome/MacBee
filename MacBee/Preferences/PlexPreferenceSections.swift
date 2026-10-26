@@ -8,7 +8,7 @@ struct PlexPreferenceSections: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        Section("Plex account") {
+        Section(header: PreferenceHeader("Plex account")) {
             switch plex.status {
             case .signedOut:
                 HStack {
@@ -34,7 +34,7 @@ struct PlexPreferenceSections: View {
         }
 
         if plex.status == .signedIn {
-            Section("Plex server and library") {
+            Section(header: PreferenceHeader("Plex server and library")) {
                 Picker("Server", selection: $plex.selectedServerId) {
                     if plex.servers.isEmpty { Text("No servers found").tag(String?.none) }
                     ForEach(plex.servers) { Text($0.name).tag(Optional($0.id)) }
@@ -55,7 +55,7 @@ struct PlexPreferenceSections: View {
                 }
             }
 
-            Section("Plex matching") {
+            Section(header: PreferenceHeader("Plex matching")) {
                 HStack {
                     Text(plex.isMatching ? "Matching songs with Plex…"
                          : "\(plex.linkedCount.formatted()) songs can play from Plex")

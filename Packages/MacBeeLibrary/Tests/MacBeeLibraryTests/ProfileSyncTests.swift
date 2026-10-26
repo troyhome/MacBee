@@ -139,3 +139,29 @@ final class ProfileSyncTests: XCTestCase {
         XCTAssertEqual(Set(after.keys), [ids[1]])
     }
 }
+
+final class SavedMixSyncTests: XCTestCase {
+    func testSavedMixesCrossOnceAndMatchSongs() async throws {
+        let macA = try LibraryDatabase(), macB = try LibraryDatabase()
+        var idsA: [Int64] = [], idsB: [Int64] = []
+        for (db, drive) in [(macA, "A"), (macB, "B")] {
+            let folder = try await db.insertFolder(path: "/Volumes/\(drive)", name: drive)
+            let batch = (1...2).map { n -> ScannedTrack in
+                var t = ScannedTrack(path: "/Volumes/\(drive)/Ride/Nowhere/0\(n).flac", fileSize: 1, modifiedAt: Date())
+                t.title = "Song \(n)"; t.artist = "Ride"; t.album = "Nowhere"; t.duration = 200; t.codec = "FLAC"
+                return t
+            }
+            _ = try await db.save(batch, folderId: folder.id!)
+            let ids = try await db.search("Song").sorted { $0.path < $1.path }.compactMap(\.id)
+            if drive == "A" { idsA = ids } else { idsB = ids }
+        }
+        try await macA.saveMix(title: "Ride Mix", subtitle: "", trackIds: idsA.reversed())
+        let snapshot = try await macA.profileSnapshot(deviceName: "A")
+        let added = try await macB.mergeSavedMixes(snapshot.savedMixes ?? [])
+        XCTAssertEqual(added, 1)
+        let mixes = try await macB.savedMixes()
+        XCTAssertEqual(mixes.first?.tracks.compactMap(\.id), Array(idsB.reversed()))
+        let again = try await macB.mergeSavedMixes(snapshot.savedMixes ?? [])
+        XCTAssertEqual(again, 0)
+    }
+}

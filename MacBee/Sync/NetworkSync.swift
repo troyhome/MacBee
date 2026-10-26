@@ -71,6 +71,9 @@ final class NetworkSync {
     /// Liked videos, by name (from the Videos library), and setting them after a sync.
     @ObservationIgnored var likedVideos: (() -> [String])?
     @ObservationIgnored var setLikedVideos: (([String]) -> Int)?
+    /// Video watching progress (Continue Watching, Recently Played), and taking in another Mac's.
+    @ObservationIgnored var videoWatching: (() -> [ProfileSnapshot.VideoWatchState])?
+    @ObservationIgnored var mergeVideoWatching: (([ProfileSnapshot.VideoWatchState]) -> Int)?
     @ObservationIgnored private var autoTimer: Timer?
     /// This Mac's data right after the last sync, to tell when something changed since.
     @ObservationIgnored private var syncedDigest: String?
@@ -148,7 +151,16 @@ final class NetworkSync {
         var snapshot = try await library.database.profileSnapshot(deviceName: deviceName)
         snapshot.removedPlaylists = RemovedPlaylistsLog.recent
         snapshot.likedVideos = likedVideos?()
+        snapshot.videoWatching = videoWatching?()
         return snapshot
+    }
+
+    /// The parts every kind of sync adds together (never removing anything): video progress and saved mixes.
+    private func addTogether(_ snapshot: ProfileSnapshot, into report: inout ProfileMergeReport) async {
+        if let watching = snapshot.videoWatching { report.videoProgressChanged = mergeVideoWatching?(watching) ?? 0 }
+        if let mixes = snapshot.savedMixes {
+            report.savedMixesAdded = (try? await library.database.mergeSavedMixes(mixes)) ?? 0
+        }
     }
 
     /// Adds another Mac's data here (never bringing back playlists deleted here), then notes its deletions.
@@ -158,6 +170,7 @@ final class NetworkSync {
         if let theirs = snapshot.likedVideos {
             report.videoLikesChanged = setLikedVideos?(Array(Set(theirs).union(likedVideos?() ?? []))) ?? 0
         }
+        await addTogether(snapshot, into: &report)
         await noteRemovals(in: snapshot)
         return report
     }
@@ -167,6 +180,8 @@ final class NetworkSync {
         let backup = try await backUpLibrary()
         _ = try await library.database.mirrorProfile(snapshot)
         if let theirs = snapshot.likedVideos { _ = setLikedVideos?(theirs) }
+        var report = ProfileMergeReport()
+        await addTogether(snapshot, into: &report)
         return backup
     }
 
@@ -175,6 +190,7 @@ final class NetworkSync {
         try await dailyBackup()
         var report = try await library.database.applyProfile(agreed, deleting: mine.playlistKeysMissing(from: agreed))
         if let videos = agreed.likedVideos { report.videoLikesChanged = setLikedVideos?(videos) ?? 0 }
+        await addTogether(agreed, into: &report)
         SyncBase.save(try await mySnapshot(), peer: peer)
         return report
     }
@@ -275,6 +291,10 @@ final class NetworkSync {
         parts.append("plays \(snapshot.plays.count) \(snapshot.plays.map(\.playedAt).max()?.timeIntervalSince1970 ?? 0)")
         parts += snapshot.playlists.map { (["p"] + $0.folders + [$0.name, "\($0.capacitySeconds ?? 0)"] + $0.songs.map(\.fingerprint)).joined(separator: "|") }.sorted()
         parts += (snapshot.likedVideos ?? []).map { "v" + $0 }
+        parts += (snapshot.videoWatching ?? []).map {
+            "w\($0.key)|\(Int($0.position ?? -1))|\($0.lastWatched?.timeIntervalSince1970 ?? 0)|\($0.lastPlayed?.timeIntervalSince1970 ?? 0)|\($0.watched)"
+        }
+        parts += (snapshot.savedMixes ?? []).map { "m\($0.title)|\($0.createdAt.timeIntervalSince1970)" }
         return parts.joined(separator: "\n")
     }
 

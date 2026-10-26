@@ -11,7 +11,7 @@ struct NavidromePreferenceSections: View {
     @State private var connecting = false
 
     var body: some View {
-        Section("Navidrome") {
+        Section(header: PreferenceHeader("Navidrome")) {
             if navidrome.isSetUp {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {

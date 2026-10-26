@@ -244,6 +244,72 @@ final class VideoLibrary {
         upNextDismissed = movedKeys(upNextDismissed); UserDefaults.standard.set(upNextDismissed, forKey: "videoUpNextDismissed")
     }
 
+    // MARK: - Syncing watching progress (Device Sync)
+
+    /// Every file path and title id under each sync key (file or folder name, lowercased).
+    private var pathsByKey: [String: [String]] {
+        var paths: [String: [String]] = [:]
+        func add(_ path: String) { paths[Self.syncKey(path), default: []].append(path) }
+        for movie in catalog.movies { movie.files.forEach { add($0.path) } }
+        for show in catalog.shows {
+            add(show.id)
+            show.seasons.flatMap(\.episodes).flatMap(\.allFiles).forEach { add($0.path) }
+        }
+        for video in catalog.musicVideos { video.allFiles.forEach { add($0.path) } }
+        return paths
+    }
+
+    /// Where each video was stopped and when it was watched, to send to another Mac.
+    var syncedWatching: [ProfileSnapshot.VideoWatchState] {
+        let keys = Set(positions.keys).union(lastWatched.keys).union(watched).union(lastPlayed.keys)
+        var states: [String: ProfileSnapshot.VideoWatchState] = [:]
+        for path in keys {
+            let key = Self.syncKey(path)
+            var state = states[key] ?? .init(key: key, position: nil, duration: nil, lastWatched: nil, lastPlayed: nil, watched: false)
+            state.position = state.position ?? positions[path]
+            state.duration = state.duration ?? durations[path]
+            state.lastWatched = [state.lastWatched, lastWatched[path]].compactMap { $0 }.max()
+            state.lastPlayed = [state.lastPlayed, lastPlayed[path]].compactMap { $0 }.max()
+            state.watched = state.watched || watched.contains(path)
+            states[key] = state
+        }
+        return states.values.sorted { $0.key < $1.key }
+    }
+
+    /// Takes in another Mac's watching progress: where it was watched more recently, its spot wins.
+    /// Returns how many videos changed.
+    @discardableResult
+    func mergeWatching(_ theirs: [ProfileSnapshot.VideoWatchState]) -> Int {
+        let paths = pathsByKey
+        var changed = Set<String>()
+        for state in theirs {
+            for path in paths[state.key] ?? [] {
+                if let when = state.lastWatched, when > (lastWatched[path] ?? .distantPast) {
+                    lastWatched[path] = when
+                    positions[path] = state.watched && state.position == nil ? nil : (state.position ?? positions[path])
+                    changed.insert(path)
+                }
+                if let duration = state.duration, durations[path] == nil { durations[path] = duration }
+                if state.watched, !watched.contains(path), state.position == nil {
+                    watched.insert(path)
+                    changed.insert(path)
+                }
+                if let when = state.lastPlayed, when > (lastPlayed[path] ?? .distantPast) {
+                    lastPlayed[path] = when
+                    changed.insert(path)
+                }
+            }
+        }
+        if !changed.isEmpty {
+            UserDefaults.standard.set(positions, forKey: "videoPositions")
+            UserDefaults.standard.set(lastWatched, forKey: "videoLastWatched")
+            UserDefaults.standard.set(durations, forKey: "videoDurations")
+            UserDefaults.standard.set(Array(watched), forKey: "watchedVideos")
+            UserDefaults.standard.set(lastPlayed, forKey: "videoLastPlayed")
+        }
+        return changed.count
+    }
+
     // MARK: - Watching
 
     func markPlayed(_ id: String) {

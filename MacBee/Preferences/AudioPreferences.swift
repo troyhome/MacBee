@@ -9,7 +9,7 @@ struct AudioPreferences: View {
     var body: some View {
         let settings = player.engine.settings
         Form {
-            Section("Output") {
+            Section(header: PreferenceHeader("Output")) {
                 Picker("Output device", selection: binding(\.deviceUID)) {
                     Text("System Default").tag(String?.none)
                     ForEach(player.availableDevices()) { device in
@@ -22,7 +22,7 @@ struct AudioPreferences: View {
                 PreferenceNote("Keeps 24-bit music from being cut down to 16-bit. Leave on unless a DAC misbehaves.")
             }
 
-            Section("Volume") {
+            Section(header: PreferenceHeader("Volume")) {
                 Picker("Volume control", selection: binding(\.volumeMode)) {
                     Text("Hardware (the device's own volume)").tag(VolumeMode.hardware)
                     Text("Software (inside MacBee)").tag(VolumeMode.software)
@@ -33,7 +33,7 @@ struct AudioPreferences: View {
                     : "Works with any device, but below 100% the music data is changed, so playback is not bit-perfect.")
             }
 
-            Section("DSD files (.dsf)") {
+            Section(header: PreferenceHeader("DSD files (.dsf)")) {
                 Picker("Play DSD as", selection: binding(\.dsdMode)) {
                     Text("Convert to PCM (works everywhere)").tag(DSDPlaybackMode.pcmConversion)
                     Text("DoP (bit-perfect, DAC must support it)").tag(DSDPlaybackMode.dop)
@@ -49,7 +49,7 @@ struct AudioPreferences: View {
                 }
             }
 
-            Section("Network playback") {
+            Section(header: PreferenceHeader("Network playback")) {
                 Toggle("Load each song into memory before it plays", isOn: binding(\.loadIntoMemory))
                 PreferenceNote("Prevents dropouts when the network drive is slow or busy. Files over 1.5 GB are always read directly.")
             }

@@ -6,14 +6,14 @@ struct GeneralPreferences: View {
     var body: some View {
         @Bindable var preferences = preferences
         Form {
-            Section("When MacBee opens") {
+            Section(header: PreferenceHeader("When MacBee opens")) {
                 Picker("Show", selection: $preferences.startPage) {
                     ForEach(StartPage.allCases) { Text($0.title).tag($0) }
                 }
                 Toggle("Check the library for changes", isOn: $preferences.checkLibraryAtLaunch)
                 PreferenceNote("Looks for new, changed and removed files. Only sizes and dates are compared, so it's quick even on a network drive.")
             }
-            Section("Media page") {
+            Section(header: PreferenceHeader("Media page")) {
                 ForEach(preferences.homeOrder) { kind in
                     HStack(spacing: 10) {
                         Image(systemName: "line.3.horizontal")
@@ -48,7 +48,7 @@ struct GeneralPreferences: View {
                     }
                 }
             }
-            Section("Playback") {
+            Section(header: PreferenceHeader("Playback")) {
                 Toggle("Keep playing when a song, album or playlist ends", isOn: $preferences.continuousPlay)
                 PreferenceNote("MacBee carries on with a mix made from the last song. Repeat All still repeats instead.")
                 Toggle("TV shows: play the next episode automatically", isOn: $preferences.continuousPlayEpisodes)
@@ -58,7 +58,7 @@ struct GeneralPreferences: View {
                 .pickerStyle(.radioGroup)
                 PreferenceNote("Used for play counts, Recently Played, Most Played and Play History.")
             }
-            Section("Lyrics") {
+            Section(header: PreferenceHeader("Lyrics")) {
                 Toggle("Find missing lyrics online", isOn: $preferences.findLyricsOnline)
                 PreferenceNote("When a song without lyrics plays, MacBee looks them up at LRCLIB (a free lyrics library) and saves them as an .lrc file next to the song, so they show in the lyrics panel from then on.")
             }

@@ -41,10 +41,10 @@ private struct LibraryPreferencesForm: View {
                 .pickerStyle(.radioGroup)
                 PreferenceNote("Also in the menu bar: Controls → Play Songs From. Away from home, each song is fetched from Plex or Navidrome as the original file before it plays, so it stays bit-perfect. Fetched songs are kept on this Mac (up to 3 GB each) so they replay instantly.")
             } header: {
-                Text("Music sources")
+                PreferenceHeader("Music sources")
             }
 
-            Section("Local network and Mac folders") {
+            Section(header: PreferenceHeader("Local network and Mac folders")) {
                 ForEach(library.folders) { state in
                     FolderPreferenceRow(state: state, library: library) { folderToRemove = state }
                         .draggable(String(state.id))
@@ -85,12 +85,8 @@ private struct LibraryPreferencesForm: View {
 
             VideoFoldersSection(preferences: preferences)
 
-            Section("Artists") {
-                Toggle("Hide compilation-only artists from Artists", isOn: $preferences.hideCompilationOnlyArtists)
-                PreferenceNote("Leaves out artists who only appear on compilations, unless they also have an album of their own.")
-            }
 
-            Section("Routine check") {
+            Section(header: PreferenceHeader("Routine check")) {
                 Picker("Check network folders for changes", selection: $preferences.routineCheck) {
                     ForEach(RoutineCheck.allCases) { Text($0.title).tag($0) }
                 }
@@ -98,7 +94,7 @@ private struct LibraryPreferencesForm: View {
                 PreferenceNote("Picks up changes made from another computer. Changes on this Mac are noticed right away. Folders are also checked when a drive is reconnected.")
             }
 
-            Section("Favorites") {
+            Section(header: PreferenceHeader("Favorites")) {
                 Toggle("Also save hearts in the music files", isOn: $preferences.saveFavoritesInFiles)
                 PreferenceNote("Writes a FAVORITE tag into FLAC and Ogg files when you heart or un-heart a song, so the heart travels with the file to your other Mac, other apps, or a rebuilt library. MP3, AAC, ALAC, WAV, AIFF and DSD files can't hold this tag; their hearts stay in MacBee's library.")
                 HStack {
@@ -108,7 +104,7 @@ private struct LibraryPreferencesForm: View {
                 }
             }
 
-            Section("Missing files") {
+            Section(header: PreferenceHeader("Missing files")) {
                 Toggle("Show missing files", isOn: $showMissingFiles)
                 PreferenceNote("Files that disappeared from a connected folder are hidden, not deleted, so their play counts come back if the file returns or was moved.")
                 if showMissingFiles {
@@ -272,7 +268,7 @@ private struct VideoFoldersSection: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        Section("Video folders") {
+        Section(header: PreferenceHeader("Video folders")) {
             ForEach(preferences.videoFolders, id: \.self) { path in
                 let paused = preferences.pausedVideoFolders.contains(path)
                 let connected = preferences.isVideoFolderConnected(path)

@@ -142,6 +142,8 @@ final class AppModel {
         library?.onFolderMoved = { [weak self] old, new in self?.videos.moveRoot(from: old, to: new) }
         networkSync?.likedVideos = { [weak self] in self?.videos.syncedLikeKeys ?? [] }
         networkSync?.setLikedVideos = { [weak self] keys in self?.videos.setSyncedLikes(keys) ?? 0 }
+        networkSync?.videoWatching = { [weak self] in self?.videos.syncedWatching ?? [] }
+        networkSync?.mergeVideoWatching = { [weak self] states in self?.videos.mergeWatching(states) ?? 0 }
         engine.eventHandler = { [weak self] event in
             if case .queueFinished = event { self?.player.queueDidFinish() }
         }

@@ -57,6 +57,37 @@ public struct ProfileSnapshot: Codable, Sendable {
 
     /// Liked movies, shows and music videos, by file or folder name (filled in by the app). Missing from older versions.
     public var likedVideos: [String]?
+
+    /// Where each video was stopped, when it was last watched or opened (filled in by the app). Missing from older versions.
+    public var videoWatching: [VideoWatchState]?
+
+    /// Saved mixes (Collections > Saved Mixes). Missing from older versions.
+    public var savedMixes: [SavedMixCopy]?
+
+    public struct VideoWatchState: Codable, Sendable, Equatable {
+        /// The file or folder name, lowercased (the same on both Macs).
+        public var key: String
+        public var position: Double?
+        public var duration: Double?
+        public var lastWatched: Date?
+        public var lastPlayed: Date?
+        public var watched: Bool
+        public init(key: String, position: Double?, duration: Double?, lastWatched: Date?, lastPlayed: Date?, watched: Bool) {
+            self.key = key
+            self.position = position
+            self.duration = duration
+            self.lastWatched = lastWatched
+            self.lastPlayed = lastPlayed
+            self.watched = watched
+        }
+    }
+
+    public struct SavedMixCopy: Codable, Sendable {
+        public var title: String
+        public var subtitle: String
+        public var createdAt: Date
+        public var songs: [SongKey]
+    }
 }
 
 /// What a merge changed, for the message after syncing.
@@ -72,6 +103,11 @@ public struct ProfileMergeReport: Sendable, Equatable {
     public var playlistsRemoved = 0
     /// Set by the app (video likes aren't in the music library).
     public var videoLikesChanged = 0
+    /// Set by the app: videos whose watching progress came across.
+    public var videoProgressChanged = 0
+    public var savedMixesAdded = 0
+
+    public init() {}
 
     /// Whether anything here changed (songs that couldn't be found don't count).
     public var changedSomething: Bool {
@@ -87,12 +123,16 @@ public struct ProfileMergeReport: Sendable, Equatable {
         if ratingsUpdated > 0 { parts.append("\(ratingsUpdated) ratings") }
         if playlistsAdded > 0 { parts.append("\(playlistsAdded) new playlists") }
         if playlistSongsAdded > 0 { parts.append("\(playlistSongsAdded) playlist songs") }
+        if savedMixesAdded > 0 { parts.append("\(savedMixesAdded) saved mixes") }
         var removed: [String] = []
         if favoritesRemoved > 0 { removed.append("\(favoritesRemoved) favorites") }
         if playlistsRemoved > 0 { removed.append("\(playlistsRemoved) playlists") }
         var lines: [String] = []
         if !parts.isEmpty { lines.append("Added " + parts.joined(separator: ", ") + ".") }
         if videoLikesChanged > 0 { lines.append("Changed \(videoLikesChanged) video like\(videoLikesChanged == 1 ? "" : "s").") }
+        if videoProgressChanged > 0 {
+            lines.append("Updated watching progress on \(videoProgressChanged) video\(videoProgressChanged == 1 ? "" : "s").")
+        }
         if playlistsChanged > 0 { lines.append("Updated \(playlistsChanged) playlist\(playlistsChanged == 1 ? "" : "s").") }
         if !removed.isEmpty { lines.append("Removed " + removed.joined(separator: ", ") + ".") }
         return lines.isEmpty ? "Already in step, nothing new." : lines.joined(separator: " ")
@@ -116,6 +156,7 @@ public extension LibraryDatabase {
             snapshot.plays = plays.compactMap { row in
                 keys[row["trackId"] as Int64].map { .init(key: $0, playedAt: row["playedAt"]) }
             }
+            snapshot.savedMixes = try Self.savedMixCopies(db, keys: keys)
             let playlists = try Playlist.fetchAll(db)
             let byId = Dictionary(uniqueKeysWithValues: playlists.compactMap { p in p.id.map { ($0, p) } })
             func folders(of playlist: Playlist) -> [String] {
@@ -299,5 +340,49 @@ public extension LibraryDatabase {
             keys[row["id"]] = .init(relativePath: relative.lowercased(), fingerprint: fingerprint)
         }
         return keys
+    }
+}
+
+public extension LibraryDatabase {
+    internal static func savedMixCopies(_ db: Database, keys: [Int64: ProfileSnapshot.SongKey]) throws -> [ProfileSnapshot.SavedMixCopy] {
+        try Row.fetchAll(db, sql: "SELECT * FROM savedMix ORDER BY id").map { row in
+            let id: Int64 = row["id"]
+            let ids = try Int64.fetchAll(db, sql: "SELECT trackId FROM savedMixItem WHERE savedMixId = ? ORDER BY position",
+                                         arguments: [id])
+            return .init(title: row["title"], subtitle: row["subtitle"], createdAt: row["createdAt"],
+                         songs: ids.compactMap { keys[$0] })
+        }
+    }
+
+    /// Adds the other Mac's saved mixes that aren't here yet (same title, made within the same minute). Never removes any.
+    func mergeSavedMixes(_ copies: [ProfileSnapshot.SavedMixCopy]) async throws -> Int {
+        try await writer.write { db in
+            var byPath: [String: Int64] = [:]
+            var byFingerprint: [String: Int64] = [:]
+            for (id, key) in try Self.songKeys(db) {
+                byPath[key.relativePath] = byPath[key.relativePath] ?? id
+                byFingerprint[key.fingerprint] = byFingerprint[key.fingerprint] ?? id
+            }
+            var known = Set<String>()
+            for row in try Row.fetchAll(db, sql: "SELECT title, createdAt FROM savedMix") {
+                let date: Date = row["createdAt"]
+                known.insert("\(row["title"] as String)@\(Int(date.timeIntervalSince1970 / 60))")
+            }
+            var added = 0
+            for copy in copies {
+                guard known.insert("\(copy.title)@\(Int(copy.createdAt.timeIntervalSince1970 / 60))").inserted else { continue }
+                let ids = copy.songs.compactMap { byPath[$0.relativePath] ?? byFingerprint[$0.fingerprint] }
+                guard !ids.isEmpty else { continue }
+                try db.execute(sql: "INSERT INTO savedMix (title, subtitle, createdAt) VALUES (?, ?, ?)",
+                               arguments: [copy.title, copy.subtitle, copy.createdAt])
+                let mixId = db.lastInsertedRowID
+                for (position, trackId) in ids.enumerated() {
+                    try db.execute(sql: "INSERT INTO savedMixItem (savedMixId, trackId, position) VALUES (?, ?, ?)",
+                                   arguments: [mixId, trackId, position])
+                }
+                added += 1
+            }
+            return added
+        }
     }
 }

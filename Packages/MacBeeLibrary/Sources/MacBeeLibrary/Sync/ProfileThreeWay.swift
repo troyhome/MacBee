@@ -76,6 +76,9 @@ public extension ProfileSnapshot {
         } else {
             result.likedVideos = mine.likedVideos ?? theirs.likedVideos
         }
+        // Added together; each Mac keeps the newest progress and skips mixes it already has.
+        result.videoWatching = (mine.videoWatching ?? []) + (theirs.videoWatching ?? [])
+        result.savedMixes = (mine.savedMixes ?? []) + (theirs.savedMixes ?? [])
         return result
     }
 

@@ -32,7 +32,7 @@ private struct SyncPreferencesForm: View {
                 }
             }
             if sync.isEnabled {
-                Section("Your other Macs") {
+                Section(header: PreferenceHeader("Your other Macs")) {
                     if sync.peers.isEmpty {
                         PreferenceNote("Looking… Turn on “Sync with my other Macs” on the other Mac too, and keep MacBee open there.")
                     }
@@ -52,7 +52,7 @@ private struct SyncPreferencesForm: View {
                 }
             }
             if let message = sync.lastMessage {
-                Section("Last sync") { PreferenceNote(message) }
+                Section(header: PreferenceHeader("Last sync")) { PreferenceNote(message) }
             }
         }
         .formStyle(.grouped)

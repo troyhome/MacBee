@@ -8,13 +8,13 @@ struct AppearancePreferences: View {
         @Bindable var themeStore = themeStore
         @Bindable var preferences = preferences
         Form {
-            Section("Theme") {
+            Section(header: PreferenceHeader("Theme")) {
                 Picker("Theme", selection: $themeStore.kind) {
                     ForEach(ThemeKind.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
             }
-            Section("Accent color") {
+            Section(header: PreferenceHeader("Accent color")) {
                 HStack(spacing: 12) {
                     ForEach(AccentChoice.allCases.filter { $0 != .custom }) { choice in
                         AccentSwatch(color: choice.color, isSelected: themeStore.accent == choice) {
@@ -35,10 +35,12 @@ struct AppearancePreferences: View {
                 }
                 PreferenceNote("Used for buttons, highlights and the playing song.")
             }
-            Section("Library display") {
+            Section(header: PreferenceHeader("Library display")) {
                 Toggle("Show quality badges (e.g. FLAC 24/96)", isOn: $preferences.showQualityBadges)
+                Toggle("Hide compilation-only artists from Artists", isOn: $preferences.hideCompilationOnlyArtists)
+                PreferenceNote("Leaves out artists who only appear on compilations, unless they also have an album of their own.")
             }
-            Section("Sidebar") {
+            Section(header: PreferenceHeader("Sidebar")) {
                 Slider(value: $preferences.sidebarWidth, in: PreferencesStore.sidebarWidthRange, step: 2) {
                     Text("Width")
                 } minimumValueLabel: {

@@ -31,6 +31,7 @@ struct MacBeeApp: App {
             PreferencesView()
                 .appEnvironment(model)
         }
+        .windowResizability(.contentMinSize) // drag the bottom edge to make Settings taller
 
         Window("Mini Player", id: Self.miniPlayerWindowID) {
             MiniPlayerView()
