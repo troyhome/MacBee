@@ -165,3 +165,27 @@ final class SavedMixSyncTests: XCTestCase {
         XCTAssertEqual(again, 0)
     }
 }
+
+final class ProfileCopyTests: XCTestCase {
+    func testNewProfileKeepsSongsButNotPersonalData() async throws {
+        let db = try LibraryDatabase()
+        let folder = try await db.insertFolder(path: "/Volumes/A", name: "A")
+        var t = ScannedTrack(path: "/Volumes/A/a.flac", fileSize: 1, modifiedAt: Date())
+        t.title = "Song"; t.artist = "Ride"; t.album = "Nowhere"; t.duration = 200; t.codec = "FLAC"
+        _ = try await db.save([t], folderId: folder.id!)
+        let id = try await db.search("Song").first!.id!
+        try await db.setFavorite(trackId: id, true)
+        try await db.recordPlay(trackId: id)
+        _ = try await db.createPlaylist(name: "Mine")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("profile-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try await db.copyWithoutPersonalData(to: url)
+        let copy = try LibraryDatabase(fileURL: url)
+        let song = try await copy.track(id: id)
+        XCTAssertEqual(song?.title, "Song")
+        XCTAssertEqual(song?.isFavorite, false)
+        XCTAssertEqual(song?.playCount, 0)
+        let playlists = try await copy.playlists()
+        XCTAssertTrue(playlists.isEmpty)
+    }
+}

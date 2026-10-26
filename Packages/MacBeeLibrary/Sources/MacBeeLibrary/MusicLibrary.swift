@@ -12,6 +12,12 @@ public struct LibraryLocation: Sendable {
         artworkDirectory = directory.appendingPathComponent("Artwork", isDirectory: true)
     }
 
+    /// A profile's own database, sharing the main cover cache (covers are the same for everyone).
+    public init(databaseDirectory: URL, artworkDirectory: URL) {
+        databaseURL = databaseDirectory.appendingPathComponent("Library.sqlite")
+        self.artworkDirectory = artworkDirectory
+    }
+
     /// ~/Library/Application Support/MacBee
     public static var `default`: LibraryLocation {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]

@@ -25,8 +25,8 @@ final class HomeViewModel {
         async let history = database.playHistory(limit: Self.historyPageSize)
 
         // "Clear" and "Reset" on the Music page hide what came before that moment (nothing is deleted).
-        let playedCutoff = UserDefaults.standard.object(forKey: "homeRecentlyPlayedClearedAt") as? Date ?? .distantPast
-        let addedCutoff = UserDefaults.standard.object(forKey: "homeRecentlyAddedResetAt") as? Date ?? .distantPast
+        let playedCutoff = UserDefaults.standard.object(forKey: Profiles.key("homeRecentlyPlayedClearedAt")) as? Date ?? .distantPast
+        let addedCutoff = UserDefaults.standard.object(forKey: Profiles.key("homeRecentlyAddedResetAt")) as? Date ?? .distantPast
         recentlyPlayed = ((try? await played) ?? []).filter { ($0.lastPlayedAt ?? .distantPast) > playedCutoff }
         recentlyAdded = ((try? await added) ?? []).filter { $0.dateAdded > addedCutoff }
         self.mixes = (try? await mixes) ?? []
@@ -37,13 +37,13 @@ final class HomeViewModel {
 
     /// Empties Recently Played (albums played from now on show up again).
     func clearRecentlyPlayed() {
-        UserDefaults.standard.set(Date(), forKey: "homeRecentlyPlayedClearedAt")
+        UserDefaults.standard.set(Date(), forKey: Profiles.key("homeRecentlyPlayedClearedAt"))
         recentlyPlayed = []
     }
 
     /// Empties Recently Added (music added from now on shows up).
     func resetRecentlyAdded() {
-        UserDefaults.standard.set(Date(), forKey: "homeRecentlyAddedResetAt")
+        UserDefaults.standard.set(Date(), forKey: Profiles.key("homeRecentlyAddedResetAt"))
         recentlyAdded = []
     }
 

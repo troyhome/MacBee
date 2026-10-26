@@ -563,3 +563,9 @@ Create an Xcode macOS app target named MacBee that uses both local packages. Bui
   within 2 s. PlaybackRouter serves Plex or Navidrome (`RemoteSource`), caches in Caches/MacBee/{Plex,Navidrome}.
   "Play songs from" gained "Always Navidrome"; Automatic tries Plex then Navidrome. ATS: NSAllowsLocalNetworking (http on
   the home network); servers outside the home network need https.
+- Profiles (2026-10-26, Troy chose one per person): `App/Profiles.swift`. Main profile = the old files; others in
+  Application Support/MacBee/Profiles/<id>/ (own Library.sqlite made by `copyWithoutPersonalData`, covers shared).
+  Per-person UserDefaults keys go through `Profiles.key(_:)` (video progress/likes, Media page cutoffs, studio
+  playlist, open folders). Switching relaunches MacBee (`NSWorkspace` new instance, then quit). Device Sync sends the
+  profile name and only syncs matching names. UI: sidebar title menu (`ProfileMenu`), Settings > General > Profiles.
+- Also synced now: video watching progress and saved mixes. Sidebar resizable by dragging (default 232).

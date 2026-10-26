@@ -19,7 +19,7 @@ struct PlaylistStudioView: View {
     @State private var openMix: StudioMix?
     @State private var mixMessage: String?
     /// The playlist being built (0 = none), remembered between visits.
-    @AppStorage("studioPlaylistId") private var storedPlaylistId = 0
+    @AppStorage(Profiles.key("studioPlaylistId")) private var storedPlaylistId = 0
     /// Width of the playlist pane on the right, adjustable by dragging the divider.
     @AppStorage("studioPanelWidth") private var panelWidth = 380.0
 

@@ -46,3 +46,4 @@ Design system and original plan: `MACBEE_PLAN.md` (only needed for UI/design wor
 - Mac App Store build (`appstore`): sandbox, folder bookmarks, cover embedding, privacy manifest, encryption answer done.
 - Not done: moving Troy's existing data into the container (only if he switches his everyday copy), App Store upload and review.
 - If `xcode-select` points at the command line tools, `macbee.sh` uses /Applications/Xcode.app by itself.
+- Profiles (one per person) exist; per-person files/keys go through `Profiles` (see history).

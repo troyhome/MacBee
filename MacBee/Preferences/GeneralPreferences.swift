@@ -6,6 +6,7 @@ struct GeneralPreferences: View {
     var body: some View {
         @Bindable var preferences = preferences
         Form {
+            ProfilesSection()
             Section(header: PreferenceHeader("When MacBee opens")) {
                 Picker("Show", selection: $preferences.startPage) {
                     ForEach(StartPage.allCases) { Text($0.title).tag($0) }

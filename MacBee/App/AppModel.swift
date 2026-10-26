@@ -110,7 +110,7 @@ final class AppModel {
         var library: MusicLibrary?
         var libraryError: String?
         do {
-            library = try MusicLibrary()
+            library = try MusicLibrary(location: Profiles.libraryLocation)
         } catch {
             libraryError = error.localizedDescription
         }

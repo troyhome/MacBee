@@ -216,6 +216,21 @@ public extension LibraryDatabase {
     }
 
     /// Copies the whole library database to `url` (a safety copy before a sync replaces things).
+    /// A copy of this library for a new profile: the same folders and songs, without anyone's favorites, ratings,
+    /// plays, playlists or saved mixes.
+    func copyWithoutPersonalData(to url: URL) async throws {
+        try await backup(to: url)
+        let copy = try DatabaseQueue(path: url.path)
+        try await copy.write { db in
+            try db.execute(sql: """
+                UPDATE track SET isFavorite = 0, rating = NULL, playCount = 0, lastPlayedAt = NULL, favoritedAt = NULL;
+                DELETE FROM play;
+                DELETE FROM playlist;
+                DELETE FROM savedMix;
+                """)
+        }
+    }
+
     func backup(to url: URL) async throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let destination = try DatabaseQueue(path: url.path)

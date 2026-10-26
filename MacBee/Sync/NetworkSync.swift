@@ -220,7 +220,8 @@ final class NetworkSync {
             try await Wire.open(connection)
             let mine = try await mySnapshot()
             try await Wire.send(Request(code: code, snapshot: mine, mode: mode, senderCode: self.code,
-                                        base: mode == .automatic ? SyncBase.load(peer: peer.name) : nil), on: connection)
+                                        base: mode == .automatic ? SyncBase.load(peer: peer.name) : nil,
+                                        profile: Profiles.active.name), on: connection)
             let response: Response = try await Wire.receive(on: connection)
             guard response.ok, let theirs = response.snapshot else {
                 lastMessage = response.error ?? "\(peer.name) didn't accept the sync."
@@ -302,8 +303,7 @@ final class NetworkSync {
     private func dailyBackup() async throws {
         let day = Date().formatted(.iso8601.year().month().day())
         guard UserDefaults.standard.string(forKey: "networkSyncBackupDay") != day else { return }
-        let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MacBee/Library-before-auto-sync.sqlite")
+        let url = Profiles.directory.appendingPathComponent("Library-before-auto-sync.sqlite")
         try? FileManager.default.removeItem(at: url)
         try await library.database.backup(to: url)
         UserDefaults.standard.set(day, forKey: "networkSyncBackupDay")
@@ -321,6 +321,14 @@ final class NetworkSync {
                 return
             }
             let from = request.snapshot.deviceName
+            // Each person syncs with their own profile on the other Mac.
+            let theirProfile = request.profile ?? Profiles.all.first { $0.id == Profiles.mainId }?.name ?? ""
+            guard theirProfile.caseInsensitiveCompare(Profiles.active.name) == .orderedSame else {
+                let problem = "\(from) is using the profile “\(theirProfile)” and this Mac “\(Profiles.active.name)”. Switch both Macs to the same profile to sync."
+                try await Wire.send(Response(ok: false, error: problem), on: connection)
+                if request.mode != .automatic { lastMessage = problem }
+                return
+            }
             // Remember the other Mac's code so this Mac can sync with it automatically too.
             if let senderCode = request.senderCode { saveCode(senderCode, forName: from) }
             switch request.mode ?? .combine {
@@ -372,8 +380,7 @@ final class NetworkSync {
     private func backUpLibrary() async throws -> URL {
         let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false))
             .replacingOccurrences(of: ":", with: "-")
-        let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MacBee/Library-before-sync-\(stamp).sqlite")
+        let url = Profiles.directory.appendingPathComponent("Library-before-sync-\(stamp).sqlite")
         try await library.database.backup(to: url)
         return url
     }
@@ -387,6 +394,9 @@ final class NetworkSync {
         var senderCode: String?
         /// Automatic sync: how the sending Mac looked right after its last sync with this one.
         var base: ProfileSnapshot?
+        /// The sending Mac's profile name; only the same person's data is synced. Missing from older versions
+        /// (they only have the main profile).
+        var profile: String?
     }
 
     struct Response: Codable {
@@ -402,8 +412,7 @@ final class NetworkSync {
 private enum SyncBase {
     static func url(peer: String) -> URL {
         let safe = peer.map { $0.isLetter || $0.isNumber ? $0 : "-" }
-        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MacBee/Sync/\(String(safe)).json")
+        return Profiles.directory.appendingPathComponent("Sync/\(String(safe)).json")
     }
 
     static func load(peer: String) -> ProfileSnapshot? {

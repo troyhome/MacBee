@@ -11,7 +11,7 @@ struct PlaylistTreeRow: View {
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.theme) private var theme
     /// Open folders, saved as "3,7,12".
-    @AppStorage("openPlaylistFolders") private var openFolders = ""
+    @AppStorage(Profiles.key("openPlaylistFolders")) private var openFolders = ""
     @State private var hovering = false
     @State private var targeted = false
 

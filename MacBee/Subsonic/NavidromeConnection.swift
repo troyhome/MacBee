@@ -23,8 +23,7 @@ final class NavidromeConnection {
     private static let passwordAccount = "navidrome"
 
     private static var linksURL: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MacBee/Navidrome-Links.json")
+        Profiles.directory.appendingPathComponent("Navidrome-Links.json")
     }
 
     var isSetUp: Bool { api != nil }

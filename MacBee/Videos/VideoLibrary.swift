@@ -12,18 +12,18 @@ final class VideoLibrary {
     private(set) var catalog = VideoCatalogStore.load() ?? VideoCatalog()
     private(set) var isScanning = false
     /// Liked movies (their file path), shows (their folder) and music videos (their file path).
-    private(set) var liked: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "likedVideos") ?? [])
+    private(set) var liked: Set<String> = Set(UserDefaults.standard.stringArray(forKey: Profiles.key("likedVideos")) ?? [])
     /// Seconds watched, per file path, for "Continue Watching" and Resume.
-    private(set) var positions: [String: Double] = UserDefaults.standard.dictionary(forKey: "videoPositions") as? [String: Double] ?? [:]
+    private(set) var positions: [String: Double] = UserDefaults.standard.dictionary(forKey: Profiles.key("videoPositions")) as? [String: Double] ?? [:]
     /// When each movie, show or music video (by its id) was last started, for Recently Played.
-    private(set) var lastPlayed: [String: Date] = UserDefaults.standard.dictionary(forKey: "videoLastPlayed") as? [String: Date] ?? [:]
+    private(set) var lastPlayed: [String: Date] = UserDefaults.standard.dictionary(forKey: Profiles.key("videoLastPlayed")) as? [String: Date] ?? [:]
     /// Files watched to the end.
-    private(set) var watched: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "watchedVideos") ?? [])
+    private(set) var watched: Set<String> = Set(UserDefaults.standard.stringArray(forKey: Profiles.key("watchedVideos")) ?? [])
     /// When each file was last watched, and how long it runs, for Continue Watching (order and time left).
-    private(set) var lastWatched: [String: Date] = UserDefaults.standard.dictionary(forKey: "videoLastWatched") as? [String: Date] ?? [:]
-    private(set) var durations: [String: Double] = UserDefaults.standard.dictionary(forKey: "videoDurations") as? [String: Double] ?? [:]
+    private(set) var lastWatched: [String: Date] = UserDefaults.standard.dictionary(forKey: Profiles.key("videoLastWatched")) as? [String: Date] ?? [:]
+    private(set) var durations: [String: Double] = UserDefaults.standard.dictionary(forKey: Profiles.key("videoDurations")) as? [String: Double] ?? [:]
     /// Shows whose "Up Next" card was removed, and when; it comes back once the show is watched again.
-    private(set) var upNextDismissed: [String: Date] = UserDefaults.standard.dictionary(forKey: "videoUpNextDismissed") as? [String: Date] ?? [:]
+    private(set) var upNextDismissed: [String: Date] = UserDefaults.standard.dictionary(forKey: Profiles.key("videoUpNextDismissed")) as? [String: Date] ?? [:]
 
     /// Each folder's file list from its last walk, so a single folder can be scanned again on its own.
     @ObservationIgnored private let fileCache = VideoFileCache()
@@ -179,13 +179,13 @@ final class VideoLibrary {
 
     func toggleLike(_ id: String) {
         if liked.remove(id) == nil { liked.insert(id) }
-        UserDefaults.standard.set(Array(liked).sorted(), forKey: "likedVideos")
+        UserDefaults.standard.set(Array(liked).sorted(), forKey: Profiles.key("likedVideos"))
     }
 
     // MARK: - Likes on other Macs
 
     /// Likes from other Macs not yet matched to a video here (that drive may not be scanned yet).
-    private var unmatchedLikeKeys: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "unmatchedVideoLikes") ?? [])
+    private var unmatchedLikeKeys: Set<String> = Set(UserDefaults.standard.stringArray(forKey: Profiles.key("unmatchedVideoLikes")) ?? [])
 
     /// A like's name on every Mac: the file name (movies, music videos) or folder name (shows), lowercased.
     static func syncKey(_ id: String) -> String { (id as NSString).lastPathComponent.lowercased() }
@@ -218,8 +218,8 @@ final class VideoLibrary {
         let changes = updated.symmetricDifference(liked).count
         liked = updated
         unmatchedLikeKeys = wanted.subtracting(matched)
-        UserDefaults.standard.set(Array(liked).sorted(), forKey: "likedVideos")
-        UserDefaults.standard.set(Array(unmatchedLikeKeys).sorted(), forKey: "unmatchedVideoLikes")
+        UserDefaults.standard.set(Array(liked).sorted(), forKey: Profiles.key("likedVideos"))
+        UserDefaults.standard.set(Array(unmatchedLikeKeys).sorted(), forKey: Profiles.key("unmatchedVideoLikes"))
         return changes
     }
 
@@ -234,14 +234,14 @@ final class VideoLibrary {
         func movedKeys<V>(_ dict: [String: V]) -> [String: V] {
             Dictionary(dict.map { (moved($0.key), $0.value) }, uniquingKeysWith: { _, new in new })
         }
-        liked = Set(liked.map(moved)); UserDefaults.standard.set(Array(liked).sorted(), forKey: "likedVideos")
-        watched = Set(watched.map(moved)); UserDefaults.standard.set(Array(watched), forKey: "watchedVideos")
+        liked = Set(liked.map(moved)); UserDefaults.standard.set(Array(liked).sorted(), forKey: Profiles.key("likedVideos"))
+        watched = Set(watched.map(moved)); UserDefaults.standard.set(Array(watched), forKey: Profiles.key("watchedVideos"))
         excluded = Set(excluded.map(moved)); UserDefaults.standard.set(Array(excluded).sorted(), forKey: "excludedVideos")
-        positions = movedKeys(positions); UserDefaults.standard.set(positions, forKey: "videoPositions")
-        lastPlayed = movedKeys(lastPlayed); UserDefaults.standard.set(lastPlayed, forKey: "videoLastPlayed")
-        lastWatched = movedKeys(lastWatched); UserDefaults.standard.set(lastWatched, forKey: "videoLastWatched")
-        durations = movedKeys(durations); UserDefaults.standard.set(durations, forKey: "videoDurations")
-        upNextDismissed = movedKeys(upNextDismissed); UserDefaults.standard.set(upNextDismissed, forKey: "videoUpNextDismissed")
+        positions = movedKeys(positions); UserDefaults.standard.set(positions, forKey: Profiles.key("videoPositions"))
+        lastPlayed = movedKeys(lastPlayed); UserDefaults.standard.set(lastPlayed, forKey: Profiles.key("videoLastPlayed"))
+        lastWatched = movedKeys(lastWatched); UserDefaults.standard.set(lastWatched, forKey: Profiles.key("videoLastWatched"))
+        durations = movedKeys(durations); UserDefaults.standard.set(durations, forKey: Profiles.key("videoDurations"))
+        upNextDismissed = movedKeys(upNextDismissed); UserDefaults.standard.set(upNextDismissed, forKey: Profiles.key("videoUpNextDismissed"))
     }
 
     // MARK: - Syncing watching progress (Device Sync)
@@ -301,11 +301,11 @@ final class VideoLibrary {
             }
         }
         if !changed.isEmpty {
-            UserDefaults.standard.set(positions, forKey: "videoPositions")
-            UserDefaults.standard.set(lastWatched, forKey: "videoLastWatched")
-            UserDefaults.standard.set(durations, forKey: "videoDurations")
-            UserDefaults.standard.set(Array(watched), forKey: "watchedVideos")
-            UserDefaults.standard.set(lastPlayed, forKey: "videoLastPlayed")
+            UserDefaults.standard.set(positions, forKey: Profiles.key("videoPositions"))
+            UserDefaults.standard.set(lastWatched, forKey: Profiles.key("videoLastWatched"))
+            UserDefaults.standard.set(durations, forKey: Profiles.key("videoDurations"))
+            UserDefaults.standard.set(Array(watched), forKey: Profiles.key("watchedVideos"))
+            UserDefaults.standard.set(lastPlayed, forKey: Profiles.key("videoLastPlayed"))
         }
         return changed.count
     }
@@ -314,7 +314,7 @@ final class VideoLibrary {
 
     func markPlayed(_ id: String) {
         lastPlayed[id] = Date()
-        UserDefaults.standard.set(lastPlayed, forKey: "videoLastPlayed")
+        UserDefaults.standard.set(lastPlayed, forKey: Profiles.key("videoLastPlayed"))
     }
 
     func position(of path: String) -> Double { positions[path] ?? 0 }
@@ -326,32 +326,32 @@ final class VideoLibrary {
     func savePosition(_ seconds: Double, duration: Double, for path: String) {
         if duration > 0 {
             durations[path] = duration
-            UserDefaults.standard.set(durations, forKey: "videoDurations")
+            UserDefaults.standard.set(durations, forKey: Profiles.key("videoDurations"))
         }
         if seconds >= Self.continueAfter {
             lastWatched[path] = Date()
-            UserDefaults.standard.set(lastWatched, forKey: "videoLastWatched")
+            UserDefaults.standard.set(lastWatched, forKey: Profiles.key("videoLastWatched"))
         }
         if duration > 0 && seconds > duration - max(60, duration * 0.05) {
             positions[path] = nil
             watched.insert(path)
-            UserDefaults.standard.set(Array(watched), forKey: "watchedVideos")
+            UserDefaults.standard.set(Array(watched), forKey: Profiles.key("watchedVideos"))
         } else if seconds >= Self.continueAfter {
             positions[path] = seconds
         } else {
             positions[path] = nil
         }
-        UserDefaults.standard.set(positions, forKey: "videoPositions")
+        UserDefaults.standard.set(positions, forKey: Profiles.key("videoPositions"))
     }
 
     /// Takes a card off Continue Watching: forgets the position, or hides a show's Up Next until it's watched again.
     func removeFromContinueWatching(_ item: ContinueItem) {
         if item.isUpNext, case let .episode(_, show) = item.kind {
             upNextDismissed[show.id] = Date()
-            UserDefaults.standard.set(upNextDismissed, forKey: "videoUpNextDismissed")
+            UserDefaults.standard.set(upNextDismissed, forKey: Profiles.key("videoUpNextDismissed"))
         } else {
             positions[item.file.path] = nil
-            UserDefaults.standard.set(positions, forKey: "videoPositions")
+            UserDefaults.standard.set(positions, forKey: Profiles.key("videoPositions"))
         }
     }
 

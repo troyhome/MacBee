@@ -54,9 +54,7 @@ struct SidebarView: View {
     private var header: some View {
         HStack {
             if !collapsed {
-                Text("MacBee")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(theme.textPrimary)
+                ProfileMenu()
                 Spacer()
             }
             Button {

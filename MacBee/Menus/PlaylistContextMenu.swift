@@ -30,7 +30,7 @@ struct PlaylistContextMenu: View {
                 Button("Use Album Covers") { Task { await store.removeArtwork(from: playlist) } }
             }
             Button("Edit in Playlist Studio") {
-                if let id = playlist.id { UserDefaults.standard.set(Int(id), forKey: "studioPlaylistId") }
+                if let id = playlist.id { UserDefaults.standard.set(Int(id), forKey: Profiles.key("studioPlaylistId")) }
                 app.go(to: .playlistStudio)
             }
             Divider()
