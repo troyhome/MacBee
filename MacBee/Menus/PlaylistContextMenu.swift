@@ -36,6 +36,9 @@ struct PlaylistContextMenu: View {
             Divider()
             Button("Export Playlist…") { store.exportWithPanel(playlist) }
             Button("Record to MiniDisc…") { store.pendingMiniDisc = playlist }
+            if MDDeckSender.appURL != nil {
+                Button("Send to MD Deck") { Task { store.message = MDDeckSender.send(await tracks()) } }
+            }
             Divider()
             Button("Delete Playlist…") { store.pendingDelete = playlist }
         }

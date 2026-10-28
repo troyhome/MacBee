@@ -46,6 +46,9 @@ struct TrackContextMenu: View {
                 Button("Go to Album") { Task { await app.openAlbum(key: track.albumKey) } }
                 Button("Go to Artist") { app.openArtist(key: track.artistKey) }
             }
+            if MDDeckSender.appURL != nil {
+                Button("Send to MD Deck") { MDDeckSender.send(tracks) }
+            }
             Divider()
             EditTagsButton(tracks: tracks)
             Button("Show in Finder") {
