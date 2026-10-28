@@ -20,9 +20,9 @@ struct PlaybackCommands: Commands {
         CommandMenu("Controls") {
             // Space is handled in AppDelegate so it still types spaces in text fields.
             Button("Play / Pause") { player.togglePlayPause() }
-            Button("Next") { player.next() }
+            Button("Next / Forward 10 Seconds") { player.forwardButton() }
                 .keyboardShortcut(.rightArrow, modifiers: .command)
-            Button("Previous") { player.previous() }
+            Button("Previous / Back 10 Seconds") { player.backButton() }
                 .keyboardShortcut(.leftArrow, modifiers: .command)
             Divider()
             Button(player.queue.isShuffled ? "Turn Shuffle Off" : "Turn Shuffle On") { player.toggleShuffle() }

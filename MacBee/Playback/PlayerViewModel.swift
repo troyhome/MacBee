@@ -221,6 +221,23 @@ final class PlayerViewModel {
         }
     }
 
+    /// Set by the app: skips this many seconds in the video that's playing; false when no video is.
+    @ObservationIgnored var videoSkip: ((Double) -> Bool)?
+    /// Set by the app: whether a video is playing (the forward/back buttons then skip 10 seconds).
+    @ObservationIgnored var isVideoActive: () -> Bool = { false }
+
+    /// The play bar's forward button, ⌘→, the media key and the Dock menu: 10 seconds on in a video, else the next song.
+    func forwardButton() {
+        if videoSkip?(10) == true { return }
+        next()
+    }
+
+    /// The back button: 10 seconds back in a video, else the previous song.
+    func backButton() {
+        if videoSkip?(-10) == true { return }
+        previous()
+    }
+
     func next() {
         guard let i = queue.currentIndex, let j = queue.index(after: i, userSkipped: true),
               let track = queue.move(to: j) else { return }

@@ -66,8 +66,8 @@ final class NowPlayingService {
         center.pauseCommand.addTarget { [weak self] _ in
             self?.run { if $0.isPlaying { $0.togglePlayPause() } } ?? .commandFailed
         }
-        center.nextTrackCommand.addTarget { [weak self] _ in self?.run { $0.next() } ?? .commandFailed }
-        center.previousTrackCommand.addTarget { [weak self] _ in self?.run { $0.previous() } ?? .commandFailed }
+        center.nextTrackCommand.addTarget { [weak self] _ in self?.run { $0.forwardButton() } ?? .commandFailed }
+        center.previousTrackCommand.addTarget { [weak self] _ in self?.run { $0.backButton() } ?? .commandFailed }
         center.changePlaybackPositionCommand.addTarget { [weak self] event in
             guard let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
             return self?.run { $0.engine.seek(to: event.positionTime) } ?? .commandFailed

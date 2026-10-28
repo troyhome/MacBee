@@ -142,6 +142,12 @@ final class AppModel {
         library?.onFolderMoved = { [weak self] old, new in self?.videos.moveRoot(from: old, to: new) }
         networkSync?.likedVideos = { [weak self] in self?.videos.syncedLikeKeys ?? [] }
         networkSync?.setLikedVideos = { [weak self] keys in self?.videos.setSyncedLikes(keys) ?? 0 }
+        player.videoSkip = { [weak self] seconds in
+            guard let session = self?.videoSession else { return false }
+            session.player.seek(by: seconds)
+            return true
+        }
+        player.isVideoActive = { [weak self] in self?.videoSession != nil }
         networkSync?.videoWatching = { [weak self] in self?.videos.syncedWatching ?? [] }
         networkSync?.mergeVideoWatching = { [weak self] states in self?.videos.mergeWatching(states) ?? 0 }
         engine.eventHandler = { [weak self] event in

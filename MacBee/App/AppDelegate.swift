@@ -15,6 +15,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Space plays/pauses, except while typing in a text field.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+            // ← and → skip 10 seconds while a video plays (not while typing).
+            if modifiers.isEmpty, event.keyCode == 123 || event.keyCode == 124,
+               !(NSApp.keyWindow?.firstResponder is NSText), let player = self?.player, player.isVideoActive() {
+                event.keyCode == 124 ? player.forwardButton() : player.backButton()
+                return nil
+            }
             guard event.keyCode == 49, modifiers.isEmpty,
                   !(NSApp.keyWindow?.firstResponder is NSText),
                   let player = self?.player else { return event }
@@ -55,6 +61,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func playPause() { player?.togglePlayPause() }
-    @objc private func next() { player?.next() }
-    @objc private func previous() { player?.previous() }
+    @objc private func next() { player?.forwardButton() }
+    @objc private func previous() { player?.backButton() }
 }
