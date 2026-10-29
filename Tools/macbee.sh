@@ -104,9 +104,34 @@ APPLESCRIPT
         ;;
     dmg)
         # A disk image with MacBee and an Applications shortcut, for copying MacBee to another Mac.
+        # Signed with Troy's Developer ID and notarized by Apple, so it opens anywhere without a warning. Xcode exports
+        # it for Developer ID, which also fetches the provisioning profile Keychain Sharing needs; then
+        # ~/bin/sign-and-notarize (shared by all of Troy's apps, see ~/.claude/CLAUDE.md) has Apple check it.
+        ARCHIVE="$OUT/MacBee-Release.xcarchive"
+        EXPORT="$OUT/Export"
+        rm -rf "$ARCHIVE" "$EXPORT"
         xcodebuild -project "$ROOT/MacBee.xcodeproj" -scheme MacBee -configuration Release \
-            -derivedDataPath "$OUT/DerivedData-Release" -allowProvisioningUpdates build
-        APP="$OUT/DerivedData-Release/Build/Products/Release/MacBee.app"
+            -derivedDataPath "$OUT/DerivedData-Release" -archivePath "$ARCHIVE" -allowProvisioningUpdates \
+            ENABLE_HARDENED_RUNTIME=YES CODE_SIGN_ENTITLEMENTS=MacBee-DeveloperID.entitlements archive
+        cat > "$OUT/ExportOptions.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key><string>developer-id</string>
+    <key>signingStyle</key><string>automatic</string>
+    <key>teamID</key><string>DA9YJ36D24</string>
+</dict>
+</plist>
+PLIST
+        xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$EXPORT" \
+            -exportOptionsPlist "$OUT/ExportOptions.plist" -allowProvisioningUpdates
+        APP="$EXPORT/MacBee.app"
+        if [[ -x "$HOME/bin/sign-and-notarize" ]]; then
+            "$HOME/bin/sign-and-notarize" "$APP"
+        else
+            echo "Not notarized: ~/bin/sign-and-notarize isn't on this Mac (see ~/.claude/CLAUDE.md)." >&2
+        fi
         VERSION="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")"
         STAGE="$OUT/dmg"
         rm -rf "$STAGE"
