@@ -344,6 +344,17 @@ final class VideoLibrary {
         UserDefaults.standard.set(positions, forKey: Profiles.key("videoPositions"))
     }
 
+    /// Marks videos watched (Continue Watching forgets them) or not watched (they start from the beginning).
+    func setWatched(_ watchedNow: Bool, paths: [String]) {
+        for path in paths {
+            positions[path] = nil
+            if watchedNow { watched.insert(path); lastWatched[path] = lastWatched[path] ?? Date() } else { watched.remove(path) }
+        }
+        UserDefaults.standard.set(positions, forKey: Profiles.key("videoPositions"))
+        UserDefaults.standard.set(Array(watched), forKey: Profiles.key("watchedVideos"))
+        UserDefaults.standard.set(lastWatched, forKey: Profiles.key("videoLastWatched"))
+    }
+
     /// Takes a card off Continue Watching: forgets the position, or hides a show's Up Next until it's watched again.
     func removeFromContinueWatching(_ item: ContinueItem) {
         if item.isUpNext, case let .episode(_, show) = item.kind {

@@ -68,7 +68,9 @@ struct ShowDetailView: View {
                 if let season = selectedSeason {
                     LazyVStack(spacing: 2) {
                         ForEach(season.episodes) { episode in
-                            EpisodeRow(episode: episode) { app.playEpisode(episode, in: show, resume: true) }
+                            EpisodeRow(episode: episode, show: show, season: season) {
+                                app.playEpisode(episode, in: show, resume: true)
+                            }
                         }
                     }
                 }
@@ -110,6 +112,8 @@ struct ShowDetailView: View {
 
 private struct EpisodeRow: View {
     let episode: Episode
+    let show: Show
+    let season: Season
     let onPlay: () -> Void
 
     @Environment(AppModel.self) private var app
@@ -117,41 +121,86 @@ private struct EpisodeRow: View {
     @State private var hovering = false
 
     var body: some View {
+        let isWatched = app.videos.watched.contains(episode.file.path)
+        let position = app.videos.position(of: episode.file.path)
         HStack(spacing: 14) {
-            ZStack {
-                Text("\(episode.number)")
-                    .font(.system(size: 13).monospacedDigit())
-                    .foregroundStyle(theme.textTertiary)
-                    .opacity(hovering ? 0 : 1)
-                Image(systemName: "play.fill")
-                    .font(.mbSecondary)
-                    .foregroundStyle(theme.accent)
-                    .opacity(hovering ? 1 : 0)
-            }
-            .frame(width: 30)
+            Text("\(episode.number)")
+                .font(.system(size: 13).monospacedDigit())
+                .foregroundStyle(theme.textTertiary)
+                .frame(width: 24)
+            // A small still from the episode, with how far you got.
+            Color.clear
+                .frame(width: 112, height: 63)
+                .overlay { PosterImage(path: nil, title: "", maxPixels: 260, previewFile: episode.file, titlesStill: false) }
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay {
+                    if hovering {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.white)
+                            .shadow(radius: 4)
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    if position > 0, let duration = app.videos.durations[episode.file.path], duration > 0 {
+                        GeometryReader { geometry in
+                            Capsule().fill(theme.accent)
+                                .frame(width: geometry.size.width * min(1, position / duration), height: 3)
+                        }
+                        .frame(height: 3)
+                        .padding(.horizontal, 6)
+                        .padding(.bottom, 5)
+                    }
+                }
+                .opacity(isWatched && !hovering ? 0.6 : 1)
             Text(episode.title ?? "Episode \(episode.number)")
                 .font(.mbRowTitle)
                 .foregroundStyle(theme.textPrimary)
-                .lineLimit(1)
+                .lineLimit(2)
             Spacer()
-            if app.videos.watched.contains(episode.file.path) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(theme.textTertiary)
-                    .help("Watched")
-            } else if app.videos.position(of: episode.file.path) > 0 {
+            if !isWatched && position > 0 {
                 Text("In progress")
                     .font(.mbCaption)
                     .foregroundStyle(theme.accent)
             }
             if episode.file.is4K { VideoBadge(text: "4K") }
+            Button {
+                app.videos.setWatched(!isWatched, paths: [episode.file.path])
+            } label: {
+                Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 16))
+                    .foregroundStyle(isWatched ? theme.accent : theme.textTertiary)
+            }
+            .buttonStyle(.plain)
+            .help(isWatched ? "Watched. Click to mark as not watched." : "Mark as watched")
         }
         .padding(.horizontal, 10)
-        .frame(height: 40)
+        .padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: 8).fill(hovering ? theme.surface : .clear))
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .onTapGesture(count: 2, perform: onPlay)
         .onTapGesture(perform: onPlay)
         .help("Play \(episode.code)")
+        .contextMenu {
+            Button("Play") { onPlay() }
+            if position > 0 { Button("Play from Start") { app.playEpisode(episode, in: show, resume: false) } }
+            Divider()
+            Button(isWatched ? "Mark as Not Watched" : "Mark as Watched") {
+                app.videos.setWatched(!isWatched, paths: [episode.file.path])
+            }
+            Button("Mark Earlier Episodes as Watched") {
+                let all = show.seasons.flatMap(\.episodes)
+                let earlier = all.prefix { $0.id != episode.id }.map(\.file.path)
+                app.videos.setWatched(true, paths: earlier)
+            }
+            Button("Mark Season \(season.number) as Watched") {
+                app.videos.setWatched(true, paths: season.episodes.map(\.file.path))
+            }
+            Button("Mark Season \(season.number) as Not Watched") {
+                app.videos.setWatched(false, paths: season.episodes.map(\.file.path))
+            }
+            Divider()
+            Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([episode.file.url]) }
+        }
     }
 }
