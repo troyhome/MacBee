@@ -2,13 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <!-- The everyday MacBee as shared in the .dmg (Developer ID, hardened runtime, notarized).
-     Same as MacBee.entitlements, plus JIT for mpv's LuaJIT, which the hardened runtime blocks otherwise. -->
+     Same as MacBee.entitlements, plus what mpv's LuaJIT needs under the hardened runtime: it writes and runs code in
+     plain memory (not MAP_JIT), so allow-jit alone crashed video playback (Code Signature Invalid, 2026-10-29). -->
 <dict>
 	<key>keychain-access-groups</key>
 	<array>
 		<string>$(AppIdentifierPrefix)com.troyhomenchuk.MacBee</string>
 	</array>
 	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
 	<true/>
 </dict>
 </plist>
