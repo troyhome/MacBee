@@ -21,7 +21,7 @@ Design system and original plan: `MACBEE_PLAN.md` (only needed for UI/design wor
 - No external DAC: tests target "MacBook Air Speakers" (the "BoomAudio" output adds effects).
 - Architecture: MVVM, small files, no giant single-file dumps.
 - Signing: automatic, Troy's team DA9YJ36D24 ("Apple Development"), `MacBee.entitlements` (Keychain Sharing). Paid developer membership active since 2026-10-19. Never go back to ad-hoc or self-signed. If a build gets a 7-day profile, delete ~/Library/Developer/Xcode/UserData/Provisioning Profiles/* and rebuild.
-- `dmg`/`release` (2026-10-29): archive with hardened runtime + `MacBee-DeveloperID.entitlements` (Developer ID build needs allow-unsigned-executable-memory for mpv's LuaJIT, not just allow-jit: without it video crashed with "Code Signature Invalid"), Xcode export for Developer ID (fetches the profile Keychain Sharing needs), then `~/bin/sign-and-notarize` notarizes and staples (see ~/.claude/CLAUDE.md). Verified: Notarized Developer ID, Plex keychain read works.
+- `dmg`/`release` (2026-10-29): archive with hardened runtime + `MacBee-DeveloperID.entitlements` (Developer ID build needs allow-unsigned-executable-memory for mpv's LuaJIT, not just allow-jit: without it video crashed with "Code Signature Invalid"), Xcode export for Developer ID (fetches the profile Keychain Sharing needs), then `~/bin/sign-and-notarize` notarizes and staples (see ~/.claude/CLAUDE.md). Verified: Notarized Developer ID, Plex keychain read works, video plays (Troy, 2026-10-29).
 - Virtual output devices (BoomAudio, Loopback, BlackHole) are never switched in sample rate or bit depth (it made Boom 3D produce loud noise); they show "not bit-perfect".
 
 ## Rules learned the hard way
