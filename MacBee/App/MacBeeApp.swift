@@ -14,7 +14,8 @@ struct MacBeeApp: App {
             RootView()
                 .background(WindowReopener(delegate: appDelegate, player: model.player))
                 .appEnvironment(model)
-                .frame(minWidth: 960, minHeight: 600)
+                // Wide enough for the sidebar (whatever width it's dragged to) and the widest page, so nothing is cut off.
+                .frame(minWidth: 820 + model.preferences.sidebarWidth, minHeight: 600)
                 .task { await model.start() }
         }
         .commands {

@@ -60,18 +60,24 @@ struct VideosView: View {
             .help("Look for new videos")
             if shownCategory == .shows {
                 @Bindable var preferences = preferences
-                Toggle("Continuous Play", isOn: $preferences.continuousPlayEpisodes)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .fixedSize()
-                    .help("Play the next episode automatically when one ends")
+                // The label goes when the window is narrow; the switch stays.
+                ViewThatFits(in: .horizontal) {
+                    Toggle("Continuous Play", isOn: $preferences.continuousPlayEpisodes)
+                        .fixedSize()
+                    Toggle("Continuous Play", isOn: $preferences.continuousPlayEpisodes)
+                        .labelsHidden()
+                        .fixedSize()
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .help("Continuous Play: play the next episode automatically when one ends")
             }
             HeaderDivider()
             if Self.sortable.contains(shownCategory) {
                 VideoSortMenu(category: shownCategory, sort: $sort)
             }
             FilterField(prompt: "Search videos", text: $searchText)
-                .frame(minWidth: 120, maxWidth: 220)
+                .frame(minWidth: 90, maxWidth: 220)
         }
     }
 
