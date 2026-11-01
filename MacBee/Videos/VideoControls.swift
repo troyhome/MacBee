@@ -13,6 +13,7 @@ struct VideoControls: View {
 
     @Environment(\.theme) private var theme
     @AppStorage("videoVolume") private var volume = 100.0
+    @AppStorage("videoVolumeBeforeMute") private var volumeBeforeMute = 100.0
     @State private var scrubbing: Double?
 
     var body: some View {
@@ -87,8 +88,16 @@ struct VideoControls: View {
                 controlButton(player.isPaused ? "play.fill" : "pause.fill", help: "Play/Pause (Space)", size: 26) { player.togglePause() }
                 controlButton("goforward.10", help: "Forward 10 seconds (→)") { player.seek(by: 10) }
                 Spacer()
-                Image(systemName: "speaker.wave.2.fill")
-                    .foregroundStyle(.white.opacity(0.8))
+                // Click to mute; click again to bring the sound back to where it was.
+                controlButton(volume < 1 ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                              help: volume < 1 ? "Unmute" : "Mute", size: 15) {
+                    if volume < 1 {
+                        volume = volumeBeforeMute > 0 ? volumeBeforeMute : 100
+                    } else {
+                        volumeBeforeMute = volume
+                        volume = 0
+                    }
+                }
                 Slider(value: $volume, in: 0...100)
                     .frame(width: 100)
                     .controlSize(.small)
