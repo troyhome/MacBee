@@ -20,6 +20,8 @@ struct PlexVideoInfo: Codable, Sendable {
 struct PlexVideoIndex: Codable, Sendable {
     var movies: [String: PlexVideoInfo] = [:]
     var shows: [String: PlexVideoInfo] = [:]
+    /// Episode names by file name ("Pilot", "The Tagger"). Missing from older saved copies.
+    var episodeTitles: [String: String]? = [:]
 
     /// Kept on this Mac so titles, posters and summaries stay when Plex can't be reached (or isn't signed in).
     static var savedURL: URL {
@@ -83,7 +85,10 @@ extension PlexConnection {
                     guard let key = episode.grandparentRatingKey else { continue }
                     let info = showInfo[key] ?? PlexVideoInfo(title: episode.grandparentTitle ?? "", year: nil, genres: [],
                                                              summary: nil, thumb: episode.grandparentThumb)
-                    for file in episode.files { index.shows[PlexVideoIndex.fileName(file)] = info }
+                    for file in episode.files {
+                        index.shows[PlexVideoIndex.fileName(file)] = info
+                        if let title = episode.title, !title.isEmpty { index.episodeTitles?[PlexVideoIndex.fileName(file)] = title }
+                    }
                 }
             }
         }

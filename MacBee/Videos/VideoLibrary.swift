@@ -110,6 +110,17 @@ final class VideoLibrary {
             if let year = info.year { catalog.shows[i].year = year }
             if !info.genres.isEmpty { catalog.shows[i].genres = info.genres }
             catalog.shows[i].summary = info.summary
+            // Episode names from Plex ("Pilot" instead of "Episode 1").
+            if let titles = index.episodeTitles {
+                for s in catalog.shows[i].seasons.indices {
+                    for e in catalog.shows[i].seasons[s].episodes.indices {
+                        let episode = catalog.shows[i].seasons[s].episodes[e]
+                        if let title = titles[PlexVideoIndex.fileName(episode.file.path)] {
+                            catalog.shows[i].seasons[s].episodes[e].title = title
+                        }
+                    }
+                }
+            }
             let poster = files.lazy.compactMap { index.shows[PlexVideoIndex.fileName($0)]?.posterPath }.first
             if catalog.shows[i].posterPath == nil { catalog.shows[i].posterPath = existing(poster) }
         }
