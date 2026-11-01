@@ -203,8 +203,11 @@ struct VideosView: View {
     @ViewBuilder
     private func detail(for title: VideoTitle) -> some View {
         switch title {
-        case let .movie(movie): MovieDetailView(movie: movie) { open = nil }
-        case let .show(show): ShowDetailView(show: show) { open = nil }
+        // The latest copy from the library, so names and posters fetched after the page opened show up.
+        case let .movie(movie):
+            MovieDetailView(movie: app.videos.catalog.movies.first { $0.id == movie.id } ?? movie) { open = nil }
+        case let .show(show):
+            ShowDetailView(show: app.videos.catalog.shows.first { $0.id == show.id } ?? show) { open = nil }
         case .musicVideo: EmptyView()
         }
     }
