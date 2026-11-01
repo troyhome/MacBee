@@ -112,8 +112,10 @@ public enum VideoScanner {
             if show.year == nil { show.year = showName.year }
             if show.posterPath == nil { show.posterPath = artwork(in: showFolder, baseName: nil, anyImage: true) }
             if show.genres.isEmpty { show.genres = genres(in: showFolder, names: ["tvshow.nfo"]) }
-            let episode = Episode(season: marker.season, number: marker.episode,
-                                  title: episodeTitle(marker.rest, showTitle: showName.title), file: found.file)
+            // The name: from the file name ("S03E17 Adrian Pimento"), else an .nfo file beside the episode.
+            let title = episodeTitle(marker.rest, showTitle: showName.title)
+                ?? nfoTitle(at: folder.appendingPathComponent("\(fileName).nfo"))
+            let episode = Episode(season: marker.season, number: marker.episode, title: title, file: found.file)
             if let index = show.seasons.firstIndex(where: { $0.number == marker.season }) {
                 show.seasons[index].episodes.append(episode)
             } else {
@@ -252,6 +254,16 @@ public enum VideoScanner {
             })
         }
         return candidates.compactMap { $0 }.first.map { folder.appendingPathComponent($0).path }
+    }
+
+    /// The <title> of a Kodi/Jellyfin style episode .nfo file, if there is one.
+    static func nfoTitle(at url: URL) -> String? {
+        guard let text = try? String(contentsOf: url, encoding: .utf8),
+              let regex = try? NSRegularExpression(pattern: "<title>([^<]+)</title>"),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let range = Range(match.range(at: 1), in: text) else { return nil }
+        let title = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+        return title.isEmpty ? nil : title
     }
 
     /// <genre> entries from a Kodi/Jellyfin style .nfo file next to the video.

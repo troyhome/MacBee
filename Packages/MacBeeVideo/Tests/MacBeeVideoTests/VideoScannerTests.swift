@@ -107,3 +107,13 @@ final class VideoScannerTests: XCTestCase {
         XCTAssertTrue(episodes[1].file.path.contains("/B/"))
     }
 }
+
+final class EpisodeNfoTests: XCTestCase {
+    func testReadsTitleFromEpisodeNfo() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("ep-\(UUID().uuidString).nfo")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try "<episodedetails>\n  <title>The Tagger</title>\n  <season>1</season>\n</episodedetails>".write(to: url, atomically: true, encoding: .utf8)
+        XCTAssertEqual(VideoScanner.nfoTitle(at: url), "The Tagger")
+        XCTAssertNil(VideoScanner.nfoTitle(at: url.appendingPathExtension("missing")))
+    }
+}

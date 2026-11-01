@@ -27,6 +27,9 @@ final class VideoLibrary {
 
     /// Each folder's file list from its last walk, so a single folder can be scanned again on its own.
     @ObservationIgnored private let fileCache = VideoFileCache()
+    @ObservationIgnored private let episodeTitles = EpisodeTitleLookup(
+        fileURL: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MacBee/episode-titles.json"))
 
     /// Looks through the video folders (movies and shows) and music folders (music videos) again.
     /// With `only`, just that folder is walked again; the others reuse what was found last time.
@@ -56,6 +59,10 @@ final class VideoLibrary {
         if found.musicVideos.isEmpty && !previous.musicVideos.isEmpty
             && !reachable.contains(where: { $0.kind == .musicVideos }) {
             found.musicVideos = previous.musicVideos
+        }
+        // Episodes still without a name (no Plex, nothing in the file name or .nfo): look them up on TVmaze.
+        if UserDefaults.standard.object(forKey: "lookUpEpisodeTitles") as? Bool ?? true {
+            found = await episodeTitles.fillMissingTitles(in: found)
         }
         found = Self.removingExcluded(from: found)
         // A drive that's away keeps its videos listed until it's back.

@@ -265,6 +265,7 @@ private struct FolderPreferenceRow: View {
 /// Folders with movies and TV shows for the Videos page (music videos are found in the music folders).
 private struct VideoFoldersSection: View {
     @Bindable var preferences: PreferencesStore
+    @AppStorage("lookUpEpisodeTitles") private var lookUpEpisodeTitles = true
     @Environment(AppModel.self) private var app
 
     var body: some View {
@@ -323,7 +324,8 @@ private struct VideoFoldersSection: View {
                 Button("Scan Videos Now") { Task { await app.refreshVideos() } }
                     .disabled(app.videos.isScanning)
             }
-            PreferenceNote("MacBee plays MKV, MP4, MOV, AVI and more, including 4K and HDR. Posters and genres come from picture and .nfo files next to the videos.")
+            Toggle("Look up missing episode names online", isOn: $lookUpEpisodeTitles)
+            PreferenceNote("MacBee plays MKV, MP4, MOV, AVI and more, including 4K and HDR. Posters and genres come from picture and .nfo files next to the videos. Episode names come from Plex, the file names or .nfo files, and otherwise from TVmaze (only the show's name is sent).")
         }
     }
 
