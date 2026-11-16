@@ -153,6 +153,7 @@ final class AppModel {
             return true
         }
         player.isVideoActive = { [weak self] in self?.videoSession != nil }
+        player.isVideoFullWindow = { [weak self] in self?.videoSession != nil && self?.videoIsMini == false }
         networkSync?.videoWatching = { [weak self] in self?.videos.syncedWatching ?? [] }
         networkSync?.mergeVideoWatching = { [weak self] states in self?.videos.mergeWatching(states) ?? 0 }
         engine.eventHandler = { [weak self] event in

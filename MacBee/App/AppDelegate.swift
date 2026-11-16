@@ -15,15 +15,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Space plays/pauses, except while typing in a text field.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+            guard let player = self?.player else { return event }
+            // While a video fills the window, a search box left active underneath can't be seen, so the keys
+            // always go to the video. Otherwise they're left alone while typing.
+            let typing = NSApp.keyWindow?.firstResponder is NSText
+                && !(NSApp.keyWindow == NSApp.mainWindow && player.isVideoFullWindow())
             // ← and → skip 10 seconds while a video plays (not while typing).
-            if modifiers.isEmpty, event.keyCode == 123 || event.keyCode == 124,
-               !(NSApp.keyWindow?.firstResponder is NSText), let player = self?.player, player.isVideoActive() {
+            if modifiers.isEmpty, event.keyCode == 123 || event.keyCode == 124, !typing, player.isVideoActive() {
                 event.keyCode == 124 ? player.forwardButton() : player.backButton()
                 return nil
             }
-            guard event.keyCode == 49, modifiers.isEmpty,
-                  !(NSApp.keyWindow?.firstResponder is NSText),
-                  let player = self?.player else { return event }
+            guard event.keyCode == 49, modifiers.isEmpty, !typing else { return event }
             player.togglePlayPause()
             return nil
         }

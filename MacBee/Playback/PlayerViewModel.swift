@@ -228,6 +228,8 @@ final class PlayerViewModel {
     @ObservationIgnored var videoTogglePause: (() -> Bool)?
     /// Set by the app: whether a video is playing (the forward/back buttons then skip 10 seconds).
     @ObservationIgnored var isVideoActive: () -> Bool = { false }
+    /// Set by the app: whether a video fills the main window (nothing else there can be typed into).
+    @ObservationIgnored var isVideoFullWindow: () -> Bool = { false }
 
     /// The play bar's forward button, ⌘→, the media key and the Dock menu: 10 seconds on in a video, else the next song.
     func forwardButton() {
