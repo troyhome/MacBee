@@ -362,6 +362,16 @@ final class VideoLibrary {
         UserDefaults.standard.set(positions, forKey: Profiles.key("videoPositions"))
     }
 
+    /// The every-few-seconds save while a video plays: only written to disk, so the pages behind the video
+    /// (Continue Watching, the show's episode list) aren't redrawn mid-playback, which made the picture stutter.
+    /// `savePosition` runs when the video stops and updates everything.
+    func savePositionQuietly(_ seconds: Double, for path: String) {
+        guard seconds >= Self.continueAfter else { return }
+        var saved = UserDefaults.standard.dictionary(forKey: Profiles.key("videoPositions")) as? [String: Double] ?? positions
+        saved[path] = seconds
+        UserDefaults.standard.set(saved, forKey: Profiles.key("videoPositions"))
+    }
+
     /// Marks videos watched (Continue Watching forgets them) or not watched (they start from the beginning).
     func setWatched(_ watchedNow: Bool, paths: [String]) {
         for path in paths {

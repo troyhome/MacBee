@@ -24,7 +24,9 @@ final class VideoSession {
                 try? await Task.sleep(for: .seconds(1))
                 guard let self else { return }
                 ticks += 1
-                if ticks % 10 == 0 { self.savePosition() }
+                if ticks % 10 == 0, self.player.duration > 0 {
+                    self.library.savePositionQuietly(self.player.position, for: self.current.file.path)
+                }
                 if self.player.reachedEnd { self.playNext() }
             }
         }
