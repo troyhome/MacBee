@@ -214,6 +214,7 @@ final class PlayerViewModel {
     // MARK: - Transport
 
     func togglePlayPause() {
+        if videoTogglePause?() == true { return }
         if engine.state == .stopped, let track = queue.current {
             start(track)
         } else {
@@ -223,6 +224,8 @@ final class PlayerViewModel {
 
     /// Set by the app: skips this many seconds in the video that's playing; false when no video is.
     @ObservationIgnored var videoSkip: ((Double) -> Bool)?
+    /// Set by the app: pauses or resumes the video that's open (Space, the media key); false when none is.
+    @ObservationIgnored var videoTogglePause: (() -> Bool)?
     /// Set by the app: whether a video is playing (the forward/back buttons then skip 10 seconds).
     @ObservationIgnored var isVideoActive: () -> Bool = { false }
 

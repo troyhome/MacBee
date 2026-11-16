@@ -147,6 +147,11 @@ final class AppModel {
             session.player.seek(by: seconds)
             return true
         }
+        player.videoTogglePause = { [weak self] in
+            guard let session = self?.videoSession else { return false }
+            session.player.togglePause()
+            return true
+        }
         player.isVideoActive = { [weak self] in self?.videoSession != nil }
         networkSync?.videoWatching = { [weak self] in self?.videos.syncedWatching ?? [] }
         networkSync?.mergeVideoWatching = { [weak self] states in self?.videos.mergeWatching(states) ?? 0 }
