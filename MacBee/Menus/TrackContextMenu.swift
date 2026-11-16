@@ -47,7 +47,7 @@ struct TrackContextMenu: View {
                 Button("Go to Artist") { app.openArtist(key: track.artistKey) }
             }
             if MDDeckSender.appURL != nil {
-                Button("Send to MD Deck") { MDDeckSender.send(tracks) }
+                Button("Send to MiniDeck") { MDDeckSender.send(tracks) }
             }
             Divider()
             EditTagsButton(tracks: tracks)
