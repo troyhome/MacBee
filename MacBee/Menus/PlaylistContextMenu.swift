@@ -56,19 +56,27 @@ struct PlaylistActionsModifier: ViewModifier {
     @Environment(PlaylistStore.self) private var store
     @Environment(PlayerViewModel.self) private var player
     @State private var newName = ""
+    /// Kept apart from `store.pendingRename`, which the alert clears as it closes, before the Rename button runs.
+    @State private var renaming: Playlist?
     @State private var miniDiscTracks: [Track] = []
 
     func body(content: Content) -> some View {
         @Bindable var store = store
         content
-            .onChange(of: store.pendingRename) { newName = store.pendingRename?.name ?? "" }
+            .onChange(of: store.pendingRename) {
+                guard let playlist = store.pendingRename else { return }
+                renaming = playlist
+                newName = playlist.name
+            }
             .alert(store.pendingRename?.isFolder == true ? "Rename Folder" : "Rename Playlist",
                    isPresented: Binding(get: { store.pendingRename != nil }, set: { if !$0 { store.pendingRename = nil } })) {
                 TextField("Name", text: $newName)
                 Button("Rename") {
-                    if let playlist = store.pendingRename { Task { await store.rename(playlist, to: newName) } }
+                    let name = newName
+                    if let playlist = renaming ?? store.pendingRename { Task { await store.rename(playlist, to: name) } }
+                    renaming = nil
                 }
-                Button("Cancel", role: .cancel) {}
+                Button("Cancel", role: .cancel) { renaming = nil }
             }
             .confirmationDialog(deleteTitle,
                                 isPresented: Binding(get: { store.pendingDelete != nil }, set: { if !$0 { store.pendingDelete = nil } })) {
