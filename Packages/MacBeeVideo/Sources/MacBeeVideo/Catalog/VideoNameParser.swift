@@ -28,7 +28,10 @@ public enum VideoNameParser {
         text = text.replacingOccurrences(of: #"\[[^\]]*\]|\{[^}]*\}"#, with: " ", options: .regularExpression)
         // A year in (parentheses) or standing alone. The title is everything before it.
         var year: Int?
-        if let match = text.range(of: #"\(?\b(19[2-9]\d|20[0-4]\d)\b\)?"#, options: .regularExpression) {
+        // A year in (parentheses) counts first, so "Blade Runner 2049 (2017)" is from 2017.
+        let yearMatch = text.range(of: #"\((19[2-9]\d|20[0-4]\d)\)"#, options: .regularExpression)
+            ?? text.range(of: #"\(?\b(19[2-9]\d|20[0-4]\d)\b\)?"#, options: .regularExpression)
+        if let match = yearMatch {
             let candidate = text[match].filter(\.isNumber)
             let before = String(text[..<match.lowerBound])
             // "(1982) Blade Runner": year first, title after.

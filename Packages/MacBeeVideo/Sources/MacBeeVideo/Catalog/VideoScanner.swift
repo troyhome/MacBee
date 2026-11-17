@@ -197,6 +197,19 @@ public enum VideoScanner {
         return key
     }
 
+    /// Which title to show when Plex knows a video: the one from the file or folder name when the person named it
+    /// differently on purpose ("Die Hard - Live Free or Die Hard"), Plex's otherwise. Plex wins when the two only
+    /// differ in punctuation or capitals ("Top Gun: Maverick"), or when the name's year doesn't match (a misread name).
+    public static func preferredTitle(fileTitle: String, fileYear: Int?, plexTitle: String, plexYear: Int?) -> String {
+        guard !plexTitle.isEmpty else { return fileTitle }
+        guard !fileTitle.isEmpty, let fileYear, fileYear == plexYear else { return plexTitle }
+        func words(_ text: String) -> String {
+            text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+                .unicodeScalars.filter(CharacterSet.alphanumerics.contains).map(String.init).joined()
+        }
+        return words(fileTitle) == words(plexTitle) ? plexTitle : fileTitle
+    }
+
     // MARK: - Files on disk
 
     struct FoundFile {

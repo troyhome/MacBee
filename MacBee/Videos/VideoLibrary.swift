@@ -104,7 +104,8 @@ final class VideoLibrary {
         for i in catalog.movies.indices {
             guard let info = catalog.movies[i].files.lazy.compactMap({ index.movies[PlexVideoIndex.fileName($0.path)] }).first
             else { continue }
-            if !info.title.isEmpty { catalog.movies[i].title = info.title }
+            catalog.movies[i].title = VideoScanner.preferredTitle(fileTitle: catalog.movies[i].title, fileYear: catalog.movies[i].year,
+                                                                  plexTitle: info.title, plexYear: info.year)
             if let year = info.year { catalog.movies[i].year = year }
             if !info.genres.isEmpty { catalog.movies[i].genres = info.genres }
             catalog.movies[i].summary = info.summary
@@ -113,7 +114,8 @@ final class VideoLibrary {
         for i in catalog.shows.indices {
             let files = catalog.shows[i].seasons.flatMap(\.episodes).map(\.file.path)
             guard let info = files.lazy.compactMap({ index.shows[PlexVideoIndex.fileName($0)] }).first else { continue }
-            if !info.title.isEmpty { catalog.shows[i].title = info.title }
+            catalog.shows[i].title = VideoScanner.preferredTitle(fileTitle: catalog.shows[i].title, fileYear: catalog.shows[i].year,
+                                                                 plexTitle: info.title, plexYear: info.year)
             if let year = info.year { catalog.shows[i].year = year }
             if !info.genres.isEmpty { catalog.shows[i].genres = info.genres }
             catalog.shows[i].summary = info.summary

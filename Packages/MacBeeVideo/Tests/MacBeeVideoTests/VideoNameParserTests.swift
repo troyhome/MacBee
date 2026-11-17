@@ -20,6 +20,9 @@ final class VideoNameParserTests: XCTestCase {
         XCTAssertEqual(name("Mickey 17 (2025) [imdbid-tt12299608]"), .init(title: "Mickey 17", year: 2025))
         XCTAssertEqual(name("007 - Dr. No (1962) [1080p]"), .init(title: "Dr. No", year: 1962))
         XCTAssertEqual(name("01 Die Hard (1988)"), .init(title: "Die Hard", year: 1988))
+        XCTAssertEqual(name("Blade Runner 2049 (2017) [1080p]"), .init(title: "Blade Runner 2049", year: 2017))
+        XCTAssertEqual(name("Die Hard - Live Free or Die Hard (2007) [1080p]"),
+                       .init(title: "Die Hard - Live Free or Die Hard", year: 2007))
     }
 
     func testEpisodes() {

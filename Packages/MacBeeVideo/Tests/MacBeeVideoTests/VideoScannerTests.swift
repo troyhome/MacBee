@@ -116,4 +116,17 @@ final class EpisodeNfoTests: XCTestCase {
         XCTAssertEqual(VideoScanner.nfoTitle(at: url), "The Tagger")
         XCTAssertNil(VideoScanner.nfoTitle(at: url.appendingPathExtension("missing")))
     }
+
+    func testPreferredTitle() {
+        func pick(_ file: String, _ fileYear: Int?, _ plex: String, _ plexYear: Int?) -> String {
+            VideoScanner.preferredTitle(fileTitle: file, fileYear: fileYear, plexTitle: plex, plexYear: plexYear)
+        }
+        XCTAssertEqual(pick("Die Hard - Live Free or Die Hard", 2007, "Live Free or Die Hard", 2007),
+                       "Die Hard - Live Free or Die Hard")
+        XCTAssertEqual(pick("Top Gun Maverick", 2022, "Top Gun: Maverick", 2022), "Top Gun: Maverick")
+        XCTAssertEqual(pick("Amelie", 2001, "Amélie", 2001), "Amélie")
+        XCTAssertEqual(pick("Blade Runner", 2049, "Blade Runner 2049", 2017), "Blade Runner 2049")
+        XCTAssertEqual(pick("Heat", nil, "Heat", 1995), "Heat")
+        XCTAssertEqual(pick("Heat", 1995, "", nil), "Heat")
+    }
 }
