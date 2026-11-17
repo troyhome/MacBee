@@ -103,7 +103,7 @@ public enum VideoThumbnailer {
     }
 
     /// A file name that stays the same between launches (Swift's hashValue changes every launch).
-    private static func stableName(_ path: String) -> String {
+    static func stableName(_ path: String) -> String {
         var hash: UInt64 = 1469598103934665603
         for byte in path.utf8 { hash = (hash ^ UInt64(byte)) &* 1099511628211 }
         return String(hash, radix: 16)
