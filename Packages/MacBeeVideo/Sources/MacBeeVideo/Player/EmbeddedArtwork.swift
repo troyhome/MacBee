@@ -44,6 +44,18 @@ public actor EmbeddedArtwork {
         return saved
     }
 
+    /// True when the video file was changed (tags, Finder icon) more than 10 minutes after the picture file was
+    /// last saved, so a poster saved with the video is the newer choice.
+    public static func isNewer(video: URL, than picture: String) async -> Bool {
+        await Task.detached(priority: .utility) {
+            let values = try? video.resourceValues(forKeys: [.contentModificationDateKey, .attributeModificationDateKey])
+            guard let changed = [values?.contentModificationDate, values?.attributeModificationDate].compactMap({ $0 }).max(),
+                  let saved = (try? FileManager.default.attributesOfItem(atPath: picture))?[.modificationDate] as? Date
+            else { return false }
+            return changed.timeIntervalSince(saved) > 600 // VideoTagger saves poster.jpg a minute or two before the video
+        }.value
+    }
+
     /// Forgets what was found for this video (right-click > Refresh Poster), so the file is read again.
     public func forget(_ video: URL) {
         let path = video.path

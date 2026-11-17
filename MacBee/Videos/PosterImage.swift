@@ -53,8 +53,16 @@ struct PosterImage: View {
         }
         .clipped()
         .task(id: "\(path ?? "")#\(PosterCache.shared.generation)") {
-            var found = await PosterCache.shared.image(at: path, maxPixels: maxPixels)
-            // The poster saved inside the video (MP4/M4V/MOV) comes before a still from the video.
+            var found: NSImage?
+            // The poster saved with the video (inside it, or as its Finder icon) wins when it was set after the
+            // poster file next to it was saved: a poster picked later in VideoTagger replaces an older poster.jpg.
+            if titlesStill, let previewFile, let path,
+               await EmbeddedArtwork.isNewer(video: previewFile.url, than: path),
+               let embedded = await EmbeddedArtwork.shared.poster(for: previewFile.url) {
+                found = await PosterCache.shared.image(at: embedded, maxPixels: maxPixels)
+            }
+            if found == nil { found = await PosterCache.shared.image(at: path, maxPixels: maxPixels) }
+            // Without a poster file, the one saved with the video comes before a still from the video.
             // Wide thumbnails (titlesStill false) keep showing a still.
             if found == nil, titlesStill, let previewFile,
                let embedded = await EmbeddedArtwork.shared.poster(for: previewFile.url) {
