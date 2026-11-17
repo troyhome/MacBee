@@ -20,22 +20,28 @@ struct VideosView: View {
     @State private var sort = VideoSort()
 
     var body: some View {
+        // The list stays (hidden, same size) underneath while a movie or show is open, so going back returns
+        // to the same spot instead of the top.
         HStack(spacing: 0) {
-            if !embedded && open == nil {
+            if !embedded {
                 VideoSidebar(category: $category, catalog: app.videos.catalog)
                 Rectangle().fill(theme.separator).frame(width: 1)
             }
-            Group {
-                if let open {
-                    detail(for: open)
-                } else {
-                    VStack(alignment: .leading, spacing: 0) {
-                        if !embedded { header }
-                        browse
-                    }
-                }
+            VStack(alignment: .leading, spacing: 0) {
+                if !embedded { header }
+                browse
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .opacity(open == nil ? 1 : 0)
+        .allowsHitTesting(open == nil)
+        .accessibilityHidden(open != nil)
+        .overlay {
+            if let open {
+                detail(for: open)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(theme.background)
+            }
         }
         .navigationTitle(embedded ? "Collections" : "Videos")
         .onAppear { sort = VideoSort.load(for: shownCategory) }
