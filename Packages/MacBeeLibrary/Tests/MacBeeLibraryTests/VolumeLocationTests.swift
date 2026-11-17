@@ -33,4 +33,13 @@ final class VolumeLocationTests: XCTestCase {
         XCTAssertFalse(VolumeLocation.sameVolume(crusher!, "smb://crusher/movies shows"))
         XCTAssertFalse(VolumeLocation.sameVolume("uuid:A", "uuid:B"))
     }
+
+    func testOrigin() {
+        XCTAssertEqual(VolumeLocation.serverName("CRUSHER._smb._tcp.local"), "CRUSHER")
+        XCTAssertEqual(VolumeLocation.serverName("crusher.local"), "crusher")
+        XCTAssertEqual(VolumeLocation.origin(of: "/Volumes/Gone Away Share", volumeID: "smb://crusher/movies shows"), "crusher")
+        XCTAssertEqual(VolumeLocation.origin(of: "/Volumes/Gone Away Drive", volumeID: "uuid:1234"), "External drive")
+        XCTAssertNil(VolumeLocation.origin(of: "/Volumes/Gone Away Drive"))
+        XCTAssertEqual(VolumeLocation.origin(of: NSTemporaryDirectory()), "This Mac")
+    }
 }

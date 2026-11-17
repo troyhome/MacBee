@@ -89,6 +89,31 @@ public enum VolumeLocation {
         return nil
     }
 
+    /// Where a folder comes from, as Finder shows it: the server's name for a network share ("CRUSHER"),
+    /// "External drive" or "This Mac". Falls back to the saved drive ID while the drive is away.
+    public static func origin(of path: String, volumeID: String? = nil) -> String? {
+        let url = URL(fileURLWithPath: path, isDirectory: true)
+        if !isLeftoverMountPoint(path),
+           let values = try? url.resourceValues(forKeys: [.volumeURLKey, .volumeURLForRemountingKey, .volumeIsInternalKey]),
+           let volume = values.volume?.standardizedFileURL.path, FileManager.default.fileExists(atPath: path) {
+            if let remote = values.volumeURLForRemounting, let host = serverName(remote.host) { return host }
+            if volume == "/" || values.volumeIsInternal == true { return "This Mac" }
+            return "External drive"
+        }
+        guard let volumeID else { return path.hasPrefix("/Volumes/") ? nil : "This Mac" }
+        if volumeID.hasPrefix("uuid:") { return "External drive" }
+        return serverName(URL(string: volumeID)?.host)
+    }
+
+    /// "CRUSHER" from "CRUSHER._smb._tcp.local" or "crusher.local".
+    static func serverName(_ host: String?) -> String? {
+        guard var host, !host.isEmpty else { return nil }
+        for suffix in ["._smb._tcp.local", "._afpovertcp._tcp.local", ".local"] where host.lowercased().hasSuffix(suffix) {
+            host = String(host.dropLast(suffix.count))
+        }
+        return host.removingPercentEncoding ?? host
+    }
+
     // MARK: - Helpers
 
     /// scheme://host/share, lowercased, without user name, password or port; ".local" names count as the same host.

@@ -64,13 +64,16 @@ struct LibrarySummaryRow: View {
             ForEach(library.folders) { state in
                 Divider()
                 FolderLine(systemImage: state.isNetwork ? "externaldrive.connected.to.line.below" : "folder",
-                           path: state.folder.path, paused: state.folder.isPaused, connected: state.isOnline) {
+                           path: state.folder.path,
+                           origin: VolumeLocation.origin(of: state.folder.path, volumeID: state.folder.volumeID),
+                           paused: state.folder.isPaused, connected: state.isOnline) {
                     MusicFolderRescanMenu(library: library, folder: state)
                 }
             }
             ForEach(preferences.videoFolders, id: \.self) { path in
                 Divider()
                 FolderLine(systemImage: "film.stack", path: path,
+                           origin: VolumeLocation.origin(of: path, volumeID: preferences.videoFolderVolumes[path]?.first),
                            paused: preferences.pausedVideoFolders.contains(path),
                            connected: preferences.isVideoFolderConnected(path)) {
                     VideoFolderRescanButton(path: path)
@@ -132,6 +135,8 @@ struct LibrarySettingsButton: View {
 private struct FolderLine<Action: View>: View {
     let systemImage: String
     let path: String
+    /// "CRUSHER", "External drive" or "This Mac".
+    let origin: String?
     let paused: Bool
     let connected: Bool
     @ViewBuilder let action: () -> Action
@@ -142,11 +147,18 @@ private struct FolderLine<Action: View>: View {
             Image(systemName: systemImage)
                 .foregroundStyle(theme.textSecondary)
                 .frame(width: 18)
-            Text(path)
-                .font(.mbRowTitle)
-                .foregroundStyle(paused ? theme.textSecondary : theme.textPrimary)
-                .lineLimit(2)
-                .help(path)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(path)
+                    .font(.mbRowTitle)
+                    .foregroundStyle(paused ? theme.textSecondary : theme.textPrimary)
+                    .lineLimit(2)
+                    .help(path)
+                if let origin {
+                    Text(origin)
+                        .font(.mbCaption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+            }
             Spacer(minLength: 8)
             Text(paused ? "Paused" : connected ? "Connected" : "Not connected")
                 .font(.mbCaption)

@@ -256,7 +256,8 @@ private struct FolderPreferenceRow: View {
     }
 
     private var details: String {
-        let kind = state.isNetwork ? "Network drive" : "On this Mac"
+        let kind = VolumeLocation.origin(of: state.folder.path, volumeID: state.folder.volumeID)
+            ?? (state.isNetwork ? "Network drive" : "On this Mac")
         guard let last = state.folder.lastScanAt else { return "\(kind) · not scanned yet" }
         return "\(kind) · last scan \(Format.relativeDateTime(last))"
     }
@@ -285,12 +286,19 @@ private struct VideoFoldersSection: View {
                                      : "Switch off to leave this folder's videos out without removing it")
                     Image(systemName: "film.stack")
                         .foregroundStyle(.secondary)
-                    Text(path)
-                        .lineLimit(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                        .help(path)
-                        .foregroundStyle(paused ? .secondary : .primary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(path)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                            .help(path)
+                            .foregroundStyle(paused ? .secondary : .primary)
+                        if let origin = VolumeLocation.origin(of: path, volumeID: preferences.videoFolderVolumes[path]?.first) {
+                            Text(origin)
+                                .font(.mbCaption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     Spacer()
                     ConnectionStatusLabel(paused: paused, connected: connected)
                     VideoFolderRescanButton(path: path)
