@@ -1,9 +1,11 @@
+import AppKit
 import AVFoundation
 import Foundation
 
 /// The poster saved inside a video file (the iTunes "covr" picture that VideoTagger and iTunes write into
-/// MP4, M4V and MOV files). Read once per file and version (path + modified date), saved to the caches folder
-/// and reused, so a page of cards doesn't read every file again. MKV is not read (no cover there).
+/// MP4, M4V and MOV files), or else the poster set as the file's Finder icon (VideoTagger does that for every
+/// file, MKV included). Read once per file and version (path + changed date), saved to the caches folder
+/// and reused, so a page of cards doesn't read every file again.
 public actor EmbeddedArtwork {
     public static let shared = EmbeddedArtwork()
 
@@ -21,10 +23,12 @@ public actor EmbeddedArtwork {
 
     /// The path of a picture file holding this video's embedded poster, or nil when it has none.
     public func poster(for video: URL) async -> String? {
-        guard Self.readableExtensions.contains(video.pathExtension.lowercased()) else { return nil }
         let path = video.path
-        let modified = await Task.detached(priority: .utility) {
-            (try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date)?.timeIntervalSince1970
+        // The later of the file's modified date and its attributes' (a new Finder icon changes only the latter).
+        let modified = await Task.detached(priority: .utility) { () -> TimeInterval? in
+            let values = try? video.resourceValues(forKeys: [.contentModificationDateKey, .attributeModificationDateKey])
+            let dates = [values?.contentModificationDate, values?.attributeModificationDate].compactMap { $0 }
+            return dates.max()?.timeIntervalSince1970
         }.value
         guard let modified else { return nil }
         let key = "\(path)#\(Int(modified))"
@@ -82,8 +86,33 @@ public actor EmbeddedArtwork {
         return file.path
     }
 
-    /// The embedded picture's bytes: the common "artwork" item first, then the iTunes cover. Only reads.
+    /// The embedded picture's bytes: the common "artwork" item first, then the iTunes cover, then the Finder icon.
+    /// Only reads.
     public static func read(_ video: URL) async -> Data? {
+        if readableExtensions.contains(video.pathExtension.lowercased()), let data = await readTags(video) { return data }
+        return finderIconPoster(video)
+    }
+
+    /// The poster set as the file's own Finder icon, stretched back from the icon's square to a poster's 2:3 shape.
+    /// Nil when the file has the normal icon.
+    public static func finderIconPoster(_ video: URL) -> Data? {
+        var info = [UInt8](repeating: 0, count: 32)
+        guard getxattr(video.path, "com.apple.FinderInfo", &info, 32, 0, 0) == 32,
+              (UInt16(info[8]) << 8 | UInt16(info[9])) & 0x0400 != 0 else { return nil } // "has custom icon"
+        let icon = NSWorkspace.shared.icon(forFile: video.path)
+        var square = NSRect(x: 0, y: 0, width: 1024, height: 1024)
+        guard let image = icon.cgImage(forProposedRect: &square, context: nil, hints: nil) else { return nil }
+        let height = 1024, width = 683
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let poster = context.makeImage() else { return nil }
+        return NSBitmapImageRep(cgImage: poster).representation(using: .jpeg, properties: [.compressionFactor: 0.88])
+    }
+
+    static func readTags(_ video: URL) async -> Data? {
         let asset = AVURLAsset(url: video)
         if let common = try? await asset.load(.commonMetadata),
            let data = await firstData(AVMetadataItem.metadataItems(from: common, filteredByIdentifier: .commonIdentifierArtwork)) {
