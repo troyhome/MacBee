@@ -410,6 +410,24 @@ final class AppModel {
     }
 
     /// Re-scans when the saved list is more than 10 minutes old (opening Videos stays instant).
+    /// Reads a movie's or show's poster again, and looks in its video folder again in case the picture's
+    /// file was added, renamed or replaced.
+    func refreshPoster(of title: VideoTitle) {
+        PosterCache.shared.reload(title.posterPath)
+        let path: String? = switch title {
+        case let .movie(movie): movie.file?.path
+        case let .show(show): show.folderPath
+        case .musicVideo: nil
+        }
+        guard let path else { return }
+        let root = preferences.videoFolders.first { path == $0 || path.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") }
+        Task {
+            await refreshVideos(only: root)
+            PosterCache.shared.reload(videos.catalog.movies.first { $0.id == title.id }?.posterPath
+                ?? videos.catalog.shows.first { $0.id == title.id }?.posterPath)
+        }
+    }
+
     func refreshVideosIfStale() async {
         // Wait for the music folders to be known, or music videos would be missed.
         if let library, library.folders.isEmpty, library.stats.tracks > 0 { return }

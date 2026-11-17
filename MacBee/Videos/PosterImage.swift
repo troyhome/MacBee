@@ -77,6 +77,15 @@ final class PosterCache {
 
     func filesMayHaveChanged() { generation += 1 }
 
+    /// Pictures the person asked to read again (right-click > Refresh Poster), with how many times.
+    @ObservationIgnored private var reloads: [String: Int] = [:]
+
+    /// Forgets the shrunken copy of this picture so it's read from disk again.
+    func reload(_ path: String?) {
+        if let path { reloads[path, default: 0] += 1 }
+        generation += 1
+    }
+
     @ObservationIgnored
     private let cache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
@@ -90,7 +99,7 @@ final class PosterCache {
         let modified = await Task.detached(priority: .utility) {
             (try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0
         }.value
-        let key = "\(path)#\(maxPixels)#\(modified)" as NSString
+        let key = "\(path)#\(maxPixels)#\(modified)#\(reloads[path] ?? 0)" as NSString
         if let cached = cache.object(forKey: key) { return cached }
         let loaded = await Task.detached(priority: .utility) { () -> (NSImage, Int)? in
             let url = URL(fileURLWithPath: path) as CFURL

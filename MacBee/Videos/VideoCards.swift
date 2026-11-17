@@ -52,6 +52,10 @@ struct VideoPosterCard: View {
             } else if let file = title.previewFile {
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }
             }
+            if case .musicVideo = title {} else {
+                Divider()
+                Button("Refresh Poster") { app.refreshPoster(of: title) }
+            }
         }
         .help(title.title)
     }
