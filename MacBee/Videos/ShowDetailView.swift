@@ -42,6 +42,14 @@ struct ShowDetailView: View {
                                 }
                             }
                             VideoLikeButton(id: show.id, diameter: 40)
+                            MoreMenuButton {
+                                if VideoTaggerSender.appURL != nil {
+                                    Button("Open in VideoTagger") { VideoTaggerSender.open(VideoTaggerSender.urls(for: .show(show))) }
+                                }
+                                Button("Show in Finder") {
+                                    NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: show.folderPath, isDirectory: true)])
+                                }
+                            }
                         }
                         .padding(.top, 8)
                     }
@@ -200,6 +208,9 @@ private struct EpisodeRow: View {
                 app.videos.setWatched(false, paths: season.episodes.map(\.file.path))
             }
             Divider()
+            if VideoTaggerSender.appURL != nil {
+                Button("Open in VideoTagger") { VideoTaggerSender.open([episode.file.url]) }
+            }
             Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([episode.file.url]) }
         }
     }

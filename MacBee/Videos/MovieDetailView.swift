@@ -50,6 +50,14 @@ struct MovieDetailView: View {
                             }
                         }
                         VideoLikeButton(id: movie.id, diameter: 40)
+                        if let file = movie.file {
+                            MoreMenuButton {
+                                if VideoTaggerSender.appURL != nil {
+                                    Button("Open in VideoTagger") { VideoTaggerSender.open([file.url]) }
+                                }
+                                Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }
+                            }
+                        }
                     }
                     .padding(.top, 10)
                     if movie.files.count > 1 {

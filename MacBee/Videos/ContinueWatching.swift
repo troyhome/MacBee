@@ -152,6 +152,9 @@ private struct ContinueCard: View {
             }
             Divider()
             Button("Remove from Continue Watching") { app.videos.removeFromContinueWatching(item) }
+            if VideoTaggerSender.appURL != nil {
+                Button("Open in VideoTagger") { VideoTaggerSender.open([item.file.url]) }
+            }
             Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([item.file.url]) }
         }
         .help(item.isUpNext ? "Play the next episode" : "Resume where you stopped")

@@ -41,8 +41,15 @@ struct VideoPosterCard: View {
         .contextMenu {
             if case .musicVideo = title { Button("Play", action: onOpen) } else { Button("Open", action: onOpen) }
             Button(app.videos.isLiked(title.id) ? "Unlike" : "Like") { app.videos.toggleLike(title.id) }
-            if let file = title.previewFile {
-                Divider()
+            Divider()
+            if VideoTaggerSender.appURL != nil {
+                Button("Open in VideoTagger") { VideoTaggerSender.open(VideoTaggerSender.urls(for: title)) }
+            }
+            if case let .show(show) = title {
+                Button("Show in Finder") {
+                    NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: show.folderPath, isDirectory: true)])
+                }
+            } else if let file = title.previewFile {
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }
             }
         }
