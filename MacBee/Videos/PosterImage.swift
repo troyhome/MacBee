@@ -3,7 +3,8 @@ import ImageIO
 import MacBeeVideo
 import SwiftUI
 
-/// A poster from a file next to the video (or from Plex), shrunk and cached. Without one, a still from the
+/// A poster from a file next to the video (or from Plex), shrunk and cached. Without one, the poster saved
+/// inside the video file (MP4/M4V/MOV). Without that, a still from the
 /// video itself (`previewFile`): blurred to fill the poster, with the whole frame in the middle. Without that,
 /// a plain card with the title, tinted by the title so cards look different from each other.
 struct PosterImage: View {
@@ -52,8 +53,17 @@ struct PosterImage: View {
         }
         .clipped()
         .task(id: "\(path ?? "")#\(PosterCache.shared.generation)") {
-            image = await PosterCache.shared.image(at: path, maxPixels: maxPixels)
-            if image == nil, let previewFile, let still = await VideoFrames.shared.frame(for: previewFile) {
+            var found = await PosterCache.shared.image(at: path, maxPixels: maxPixels)
+            // The poster saved inside the video (MP4/M4V/MOV) comes before a still from the video.
+            // Wide thumbnails (titlesStill false) keep showing a still.
+            if found == nil, titlesStill, let previewFile,
+               let embedded = await EmbeddedArtwork.shared.poster(for: previewFile.url) {
+                found = await PosterCache.shared.image(at: embedded, maxPixels: maxPixels)
+            }
+            image = found
+            if found != nil {
+                frame = nil
+            } else if let previewFile, let still = await VideoFrames.shared.frame(for: previewFile) {
                 frame = await PosterCache.shared.image(at: still, maxPixels: maxPixels)
             }
         }

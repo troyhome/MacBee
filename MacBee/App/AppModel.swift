@@ -413,6 +413,13 @@ final class AppModel {
     /// Reads a movie's or show's poster again, and looks in its video folder again in case the picture's
     /// file was added, renamed or replaced.
     func refreshPoster(of title: VideoTitle) {
+        if let file = title.previewFile {
+            // Read the poster saved inside the video again too, then let the cards look again.
+            Task {
+                await EmbeddedArtwork.shared.forget(file.url)
+                PosterCache.shared.filesMayHaveChanged()
+            }
+        }
         PosterCache.shared.reload(title.posterPath)
         let path: String? = switch title {
         case let .movie(movie): movie.file?.path
