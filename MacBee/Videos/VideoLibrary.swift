@@ -72,6 +72,7 @@ final class VideoLibrary {
             setSyncedLikes(syncedLikeKeys) // likes that arrived before these videos were found
         }
         isScanning = false
+        PosterCache.shared.filesMayHaveChanged() // a poster.jpg may have been replaced
     }
 
     /// Downloads (or reuses) the Plex posters of the videos found, and notes where each was saved.

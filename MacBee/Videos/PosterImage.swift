@@ -51,7 +51,7 @@ struct PosterImage: View {
             }
         }
         .clipped()
-        .task(id: path) {
+        .task(id: "\(path ?? "")#\(PosterCache.shared.generation)") {
             image = await PosterCache.shared.image(at: path, maxPixels: maxPixels)
             if image == nil, let previewFile, let still = await VideoFrames.shared.frame(for: previewFile) {
                 frame = await PosterCache.shared.image(at: still, maxPixels: maxPixels)
@@ -66,10 +66,18 @@ struct PosterImage: View {
     }
 }
 
-/// Keeps shrunken posters in memory (up to about 80 MB).
+/// Keeps shrunken posters in memory (up to about 80 MB). A picture replaced on disk (same name, newer date) is
+/// read again; after each video scan the posters on screen check their files once more.
 @MainActor
+@Observable
 final class PosterCache {
     static let shared = PosterCache()
+    /// Goes up after each video scan, so posters on screen look at their files again.
+    private(set) var generation = 0
+
+    func filesMayHaveChanged() { generation += 1 }
+
+    @ObservationIgnored
     private let cache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
         cache.totalCostLimit = 80_000_000
@@ -78,7 +86,11 @@ final class PosterCache {
 
     func image(at path: String?, maxPixels: Int) async -> NSImage? {
         guard let path else { return nil }
-        let key = "\(path)#\(maxPixels)" as NSString
+        // The file's date is part of the key, so a new poster.jpg saved over the old one shows up.
+        let modified = await Task.detached(priority: .utility) {
+            (try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0
+        }.value
+        let key = "\(path)#\(maxPixels)#\(modified)" as NSString
         if let cached = cache.object(forKey: key) { return cached }
         let loaded = await Task.detached(priority: .utility) { () -> (NSImage, Int)? in
             let url = URL(fileURLWithPath: path) as CFURL
